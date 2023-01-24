@@ -4,6 +4,7 @@
 //!! https://github.com/AlexGyver/AC_Dimmer  схемы и всякое такое
 //!* https://alexgyver.ru/lessons/pid/
 //!* https://github.com/GyverLibs/GyverPID/blob/main/examples/autotune2/
+//!* https://alexgyver.ru/lessons/eeprom/
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -11,56 +12,60 @@
 #include <Adafruit_BME280.h>
 #include <U8g2lib.h>
 #include <GyverEncoder.h>
-#include <GyverTimers.h>  // библиотека таймера
-#include <GyverNTC.h>     
-#include "GyverPID.h"     
+#include <GyverTimers.h> // библиотека таймера
+#include <GyverNTC.h>
+#include "GyverPID.h"
 #include "PIDtuner2.h"
-#include "thermistorMinim.h" 
-//Энкодер https://alexgyver.ru/encoder/
-#define SW 5					   // Pin encoder Button
-#define DT 6						   // Pin  Detect
-#define CLK 7						   // Pin  Clockwise
-//Энкодер
+#include "thermistorMinim.h"
+#include <EEPROM.h>
+// Энкодер https://alexgyver.ru/encoder/
+#define SW 5  // Pin encoder Button
+#define DT 6  // Pin  Detect
+#define CLK 7 // Pin  Clockwise
+// Энкодер
 
-//Димер
-#define ZERO_PIN 2    // пин детектора нуля
-#define INT_NUM 0     // соответствующий ему номер прерывания
-#define DIMMER_PIN 4  // управляющий пин симистора
-//Димер
+// Димер
+#define ZERO_PIN 2	 // пин детектора нуля
+#define INT_NUM 0	 // соответствующий ему номер прерывания
+#define DIMMER_PIN 4 // управляющий пин симистора
+// Димер
 
-#define buzzerPin  9
+#define buzzerPin 9
 #define NTC_PIN 0
 #define SEALEVELPRESSURE_HPA (1013.25) // оценивает высоту в метрах на основе давления на уровне моря
-#define HESTERESIS 2 // оценивает высоту в метрах на основе давления на уровне моря
+#define HESTERESIS 2				   // оценивает высоту в метрах на основе давления на уровне моря
 
 const PROGMEM char arButt[36] = {'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 const PROGMEM char arButtSmall[36] = {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 Adafruit_BME280 bme;
-Encoder enc(CLK, DT, SW);	
+Encoder enc(CLK, DT, SW);
 GyverNTC ntc(NTC_PIN, 10000, 3950);
 PIDtuner2 tuner;
 
 //!! взять из автотюна
-GyverPID regulator(0.1, 0.05, 0.01, 10); 
+GyverPID regulator(0.1, 0.05, 0.01, 10);
 
-int dimmer;  // переменная диммера
+int dimmer; // переменная диммера
 int setTemp = 0;
 uint64_t timeToDry = 0;
 uint64_t startDry = 0;
 uint16_t timer = 0;
 uint16_t storageTemp = 35;
 
-struct Data {
-  float 	pidKp = 0;
-  float 	pidKi = 0;
-  float 	pidKd = 0;
-  int   	pidDt = 0;
-  int 		storageTemp = 35;
-  int 		setTemp = 60;
-  int 		timeToDry = 4 * 60 * 60 * 1000;
+struct Settings
+{
+	bool sate = 0;
+	float pidKp = 0;
+	float pidKi = 0;
+	float pidKd = 0;
+	int pidDt = 0;
+	int storageTemp = 35;
+	int setTemp = 60;
+	int timeToDry = 4 * 60 * 60 * 1000;
 };
+Settings settings;
 
 void isrCLK()
 {
@@ -74,36 +79,39 @@ void isrDT()
 //* ОБРАБОТКА ЭНКОДЕРА - ДЛЯ МЕНЮ
 void rotaryMenu(int *s, int *i)
 {
-  if (enc.isRight())
-  {
-    *s = *s + 1;
-    if (*s >= *i)
-      *s = 0;
-  }
-  if (enc.isLeft())
-  {
-    *s = *s - 1;
-    if (*s < 0)
-      *s = *i - 1;
-  }
+	if (enc.isRight())
+	{
+		*s = *s + 1;
+		if (*s >= *i)
+			*s = 0;
+	}
+	if (enc.isLeft())
+	{
+		*s = *s - 1;
+		if (*s < 0)
+			*s = *i - 1;
+	}
 }
 
 // прерывание детектора нуля
-void isr() {
-  static int lastDim;
-  digitalWrite(DIMMER_PIN, 0);  // выключаем симистор
-  // если значение изменилось, устанавливаем новый период
-  // если нет, то просто перезапускаем со старым
-  if (lastDim != dimmer) Timer2.setPeriod(lastDim = dimmer);
-  else Timer2.restart();
+void isr()
+{
+	static int lastDim;
+	digitalWrite(DIMMER_PIN, 0); // выключаем симистор
+	// если значение изменилось, устанавливаем новый период
+	// если нет, то просто перезапускаем со старым
+	if (lastDim != dimmer)
+		Timer2.setPeriod(lastDim = dimmer);
+	else
+		Timer2.restart();
 }
 
 // прерывание таймера
-ISR(TIMER2_A) {
-  digitalWrite(DIMMER_PIN, 1);  // включаем симистор
-  Timer2.stop();                // останавливаем таймер
+ISR(TIMER2_A)
+{
+	digitalWrite(DIMMER_PIN, 1); // включаем симистор
+	Timer2.stop();				 // останавливаем таймер
 }
-
 
 void dispalyPrint4(char *STR1, char *STR2, char *STR3, char *STR4)
 {
@@ -136,21 +144,32 @@ void dispalyPrint4(char *STR1, char *STR2, char *STR3, char *STR4)
 	} while (oled.nextPage());
 }
 
-
 void setup()
 {
-	//Диммер
+	EEPROM.get(0, settings);
+	if (settings.sate)
+	{
+		regulator.Kd = settings.pidKd;
+		regulator.Kp = settings.pidKp;
+		regulator.Ki = settings.pidKi;
+		regulator.setDt(settings.pidDt);
+
+		setTemp = settings.storageTemp;
+		timeToDry = settings.timeToDry;
+	}
+
+	// Диммер
 	pinMode(ZERO_PIN, INPUT_PULLUP);
 	pinMode(DIMMER_PIN, OUTPUT);
 
 	pinMode(DT, INPUT_PULLUP);
-  	pinMode(CLK, INPUT_PULLUP);
-  	pinMode(SW, INPUT_PULLUP);
+	pinMode(CLK, INPUT_PULLUP);
+	pinMode(SW, INPUT_PULLUP);
 	pinMode(buzzerPin, OUTPUT);
 
 	attachInterrupt(INT_NUM, isr, RISING); // для самодельной схемы ставь FALLING
 	Timer2.enableISR();
-	//Диммер
+	// Диммер
 
 	enc.setType(TYPE2);
 	attachInterrupt(0, isrCLK, CHANGE); // прерывание на 2 пине! CLK у энка
@@ -179,7 +198,7 @@ void setup()
 	dispalyPrint4("-", "-", "-", "-"); //!!!! НЕ УДАЛЯТЬ ИНАЧЕ СТАРТУЕТ КРИВО, ВИДИМО НУЖНО СНАЧАЛА ПНУТЬ ЭКРАН
 	dispalyPrint4("SUPER", "PUPER", "SUSHILKA", "BY ENGENNER");
 	tone(buzzerPin, 50);
-  	delay(50);
+	delay(50);
 	// delay(3000);
 }
 
@@ -193,48 +212,59 @@ void loop()
 	char timerChar[12];
 	// char bmePresureChar[12];
 	// char bmeAltitudeChar[12];
-	float bmeTemp = bme.readTemperature(); 
-	int ntcTemp = ntc.getTempAverage(); 
+	float bmeTemp = bme.readTemperature();
+	int ntcTemp = ntc.getTempAverage();
 	sprintf(bmeTempChar, "air t:  %.2f C", bmeTemp);
 	sprintf(bmeHumidityChar, "air H:  %03d %", bme.readHumidity());
 	sprintf(ntcTempChar, "bed t: %.2f C", ntc.getTempAverage());
-	if (timer > 0){
+	if (timer > 0)
+	{
 		sprintf(timerChar, "timer: %03d C", timer);
-	} else {
+	}
+	else
+	{
 		sprintf(timerChar, "timer off");
 	}
-	
+
 	// sprintf(bmePresureChar, "P: %04d mm", bme.readPressure() / 100.0F);
 	dispalyPrint4(bmeTempChar, ntcTempChar, bmeHumidityChar, timerChar);
 	// sprintf(bmeAltitude, "A: %04d m", bme.readAltitude(SEALEVELPRESSURE_HPA));
 
-	if (millis() - startDry > timeToDry){
+	if (millis() - startDry > timeToDry)
+	{
 		setTemp = storageTemp;
 	}
-	if (bmeTemp < setTemp - HESTERESIS){
-		regulator.setpoint = setTemp + 10;	
+	if (bmeTemp < setTemp - HESTERESIS)
+	{
+		regulator.setpoint = setTemp + 10;
 		regulator.input = ntcTemp;
 		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
 	}
-	
-	if (bmeTemp < setTemp - HESTERESIS) {
-		regulator.setpoint = setTemp + 5;	
+
+	if (bmeTemp < setTemp - HESTERESIS)
+	{
+		regulator.setpoint = setTemp + 5;
 		regulator.input = ntcTemp;
 		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
 	}
-	
-	if (bmeTemp > setTemp){
-		regulator.setpoint = setTemp;	
+
+	if (bmeTemp > setTemp)
+	{
+		regulator.setpoint = setTemp;
 		regulator.input = ntcTemp;
 		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
 	}
-	
-	if ("AUTOPID"){
+
+	if ("AUTOPID")
+	{
 		// направление, начальный сигнал, конечный, период плато, точность, время стабилизации, период итерации
-  		tuner.setParameters(NORMAL, 0, 80, 6000, 0.05, 500);
-		
+		tuner.setParameters(NORMAL, 0, 80, 6000, 0.05, 500);
+
 		tuner.setInput(ntc.getTempAverage());
 		tuner.compute();
 		dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
+
+		//!* запихнуть все в епром
+		//!! EEPROM.put(0, settings);
 	}
 }
