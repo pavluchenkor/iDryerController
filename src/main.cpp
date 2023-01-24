@@ -28,6 +28,7 @@
 #define DIMMER_PIN 4  // управляющий пин симистора
 //Димер
 
+#define buzzerPin  9
 #define NTC_PIN 0
 #define SEALEVELPRESSURE_HPA (1013.25) // оценивает высоту в метрах на основе давления на уровне моря
 #define HESTERESIS 2 // оценивает высоту в метрах на основе давления на уровне моря
@@ -50,6 +51,17 @@ uint64_t timeToDry = 0;
 uint64_t startDry = 0;
 uint16_t timer = 0;
 uint16_t storageTemp = 35;
+
+struct Data {
+  float 	pidKp = 0;
+  float 	pidKi = 0;
+  float 	pidKd = 0;
+  int   	pidDt = 0;
+  int 		storageTemp = 35;
+  int 		setTemp = 60;
+  int 		timeToDry = 4 * 60 * 60 * 1000;
+};
+
 void isrCLK()
 {
 	enc.tick(); // отработка в прерывании
@@ -134,7 +146,8 @@ void setup()
 	pinMode(DT, INPUT_PULLUP);
   	pinMode(CLK, INPUT_PULLUP);
   	pinMode(SW, INPUT_PULLUP);
-	
+	pinMode(buzzerPin, OUTPUT);
+
 	attachInterrupt(INT_NUM, isr, RISING); // для самодельной схемы ставь FALLING
 	Timer2.enableISR();
 	//Диммер
@@ -165,7 +178,9 @@ void setup()
 	delay(200);
 	dispalyPrint4("-", "-", "-", "-"); //!!!! НЕ УДАЛЯТЬ ИНАЧЕ СТАРТУЕТ КРИВО, ВИДИМО НУЖНО СНАЧАЛА ПНУТЬ ЭКРАН
 	dispalyPrint4("SUPER", "PUPER", "SUSHILKA", "BY ENGENNER");
-	delay(3000);
+	tone(buzzerPin, 50);
+  	delay(50);
+	// delay(3000);
 }
 
 void loop()
@@ -214,10 +229,6 @@ void loop()
 		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
 	}
 	
-
-	
-
-
 	if ("AUTOPID"){
 		// направление, начальный сигнал, конечный, период плато, точность, время стабилизации, период итерации
   		tuner.setParameters(NORMAL, 0, 80, 6000, 0.05, 500);
