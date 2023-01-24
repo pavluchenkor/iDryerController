@@ -1,7 +1,9 @@
 //!* OLED https://startingelectronics.org/tutorials/arduino/modules/OLED-128x32-I2C-display/
 //!* BME280 https://randomnerdtutorials.com/bme280-sensor-arduino-pressure-temperature-humidity/
 //!* https://github.com/AlexGyver/tutorials/tree/master/triac/smooth_1ch
-//!!https://github.com/AlexGyver/AC_Dimmer  схемы и всякое такое
+//!! https://github.com/AlexGyver/AC_Dimmer  схемы и всякое такое
+//!* https://alexgyver.ru/lessons/pid/
+//!* https://github.com/GyverLibs/GyverPID/blob/main/examples/autotune2/
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -10,11 +12,14 @@
 #include <U8g2lib.h>
 #include <GyverEncoder.h>
 #include <GyverTimers.h>  // библиотека таймера
-#include <GyverNTC.h>           
-//Энкодер
-#define DT 7						   // Pin  Detect
-#define CLK 6						   // Pin  Clockwise
-#define encBut 5					   // Pin encoder Button
+#include <GyverNTC.h>     
+#include "GyverPID.h"     
+#include "PIDtuner2.h"
+#include "thermistorMinim.h" 
+//Энкодер https://alexgyver.ru/encoder/
+#define SW 5					   // Pin encoder Button
+#define DT 6						   // Pin  Detect
+#define CLK 7						   // Pin  Clockwise
 //Энкодер
 
 //Димер
@@ -25,17 +30,26 @@
 
 #define NTC_PIN 0
 #define SEALEVELPRESSURE_HPA (1013.25) // оценивает высоту в метрах на основе давления на уровне моря
+#define HESTERESIS 2 // оценивает высоту в метрах на основе давления на уровне моря
 
 const PROGMEM char arButt[36] = {'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 const PROGMEM char arButtSmall[36] = {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 Adafruit_BME280 bme;
-Encoder enc(CLK, DT, encBut);	
+Encoder enc(CLK, DT, SW);	
 GyverNTC ntc(NTC_PIN, 10000, 3950);
+PIDtuner2 tuner;
+
+//!! взять из автотюна
+GyverPID regulator(0.1, 0.05, 0.01, 10); 
 
 int dimmer;  // переменная диммера
-
+int setTemp = 0;
+uint64_t timeToDry = 0;
+uint64_t startDry = 0;
+uint16_t timer = 0;
+uint16_t storageTemp = 35;
 void isrCLK()
 {
 	enc.tick(); // отработка в прерывании
@@ -110,6 +124,7 @@ void dispalyPrint4(char *STR1, char *STR2, char *STR3, char *STR4)
 	} while (oled.nextPage());
 }
 
+
 void setup()
 {
 	//Диммер
@@ -118,7 +133,7 @@ void setup()
 
 	pinMode(DT, INPUT_PULLUP);
   	pinMode(CLK, INPUT_PULLUP);
-  	pinMode(encBut, INPUT);
+  	pinMode(SW, INPUT_PULLUP);
 	
 	attachInterrupt(INT_NUM, isr, RISING); // для самодельной схемы ставь FALLING
 	Timer2.enableISR();
@@ -135,6 +150,15 @@ void setup()
 		while (1)
 			;
 	}
+
+	regulator.setDirection(NORMAL); // направление регулирования (NORMAL/REVERSE). ПО УМОЛЧАНИЮ СТОИТ NORMAL
+	regulator.setLimits(0, 255);	// пределы (ставим для 8 битного ШИМ). ПО УМОЛЧАНИЮ СТОЯТ 0 И 255
+	regulator.setpoint = 50;		// сообщаем регулятору температуру, которую он должен поддерживать
+	// // в процессе работы можно менять коэффициенты
+	// regulator.Kp = 5.2;
+	// regulator.Ki += 0.5;
+	// regulator.Kd = 0;
+
 	oled.begin();
 	oled.setFlipMode(1);
 	oled.setContrast(0);
@@ -148,21 +172,58 @@ void loop()
 {
 	enc.tick();
 
-	char bmeTemp[3];
-	char ntcTemp[3];
-	char bmeHumidity[3];
-	char bmePresure[4];
-	char bmeAltitude[4];
-	sprintf(bmeTemp, "t:  %03d C", bme.readTemperature());
-	sprintf(bmeHumidity, "H:  %03d %", bme.readHumidity());
-	sprintf(bmePresure, "P: %04d mm", bme.readPressure() / 100.0F);
-	sprintf(ntcTemp, "P: %04d mm", round(ntc.getTempAverage()));
-	dispalyPrint4(bmeTemp, bmeHumidity, bmePresure, bmeAltitude);
+	char bmeTempChar[12];
+	char ntcTempChar[12];
+	char bmeHumidityChar[12];
+	char timerChar[12];
+	// char bmePresureChar[12];
+	// char bmeAltitudeChar[12];
+	float bmeTemp = bme.readTemperature(); 
+	int ntcTemp = ntc.getTempAverage(); 
+	sprintf(bmeTempChar, "air t:  %.2f C", bmeTemp);
+	sprintf(bmeHumidityChar, "air H:  %03d %", bme.readHumidity());
+	sprintf(ntcTempChar, "bed t: %.2f C", ntc.getTempAverage());
+	if (timer > 0){
+		sprintf(timerChar, "timer: %03d C", timer);
+	} else {
+		sprintf(timerChar, "timer off");
+	}
+	
+	// sprintf(bmePresureChar, "P: %04d mm", bme.readPressure() / 100.0F);
+	dispalyPrint4(bmeTempChar, ntcTempChar, bmeHumidityChar, timerChar);
 	// sprintf(bmeAltitude, "A: %04d m", bme.readAltitude(SEALEVELPRESSURE_HPA));
 
-	// задаём значение 500-9300, где 500 максимум мощности, 9300 минимум!!!
-	// и 500-7600 для 60 Гц в сети
-	dimmer = map(analogRead(A0), 0, 1024, 500, 9300); //!! для чтения потенциаометра, потом заменить на нужный показатель в процентах
-	delay(100); // в реальном коде задержек быть не должно
- 
+	if (millis() - startDry > timeToDry){
+		setTemp = storageTemp;
+	}
+	if (bmeTemp < setTemp - HESTERESIS){
+		regulator.setpoint = setTemp + 10;	
+		regulator.input = ntcTemp;
+		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+	}
+	
+	if (bmeTemp < setTemp - HESTERESIS) {
+		regulator.setpoint = setTemp + 5;	
+		regulator.input = ntcTemp;
+		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+	}
+	
+	if (bmeTemp > setTemp){
+		regulator.setpoint = setTemp;	
+		regulator.input = ntcTemp;
+		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+	}
+	
+
+	
+
+
+	if ("AUTOPID"){
+		// направление, начальный сигнал, конечный, период плато, точность, время стабилизации, период итерации
+  		tuner.setParameters(NORMAL, 0, 80, 6000, 0.05, 500);
+		
+		tuner.setInput(ntc.getTempAverage());
+		tuner.compute();
+		dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
+	}
 }
