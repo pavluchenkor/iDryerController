@@ -30,7 +30,8 @@
 #define DIMMER_PIN 4 // управляющий пин симистора
 // Димер
 
-#define buzzerPin 9
+#define buzzerPin 10
+#define FAN 11
 #define NTC_PIN 0
 #define SEALEVELPRESSURE_HPA (1013.25) // оценивает высоту в метрах на основе давления на уровне моря
 #define HESTERESIS 2				   // оценивает высоту в метрах на основе давления на уровне моря
@@ -266,5 +267,7 @@ void loop()
 
 		//!* запихнуть все в епром
 		//!! EEPROM.put(0, settings);
+		//!! tone(buzzerPin, 50);
+		//!! delay(50);
 	}
 }
