@@ -54,7 +54,7 @@ uint64_t timeToDry = 0;
 uint64_t startDry = 0;
 uint16_t timer = 0;
 uint16_t storageTemp = 35;
-
+uint8_t pid_itr = 0;
 struct Settings
 {
 	bool sate = 0;
@@ -153,7 +153,13 @@ void setup()
 		regulator.Kd = settings.pidKd;
 		regulator.Kp = settings.pidKp;
 		regulator.Ki = settings.pidKi;
-		regulator.setDt(settings.pidDt);
+		// https://alexgyver.ru/gyverpid/
+		// установить пределы Время итерации: время итерации можно изменить в процессе
+		// работы (не знаю, зачем, но возможность есть). Время устанавливается в миллисекундах
+		// и влияет на функцию getResultTimer(), которая с этим периодом делает новый расчёт
+		// управляющего сигнала. Также это время входит в расчёт управляющего
+		// сигнала (в И и Д составляющей). Устанавливается командой setDt(dt);  // установка времени итерации в мс
+		regulator.setDt(settings.pidDt); // время
 
 		setTemp = settings.storageTemp;
 		timeToDry = settings.timeToDry;
@@ -264,10 +270,30 @@ void loop()
 		tuner.setInput(ntc.getTempAverage());
 		tuner.compute();
 		dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
-
-		//!* запихнуть все в епром
-		//!! EEPROM.put(0, settings);
-		//!! tone(buzzerPin, 50);
-		//!! delay(50);
+		if (tuner.getState() != 7 && pid_itr != tuner.getState())
+		{
+			pid_itr = tuner.getState();
+			char str1[12];
+			char str2[12];
+			char str3[12];
+			char str4[12];
+			sprintf(str1, "PID ATOTUNE");
+			sprintf(str2, "Kp:  %.2f", tuner.getPID_p());
+			sprintf(str3, "Ki:  %.2f", tuner.getPID_i());
+			sprintf(str4, "Kd:  %.2f", tuner.getPID_d());
+			dispalyPrint4(str1, str2, str3, str4);
+		}
+		if (tuner.getState() == 7)
+		{
+			settings.pidKp = tuner.getPID_p(); // p для ПИД регулятора
+			settings.pidKi = tuner.getPID_i(); // i для ПИД регулятора
+			settings.pidKd = tuner.getPID_d(); //  d для ПИД регулятора
+			dimmer = 0;
+			//!* запихнуть все в епром
+			//!! EEPROM.put(0, settings);
+			//!! tone(buzzerPin, 50);
+			//!! delay(50);
+			dispalyPrint4("PID", "IS", "COMPUTE", "AND SAVE");
+		}
 	}
 }
