@@ -36,6 +36,9 @@
 #define SEALEVELPRESSURE_HPA (1013.25) // оценивает высоту в метрах на основе давления на уровне моря
 #define HESTERESIS 2				   // оценивает высоту в метрах на основе давления на уровне моря
 
+#define OFF 0
+#define ON 1
+
 const PROGMEM char arButt[36] = {'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 const PROGMEM char arButtSmall[36] = {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 
@@ -55,6 +58,8 @@ uint64_t startDry = 0;
 uint16_t timer = 0;
 uint16_t storageTemp = 35;
 uint8_t pid_itr = 0;
+bool autoPid = OFF;
+
 struct Settings
 {
 	bool sate = 0;
@@ -262,7 +267,7 @@ void loop()
 		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
 	}
 
-	if ("AUTOPID")
+	while (pid_itr < 7 && autoPid == ON) // AUTOPID
 	{
 		// направление, начальный сигнал, конечный, период плато, точность, время стабилизации, период итерации
 		tuner.setParameters(NORMAL, 0, 80, 6000, 0.05, 500);
@@ -291,9 +296,21 @@ void loop()
 			dimmer = 0;
 			//!* запихнуть все в епром
 			//!! EEPROM.put(0, settings);
-			//!! tone(buzzerPin, 50);
 			//!! delay(50);
 			dispalyPrint4("PID", "IS", "COMPUTE", "AND SAVE");
+			tone(buzzerPin, 500, 100);
+			delay(100);
+			tone(buzzerPin, 500, 1000);
+			char str1[12];
+			char str2[12];
+			char str3[12];
+			char str4[12];
+			sprintf(str1, "CURRENT PID");
+			sprintf(str2, "Kp:  %.2f", tuner.getPID_p());
+			sprintf(str3, "Ki:  %.2f", tuner.getPID_i());
+			sprintf(str4, "Kd:  %.2f", tuner.getPID_d());
+			dispalyPrint4(str1, str2, str3, str4);
+			autoPid = OFF;
 		}
 	}
 }
