@@ -29,15 +29,18 @@
 #define INT_NUM 0	 // соответствующий ему номер прерывания
 #define DIMMER_PIN 4 // управляющий пин симистора
 // Димер
-
 #define buzzerPin 10
 #define FAN 11
+
 #define NTC_PIN 0
 #define SEALEVELPRESSURE_HPA (1013.25) // оценивает высоту в метрах на основе давления на уровне моря
 #define HESTERESIS 2				   // оценивает высоту в метрах на основе давления на уровне моря
 
 #define OFF 0
 #define ON 1
+#define DRY 2
+#define STORAGE 3
+#define AUTOPID 4
 
 const PROGMEM char arButt[36] = {'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 const PROGMEM char arButtSmall[36] = {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
@@ -59,6 +62,12 @@ uint16_t timer = 0;
 uint16_t storageTemp = 35;
 uint8_t pid_itr = 0;
 bool autoPid = OFF;
+uint8_t state = 0;
+
+char str1[12];
+char str2[12];
+char str3[12];
+char str4[12];
 
 struct Settings
 {
@@ -73,6 +82,7 @@ struct Settings
 };
 Settings settings;
 
+//!* Обработка энкодера в прерывании
 void isrCLK()
 {
 	enc.tick(); // отработка в прерывании
@@ -107,16 +117,16 @@ void isr()
 	// если значение изменилось, устанавливаем новый период
 	// если нет, то просто перезапускаем со старым
 	if (lastDim != dimmer)
-		Timer2.setPeriod(lastDim = dimmer);
+		Timer1.setPeriod(lastDim = dimmer);
 	else
-		Timer2.restart();
+		Timer1.restart();
 }
 
 // прерывание таймера
-ISR(TIMER2_A)
+ISR(Timer1_A)
 {
 	digitalWrite(DIMMER_PIN, 1); // включаем симистор
-	Timer2.stop();				 // останавливаем таймер
+	Timer1.stop();				 // останавливаем таймер
 }
 
 void dispalyPrint4(char *STR1, char *STR2, char *STR3, char *STR4)
@@ -179,8 +189,8 @@ void setup()
 	pinMode(SW, INPUT_PULLUP);
 	pinMode(buzzerPin, OUTPUT);
 
-	attachInterrupt(INT_NUM, isr, RISING); // для самодельной схемы ставь FALLING
-	Timer2.enableISR();
+	attachInterrupt(INT_NUM, isr, FALLING); // для самодельной схемы ставь FALLING
+	Timer1.enableISR();						// Timer1.enableISR();
 	// Диммер
 
 	enc.setType(TYPE2);
@@ -218,99 +228,105 @@ void loop()
 {
 	enc.tick();
 
-	char bmeTempChar[12];
-	char ntcTempChar[12];
-	char bmeHumidityChar[12];
-	char timerChar[12];
-	// char bmePresureChar[12];
-	// char bmeAltitudeChar[12];
-	float bmeTemp = bme.readTemperature();
-	int ntcTemp = ntc.getTempAverage();
-	sprintf(bmeTempChar, "air t:  %.2f C", bmeTemp);
-	sprintf(bmeHumidityChar, "air H:  %03d %", bme.readHumidity());
-	sprintf(ntcTempChar, "bed t: %.2f C", ntc.getTempAverage());
-	if (timer > 0)
+	switch (state)
 	{
-		sprintf(timerChar, "timer: %03d C", timer);
-	}
-	else
-	{
-		sprintf(timerChar, "timer off");
-	}
-
-	// sprintf(bmePresureChar, "P: %04d mm", bme.readPressure() / 100.0F);
-	dispalyPrint4(bmeTempChar, ntcTempChar, bmeHumidityChar, timerChar);
-	// sprintf(bmeAltitude, "A: %04d m", bme.readAltitude(SEALEVELPRESSURE_HPA));
-
-	if (millis() - startDry > timeToDry)
-	{
-		setTemp = storageTemp;
-	}
-	if (bmeTemp < setTemp - HESTERESIS)
-	{
-		regulator.setpoint = setTemp + 10;
-		regulator.input = ntcTemp;
-		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-	}
-
-	if (bmeTemp < setTemp - HESTERESIS)
-	{
-		regulator.setpoint = setTemp + 5;
-		regulator.input = ntcTemp;
-		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-	}
-
-	if (bmeTemp > setTemp)
-	{
-		regulator.setpoint = setTemp;
-		regulator.input = ntcTemp;
-		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-	}
-
-	while (pid_itr < 7 && autoPid == ON) // AUTOPID
-	{
-		// направление, начальный сигнал, конечный, период плато, точность, время стабилизации, период итерации
-		tuner.setParameters(NORMAL, 0, 80, 6000, 0.05, 500);
-
-		tuner.setInput(ntc.getTempAverage());
-		tuner.compute();
-		dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
-		if (tuner.getState() != 7 && pid_itr != tuner.getState())
+	case OFF:
+		/* code */
+		break;
+	case ON:
+		// char bmePresureChar[12];
+		// char bmeAltitudeChar[12];
+		float bmeTemp = bme.readTemperature();
+		int ntcTemp = ntc.getTempAverage();
+		sprintf(str1, "air t:  %.2f C", bmeTemp);
+		sprintf(str2, "air H:  %03d %", bme.readHumidity());
+		sprintf(str3, "bed t: %.2f C", ntc.getTempAverage());
+		if (timer > 0)
 		{
-			pid_itr = tuner.getState();
-			char str1[12];
-			char str2[12];
-			char str3[12];
-			char str4[12];
-			sprintf(str1, "PID ATOTUNE");
-			sprintf(str2, "Kp:  %.2f", tuner.getPID_p());
-			sprintf(str3, "Ki:  %.2f", tuner.getPID_i());
-			sprintf(str4, "Kd:  %.2f", tuner.getPID_d());
-			dispalyPrint4(str1, str2, str3, str4);
+			sprintf(str4, "timer: %03d C", timer);
 		}
-		if (tuner.getState() == 7)
+		else
 		{
-			settings.pidKp = tuner.getPID_p(); // p для ПИД регулятора
-			settings.pidKi = tuner.getPID_i(); // i для ПИД регулятора
-			settings.pidKd = tuner.getPID_d(); //  d для ПИД регулятора
-			dimmer = 0;
-			//!* запихнуть все в епром
-			//!! EEPROM.put(0, settings);
-			//!! delay(50);
-			dispalyPrint4("PID", "IS", "COMPUTE", "AND SAVE");
-			tone(buzzerPin, 500, 100);
-			delay(100);
-			tone(buzzerPin, 500, 1000);
-			char str1[12];
-			char str2[12];
-			char str3[12];
-			char str4[12];
-			sprintf(str1, "CURRENT PID");
-			sprintf(str2, "Kp:  %.2f", tuner.getPID_p());
-			sprintf(str3, "Ki:  %.2f", tuner.getPID_i());
-			sprintf(str4, "Kd:  %.2f", tuner.getPID_d());
-			dispalyPrint4(str1, str2, str3, str4);
-			autoPid = OFF;
+			sprintf(str4, "timer off");
 		}
+
+		// sprintf(bmePresureChar, "P: %04d mm", bme.readPressure() / 100.0F);
+		// sprintf(bmeAltitude, "A: %04d m", bme.readAltitude(SEALEVELPRESSURE_HPA));
+		dispalyPrint4(str1, str2, str3, str4);
+
+		if (millis() - startDry > timeToDry)
+		{
+			setTemp = storageTemp;
+		}
+		if (bmeTemp < setTemp - HESTERESIS)
+		{
+			regulator.setpoint = setTemp + 10;
+			regulator.input = ntcTemp;
+			dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+		}
+
+		if (bmeTemp < setTemp - HESTERESIS)
+		{
+			regulator.setpoint = setTemp + 5;
+			regulator.input = ntcTemp;
+			dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+		}
+
+		if (bmeTemp > setTemp)
+		{
+			regulator.setpoint = setTemp;
+			regulator.input = ntcTemp;
+			dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+		}
+		break;
+	case DRY:
+		/* code */
+		break;
+	case STORAGE:
+		/* code */
+		break;
+	case AUTOPID:
+		while (pid_itr < 7) // AUTOPID
+		{
+			// направление, начальный сигнал, конечный, период плато, точность, время стабилизации, период итерации
+			tuner.setParameters(NORMAL, 0, 80, 6000, 0.05, 500);
+
+			tuner.setInput(ntc.getTempAverage());
+			tuner.compute();
+			dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
+			if (tuner.getState() != 7 && pid_itr != tuner.getState())
+			{
+				pid_itr = tuner.getState();
+				sprintf(str1, "PID ATOTUNE");
+				sprintf(str2, "Kp:  %.2f", tuner.getPID_p());
+				sprintf(str3, "Ki:  %.2f", tuner.getPID_i());
+				sprintf(str4, "Kd:  %.2f", tuner.getPID_d());
+				dispalyPrint4(str1, str2, str3, str4);
+			}
+			if (tuner.getState() == 7)
+			{
+				settings.pidKp = tuner.getPID_p(); // p для ПИД регулятора
+				settings.pidKi = tuner.getPID_i(); // i для ПИД регулятора
+				settings.pidKd = tuner.getPID_d(); //  d для ПИД регулятора
+				dimmer = 0;
+				//!* запихнуть все в епром
+				//!! EEPROM.put(0, settings);
+				//!! delay(50);
+				dispalyPrint4("PID", "IS", "COMPUTE", "AND SAVE");
+				tone(buzzerPin, 500, 100);
+				delay(100);
+				tone(buzzerPin, 500, 1000);
+				sprintf(str1, "CURRENT PID");
+				sprintf(str2, "Kp:  %.2f", tuner.getPID_p());
+				sprintf(str3, "Ki:  %.2f", tuner.getPID_i());
+				sprintf(str4, "Kd:  %.2f", tuner.getPID_d());
+				dispalyPrint4(str1, str2, str3, str4);
+				state = OFF;
+			}
+		}
+		break;
+
+	default:
+		break;
 	}
 }
