@@ -19,14 +19,15 @@
 #include "thermistorMinim.h"
 #include <EEPROM.h>
 // Энкодер https://alexgyver.ru/encoder/
-#define SW 5  // Pin encoder Button
-#define DT 6  // Pin  Detect
+#define SW 5	// Pin encoder Button
+#define DT 6	// Pin  Detect
 #define CLK 7 // Pin  Clockwise
 // Энкодер
 
+#define MAX_TEMP 100
 // Димер
 #define ZERO_PIN 2	 // пин детектора нуля
-#define INT_NUM 0	 // соответствующий ему номер прерывания
+#define INT_NUM 0		 // соответствующий ему номер прерывания
 #define DIMMER_PIN 4 // управляющий пин симистора
 // Димер
 #define buzzerPin 10
@@ -34,13 +35,14 @@
 
 #define NTC_PIN 0
 #define SEALEVELPRESSURE_HPA (1013.25) // оценивает высоту в метрах на основе давления на уровне моря
-#define HESTERESIS 2				   // оценивает высоту в метрах на основе давления на уровне моря
+#define HESTERESIS 2									 // оценивает высоту в метрах на основе давления на уровне моря
 
 #define OFF 0
 #define ON 1
 #define DRY 2
 #define STORAGE 3
 #define AUTOPID 4
+#define NTC_ERROR 5
 
 const PROGMEM char arButt[36] = {'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 const PROGMEM char arButtSmall[36] = {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
@@ -55,7 +57,7 @@ PIDtuner2 tuner;
 GyverPID regulator(0.1, 0.05, 0.01, 10);
 
 int dimmer; // переменная диммера
-int setTemp = 0;
+int dryTemp = 0;
 uint64_t timeToDry = 0;
 uint64_t startDry = 0;
 uint16_t timer = 0;
@@ -77,12 +79,59 @@ struct Settings
 	float pidKd = 0;
 	int pidDt = 0;
 	int storageTemp = 35;
-	int setTemp = 60;
+	int dryTemp = 60;
 	int timeToDry = 4 * 60 * 60 * 1000;
 };
 Settings settings;
 
-//!* Обработка энкодера в прерывании
+struct Data
+{
+	int ntcTemp = 0;
+	float bmeTemp = 0;
+	float bmeHumidity = 0;
+	int timer = 0;
+};
+
+class iDryer
+{
+public:
+	int ntcTemp = 0;
+	float bmeTemp = 0;
+	float bmeHumidity = 0;
+	int timer = 0;
+	bool newDataFlag = false;
+	int temperature = 0;
+	Data oldData;
+	Data data;
+
+	bool getData(int setTemperature)
+	{
+		data.ntcTemp = ntc.getTempAverage();
+		data.bmeTemp = bme.readTemperature();
+		data.bmeHumidity = bme.readHumidity();
+
+		if (data.bmeTemp < setTemperature - HESTERESIS)
+			temperature = setTemperature + 10;
+		if (data.bmeTemp > setTemperature + HESTERESIS)
+			temperature = setTemperature + 5;
+		if (data.bmeTemp > setTemperature + HESTERESIS)
+			temperature = 0;
+		if (data.bmeTemp > setTemperature - HESTERESIS && data.bmeTemp < setTemperature + HESTERESIS)
+			temperature = setTemperature;
+
+		if (data.ntcTemp != oldData.ntcTemp ||
+				data.bmeTemp != oldData.bmeTemp ||
+				data.bmeHumidity != oldData.bmeHumidity)
+		{
+			oldData = data;
+			newDataFlag = true;
+			return newDataFlag;
+		}
+		newDataFlag = false;
+		return newDataFlag;
+	}
+} iDryer;
+
 void isrCLK()
 {
 	enc.tick(); // отработка в прерывании
@@ -123,10 +172,10 @@ void isr()
 }
 
 // прерывание таймера
-ISR(Timer1_A)
+ISR(TIMER1_A)
 {
 	digitalWrite(DIMMER_PIN, 1); // включаем симистор
-	Timer1.stop();				 // останавливаем таймер
+	Timer1.stop();							 // останавливаем таймер
 }
 
 void dispalyPrint4(char *STR1, char *STR2, char *STR3, char *STR4)
@@ -176,7 +225,7 @@ void setup()
 		// сигнала (в И и Д составляющей). Устанавливается командой setDt(dt);  // установка времени итерации в мс
 		regulator.setDt(settings.pidDt); // время
 
-		setTemp = settings.storageTemp;
+		dryTemp = settings.storageTemp;
 		timeToDry = settings.timeToDry;
 	}
 
@@ -189,8 +238,8 @@ void setup()
 	pinMode(SW, INPUT_PULLUP);
 	pinMode(buzzerPin, OUTPUT);
 
-	attachInterrupt(INT_NUM, isr, FALLING); // для самодельной схемы ставь FALLING
-	Timer1.enableISR();						// Timer1.enableISR();
+	attachInterrupt(INT_NUM, isr, RISING); // для самодельной схемы ставь FALLING
+	Timer1.enableISR();										 // Timer2.enableISR();
 	// Диммер
 
 	enc.setType(TYPE2);
@@ -206,8 +255,8 @@ void setup()
 	}
 
 	regulator.setDirection(NORMAL); // направление регулирования (NORMAL/REVERSE). ПО УМОЛЧАНИЮ СТОИТ NORMAL
-	regulator.setLimits(0, 255);	// пределы (ставим для 8 битного ШИМ). ПО УМОЛЧАНИЮ СТОЯТ 0 И 255
-	regulator.setpoint = 50;		// сообщаем регулятору температуру, которую он должен поддерживать
+	regulator.setLimits(0, 255);		// пределы (ставим для 8 битного ШИМ). ПО УМОЛЧАНИЮ СТОЯТ 0 И 255
+	regulator.setpoint = 50;				// сообщаем регулятору температуру, которую он должен поддерживать
 	// // в процессе работы можно менять коэффициенты
 	// regulator.Kp = 5.2;
 	// regulator.Ki += 0.5;
@@ -228,62 +277,70 @@ void loop()
 {
 	enc.tick();
 
+	int tmpTemp = analogRead(NTC_PIN);
+	if (tmpTemp == 0 || tmpTemp == 4095)
+	{
+		state = NTC_ERROR;
+	}
+
 	switch (state)
 	{
+	case NTC_ERROR:
+		dimmer = 0;
+		digitalWrite(DIMMER_PIN, 0);
+		detachInterrupt(INT_NUM);
+		analogWrite(FAN, 255);
+		while (1)
+		{
+			dispalyPrint4("", "CHECK NTC", "AND RESTART", "");
+			tone(buzzerPin, 500, 500);
+			dispalyPrint4("", "ERROR", "ERROR", "");
+			tone(buzzerPin, 1000, 500);
+		}
+		// state = OFF;
+		break;
 	case OFF:
 		/* code */
 		break;
 	case ON:
-		// char bmePresureChar[12];
-		// char bmeAltitudeChar[12];
-		float bmeTemp = bme.readTemperature();
-		int ntcTemp = ntc.getTempAverage();
-		sprintf(str1, "air t:  %.2f C", bmeTemp);
-		sprintf(str2, "air H:  %03d %", bme.readHumidity());
-		sprintf(str3, "bed t: %.2f C", ntc.getTempAverage());
-		if (timer > 0)
+
+		break;
+	case DRY:
+		// sprintf(bmePresureChar, "P: %04d mm", bme.readPressure() / 100.0F);
+		// sprintf(bmeAltitude, "A: %04d m", bme.readAltitude(SEALEVELPRESSURE_HPA));
+
+		if (iDryer.getData(dryTemp))
 		{
-			sprintf(str4, "timer: %03d C", timer);
+			sprintf(str1, "air t:  %.2f C", iDryer.data.bmeTemp);
+			sprintf(str2, "air H:  %03d %", iDryer.data.bmeHumidity);
+			sprintf(str3, "bed t: %.2f C", iDryer.data.ntcTemp);
+			sprintf(str4, "timer: %03d C", iDryer.data.timer);
+			dispalyPrint4(str1, str2, str3, str4);
+		}
+		regulator.setpoint = iDryer.temperature;
+		regulator.input = iDryer.data.ntcTemp;
+		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+		if (millis() - startDry > timeToDry)
+		{
+			dryTemp = storageTemp;
 		}
 		else
 		{
-			sprintf(str4, "timer off");
+			state = OFF;
 		}
-
-		// sprintf(bmePresureChar, "P: %04d mm", bme.readPressure() / 100.0F);
-		// sprintf(bmeAltitude, "A: %04d m", bme.readAltitude(SEALEVELPRESSURE_HPA));
-		dispalyPrint4(str1, str2, str3, str4);
-
-		if (millis() - startDry > timeToDry)
-		{
-			setTemp = storageTemp;
-		}
-		if (bmeTemp < setTemp - HESTERESIS)
-		{
-			regulator.setpoint = setTemp + 10;
-			regulator.input = ntcTemp;
-			dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-		}
-
-		if (bmeTemp < setTemp - HESTERESIS)
-		{
-			regulator.setpoint = setTemp + 5;
-			regulator.input = ntcTemp;
-			dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-		}
-
-		if (bmeTemp > setTemp)
-		{
-			regulator.setpoint = setTemp;
-			regulator.input = ntcTemp;
-			dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-		}
-		break;
-	case DRY:
-		/* code */
 		break;
 	case STORAGE:
-		/* code */
+		if (iDryer.getData(storageTemp))
+		{
+			sprintf(str1, "STORAGE");
+			sprintf(str2, "air t:  %.2f C", iDryer.data.bmeTemp);
+			sprintf(str3, "air H:  %03d %", iDryer.data.bmeHumidity);
+			sprintf(str4, "bed t: %.2f C", iDryer.data.ntcTemp);
+			dispalyPrint4(str1, str2, str3, str4);
+		}
+		regulator.setpoint = iDryer.temperature;
+		regulator.input = iDryer.data.ntcTemp;
+		dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
 		break;
 	case AUTOPID:
 		while (pid_itr < 7) // AUTOPID
