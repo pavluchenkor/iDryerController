@@ -278,7 +278,7 @@ void loop()
 	enc.tick();
 
 	int tmpTemp = analogRead(NTC_PIN);
-	if (tmpTemp == 0 || tmpTemp == 4095)
+	if (tmpTemp == 0 || tmpTemp >= 1023)
 	{
 		state = NTC_ERROR;
 	}
