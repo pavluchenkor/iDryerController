@@ -166,8 +166,6 @@ void rotaryMenu(int *s, int *i)
     }
 }
 
-
-
 void storage(int *s, int *e, int *f)
 {
     bool exit1 = OFF;
@@ -359,14 +357,14 @@ void setup()
 
 void loop()
 {
-//!*
+    //!*
 
     if (iDryer.getData(dryTemp))
     {
-        sprintf(str1, "air t:  %.2f C", iDryer.data.bmeTemp);
-        sprintf(str2, "air H:  %03d %", iDryer.data.bmeHumidity);
-        sprintf(str3, "bed t: %.2f C", iDryer.data.ntcTemp);
-        sprintf(str4, "timer: %03d C", iDryer.data.timer);
+        sprintf(str1, "air t:\t%.2f C", iDryer.data.bmeTemp);
+        sprintf(str2, "air H:\t%03d %", iDryer.data.bmeHumidity);
+        sprintf(str3, "bed t:\t %.2f C", iDryer.data.ntcTemp);
+        sprintf(str4, "timer:\t%03d C", iDryer.data.timer);
         Serial.println(str1);
         Serial.println(str2);
         Serial.println(str3);
