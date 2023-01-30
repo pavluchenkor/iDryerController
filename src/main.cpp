@@ -45,9 +45,6 @@
 #define AUTOPID 4
 #define NTC_ERROR 5
 
-const PROGMEM char arButt[36] = {'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
-const PROGMEM char arButtSmall[36] = {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
-
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 Adafruit_BME280 bme;
 Encoder enc(CLK, DT, SW, TYPE1);
@@ -70,7 +67,7 @@ uint8_t state = 0;
 //!* menu
 int reset = LOW;
 int select = 0;
-int exit = LOW;
+int exitMenu = LOW;
 int first = LOW;
 int item = 0;
 int on = 1;
@@ -169,66 +166,11 @@ void rotaryMenu(int *s, int *i)
     }
 }
 
-void menu(int *s, int *e, bool *f)
-{
-    switch (*s)
-    {
-    case 0:
-        dispalyPrint4("", "DRY", "MODE", "");
-        if (enc.isClick())
-        {
-            item = 4;
-            rotaryMenu(&select, &item);
-            dry(&select, &exit, &first);
-        }
-        break;
 
-    case 1:
-        dispalyPrint4("", "STORAGE", "MODE", "");
-        if (enc.isClick())
-        {
-            storage(&select, &exit, &first);
-        }
-        break;
-
-    case 2:
-        dispalyPrint4("", "AUTO PID", "click for", " start");
-        if (enc.isClick())
-        {
-            state = AUTOPID;
-        }
-        break;
-    case 3:
-        dispalyPrint4("", "EXIT", "MENU", "");
-        if (enc.isClick())
-        {
-            *e = HIGH;
-        }
-        break;
-    }
-    *f = OFF;
-}
-
-void dry(int *s, int *e, int *f)
-{
-    bool exit = OFF;
-    do
-    {
-        switch (*s)
-        {
-        case 0:
-            /* code */
-            break;
-
-        default:
-            break;
-        }
-    } while (exit == OFF);
-}
 
 void storage(int *s, int *e, int *f)
 {
-    bool exit = OFF;
+    bool exit1 = OFF;
     do
     {
         switch (*s)
@@ -240,7 +182,7 @@ void storage(int *s, int *e, int *f)
         default:
             break;
         }
-    } while (exit == OFF);
+    } while (exit1 == OFF);
 }
 
 // прерывание детектора нуля
@@ -292,6 +234,63 @@ void dispalyPrint4(char *STR1, char *STR2, char *STR3, char *STR4)
             oled.drawUTF8((128 - width4) / 2, 64, STR4);
         }
     } while (oled.nextPage());
+}
+
+void menu(int *s, int *e, int *f)
+{
+    switch (*s)
+    {
+    case 0:
+        dispalyPrint4("", "DRY", "MODE", "");
+        if (enc.isClick())
+        {
+            item = 4;
+            rotaryMenu(&select, &item);
+            // dry(&select, &exitMenu, &first);
+        }
+        break;
+
+    case 1:
+        dispalyPrint4("", "STORAGE", "MODE", "");
+        if (enc.isClick())
+        {
+            storage(&select, &exitMenu, &first);
+        }
+        break;
+
+    case 2:
+        dispalyPrint4("", "AUTO PID", "click for", " start");
+        if (enc.isClick())
+        {
+            state = AUTOPID;
+        }
+        break;
+    case 3:
+        dispalyPrint4("", "EXIT", "MENU", "");
+        if (enc.isClick())
+        {
+            *e = HIGH;
+        }
+        break;
+    }
+    *f = OFF;
+}
+
+void dry(int *s, int *e, int *f)
+{
+    bool exit1 = OFF;
+    do
+    {
+        switch (*s)
+        {
+        case 0:
+            /* code */
+            break;
+
+        default:
+            break;
+        }
+    } while (exit1 == OFF);
 }
 
 void setup()
@@ -360,6 +359,17 @@ void setup()
 
 void loop()
 {
+//!*
+
+    sprintf(str1, "air t:  %.2f C", iDryer.data.bmeTemp);
+    sprintf(str2, "air H:  %03d %", iDryer.data.bmeHumidity);
+    sprintf(str3, "bed t: %.2f C", iDryer.data.ntcTemp);
+    sprintf(str4, "timer: %03d C", iDryer.data.timer);
+    Serial.println(str1);
+    Serial.println(str2);
+    Serial.println(str3);
+    Serial.println(str4);
+
     enc.tick();
 
     int tmpTemp = analogRead(NTC_PIN);
@@ -377,8 +387,8 @@ void loop()
         {
             item = 4; //////////////////// item main menu
             rotaryMenu(&select, &item);
-            menu(&select, &exit, &first);
-        } while (exit == LOW);
+            menu(&select, &exitMenu, &first);
+        } while (exitMenu == LOW);
         delay(300);
     }
 

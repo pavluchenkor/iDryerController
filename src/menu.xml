@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<RootMenu xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Config IdPrefix="mnuCmd" VarPrefix="sampleMenu" UseNumbering="true" IncludeNumberHierarchy="false" MaxNameLen="15" MenuBackFirstItem="false" BackText="Back" ExitText="Exit" AvrProgMem="true"/>
+  <MenuItems>
+    <Item Id="TopItem1_Dry" Name="Dry"/>
+    <MenuItems>
+      <Item Id="SubTopItem1_Dry" Name="Dry meny">
+        <MenuItems>
+          <Item Id="subItemDry_1" Name="Temperature"/>
+          <Item Id="subItemDry_2" Name="Humidity"/>
+          <Item Id="subItemDry_3" Name="Time"/>
+        </MenuItems>
+      </Item>
+    </MenuItems>
+    <Item Id="TopItem2_Storage" Name="Storage"/>
+    <Item Id="TopItem3" Name="Top item 3"/>
+    <Item Id="TopItem4" Name="Top item 4">
+      <MenuItems>
+        <Item Id="SubTopItem2_Storage" Name="Storage menu">
+          <MenuItems>
+            <Item Id="subItemStorage_1" Name="Temperature"/>
+            <Item Id="subItemStorage_2" Name="Humidity"/>
+            <Item Id="subItemStorage_3" Name="Time"/>
+          </MenuItems>
+        </Item>
+      </MenuItems>
+    </Item>
+    <Item Id="ResetToDefaults" Name="Reset"/>
+  </MenuItems>
+</RootMenu>
+
+//!! https://www.cohesivecomputing.co.uk/hackatronics/arduino-lcd-menu-library/
+//!! https://lcd-menu-bulder.cohesivecomputing.co.uk/
