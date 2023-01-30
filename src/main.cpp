@@ -361,14 +361,17 @@ void loop()
 {
 //!*
 
-    sprintf(str1, "air t:  %.2f C", iDryer.data.bmeTemp);
-    sprintf(str2, "air H:  %03d %", iDryer.data.bmeHumidity);
-    sprintf(str3, "bed t: %.2f C", iDryer.data.ntcTemp);
-    sprintf(str4, "timer: %03d C", iDryer.data.timer);
-    Serial.println(str1);
-    Serial.println(str2);
-    Serial.println(str3);
-    Serial.println(str4);
+    if (iDryer.getData(dryTemp))
+    {
+        sprintf(str1, "air t:  %.2f C", iDryer.data.bmeTemp);
+        sprintf(str2, "air H:  %03d %", iDryer.data.bmeHumidity);
+        sprintf(str3, "bed t: %.2f C", iDryer.data.ntcTemp);
+        sprintf(str4, "timer: %03d C", iDryer.data.timer);
+        Serial.println(str1);
+        Serial.println(str2);
+        Serial.println(str3);
+        Serial.println(str4);
+    }
 
     enc.tick();
 
