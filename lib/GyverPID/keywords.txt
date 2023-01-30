@@ -1,0 +1,57 @@
+#######################################
+# Syntax Coloring Map For GyverPID
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+GyverPID	KEYWORD1
+PIDtuner	KEYWORD1
+PIDtuner2	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+setpoint	KEYWORD2
+input	KEYWORD2
+output	KEYWORD2
+Kp	KEYWORD2
+Ki	KEYWORD2
+Kd	KEYWORD2
+
+getResult	KEYWORD2
+getResultTimer	KEYWORD2
+getResultNow	KEYWORD2
+setDirection	KEYWORD2
+setMode	KEYWORD2
+setLimits	KEYWORD2
+setDt	KEYWORD2
+integral	KEYWORD2
+
+setParameters	KEYWORD2
+setInput	KEYWORD2
+compute	KEYWORD2
+getPI_p	KEYWORD2
+getPI_i	KEYWORD2
+getPID_p	KEYWORD2
+getPID_i	KEYWORD2
+getPID_d	KEYWORD2
+getOutput	KEYWORD2
+getAccuracy	KEYWORD2
+reset	KEYWORD2
+debugText	KEYWORD2
+debugPlot	KEYWORD2
+getState	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+NORMAL	LITERAL1
+REVERSE	LITERAL1
+ON_ERROR	LITERAL1
+ON_RATE	LITERAL1
+PID_INTEGER	LITERAL1
+PID_INTEGRAL_WINDOW	LITERAL1
+PID_OPTIMIZED_I	LITERAL1

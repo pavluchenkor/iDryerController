@@ -1,0 +1,7 @@
+https://github.com/adafruit/Adafruit_Sensor
+GyverLibs/EncButton
+olikraus/U8g2@^2.32.7
+GyverLibs/GyverTimers
+GyverLibs/GyverNTC
+https://github.com/adafruit/Adafruit_BME280_Library
+GyverLibs/GyverPID
