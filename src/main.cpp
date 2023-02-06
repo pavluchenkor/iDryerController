@@ -54,7 +54,7 @@
 #define NTC_ERROR 6
 
 uint8_t lineHight = 16;
-uint8_t dimmer;         // переменная диммера
+uint8_t dimmer; // переменная диммера
 // uint8_t dryTemp = 0;
 // uint64_t timeToDry = 0;
 uint64_t startDry = 0;
