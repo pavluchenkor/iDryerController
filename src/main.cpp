@@ -45,8 +45,14 @@
 #define AUTOPID 4
 #define NTC_ERROR 5
 
-U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
+#define BME_SCK 18
+#define BME_MISO 19
+#define BME_MOSI 23
+#define BME_CS 5*/
+
 Adafruit_BME280 bme;
+U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
+
 Encoder enc(CLK, DT, SW, TYPE1);
 GyverNTC ntc(NTC_PIN, 10000, 3950);
 PIDtuner2 tuner;
@@ -327,185 +333,192 @@ void setup()
     enc.setType(TYPE2);
     attachInterrupt(0, isrCLK, CHANGE); // прерывание на 2 пине! CLK у энка
     attachInterrupt(1, isrDT, CHANGE);  // прерывание на 3 пине! DT у энка
-    Serial.begin(9600);
 
-    if (!bme.begin(0x76))
-    {
-        Serial.println("Could not find a valid BME280 sensor, check wiring!");
-        while (1)
-            ;
-    }
 
     regulator.setDirection(NORMAL); // направление регулирования (NORMAL/REVERSE). ПО УМОЛЧАНИЮ СТОИТ NORMAL
     regulator.setLimits(0, 255);    // пределы (ставим для 8 битного ШИМ). ПО УМОЛЧАНИЮ СТОЯТ 0 И 255
     regulator.setpoint = 50;        // сообщаем регулятору температуру, которую он должен поддерживать
-    // // в процессе работы можно менять коэффициенты
-    // regulator.Kp = 5.2;
-    // regulator.Ki += 0.5;
-    // regulator.Kd = 0;
+    // в процессе работы можно менять коэффициенты
+    regulator.Kp = 5.2;
+    regulator.Ki += 0.5;
+    regulator.Kd = 0;
 
+    Serial.begin(57200);
+    oled.setI2CAddress(0x3C * 2);
     oled.begin();
     oled.setFlipMode(1);
     oled.setContrast(0);
     delay(200);
     dispalyPrint4("-", "-", "-", "-"); //!!!! НЕ УДАЛЯТЬ ИНАЧЕ СТАРТУЕТ КРИВО, ВИДИМО НУЖНО СНАЧАЛА ПНУТЬ ЭКРАН
-    dispalyPrint4("SUPER", "PUPER", "SUSHILKA", "BY ENGENNER");
+    dispalyPrint4("SUPER", "PU77PER", "SUSHILKA", "BY ENGENNER");
     tone(buzzerPin, 50);
     delay(50);
-    // delay(3000);
+    if (!bme.begin(0x76))
+    {
+        Serial.println("Could not find a valid BME280 sensor, check wiring!");
+        // while (1)
+            ;
+    }
 }
 
 void loop()
 {
-    //!*
+    // //!*
 
-    if (iDryer.getData(dryTemp))
-    {
-        sprintf(str1, "air t:\t%.2f C", iDryer.data.bmeTemp);
-        sprintf(str2, "air H:\t%03d %", iDryer.data.bmeHumidity);
-        sprintf(str3, "bed t:\t %.2f C", iDryer.data.ntcTemp);
-        sprintf(str4, "timer:\t%03d C", iDryer.data.timer);
-        Serial.println(str1);
-        Serial.println(str2);
-        Serial.println(str3);
-        Serial.println(str4);
-    }
-
-    enc.tick();
-
-    int tmpTemp = analogRead(NTC_PIN);
-    if (tmpTemp == 0 || tmpTemp >= 1023)
-    {
-        state = NTC_ERROR;
-    }
-
-    if (enc.isHold())
-    {
-        delay(700);
-        dispalyPrint4("", "", "", "RELEASE IT");
-        delay(500);
-        do
-        {
-            item = 4; //////////////////// item main menu
-            rotaryMenu(&select, &item);
-            menu(&select, &exitMenu, &first);
-        } while (exitMenu == LOW);
-        delay(300);
-    }
-
-    // МЕНЮ
-    //-Сушка
-    //--Температура
-    //--Время
-    //--Старт
-    //-Подогрев
-    //--Температура
-    //--Старт
-    //-Автопид
-    //--Старт
-    //-?
-
-    switch (state)
-    {
-    case NTC_ERROR:
-        dimmer = 0;
-        digitalWrite(DIMMER_PIN, 0);
-        detachInterrupt(INT_NUM);
-        analogWrite(FAN, 255);
-        while (1)
-        {
-            dispalyPrint4("", "CHECK NTC", "AND RESTART", "");
-            tone(buzzerPin, 500, 500);
-            dispalyPrint4("", "ERROR", "ERROR", "");
-            tone(buzzerPin, 1000, 500);
-        }
-        // state = OFF;
-        break;
-    case OFF:
-        /* code */
-        break;
-    case ON:
-
-        break;
-    case DRY:
-        // sprintf(bmePresureChar, "P: %04d mm", bme.readPressure() / 100.0F);
-        // sprintf(bmeAltitude, "A: %04d m", bme.readAltitude(SEALEVELPRESSURE_HPA));
-
-        if (iDryer.getData(dryTemp))
-        {
-            sprintf(str1, "air t:  %.2f C", iDryer.data.bmeTemp);
-            sprintf(str2, "air H:  %03d %", iDryer.data.bmeHumidity);
-            sprintf(str3, "bed t: %.2f C", iDryer.data.ntcTemp);
-            sprintf(str4, "timer: %03d C", iDryer.data.timer);
+            sprintf(str1, "AIR T: %.2f C", iDryer.data.bmeTemp);
+            sprintf(str2, "AIR H: %03d %", iDryer.data.bmeHumidity);
+            sprintf(str3, "BED t: %.2f C", iDryer.data.ntcTemp);
+            sprintf(str4, "TIM: %03d C", iDryer.data.timer);
             dispalyPrint4(str1, str2, str3, str4);
-        }
-        regulator.setpoint = iDryer.temperature;
-        regulator.input = iDryer.data.ntcTemp;
-        dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-        if (millis() - startDry > timeToDry)
-        {
-            dryTemp = storageTemp;
-        }
-        else
-        {
-            state = OFF;
-        }
-        break;
-    case STORAGE:
-        if (iDryer.getData(storageTemp))
-        {
-            sprintf(str1, "STORAGE");
-            sprintf(str2, "air t:  %.2f C", iDryer.data.bmeTemp);
-            sprintf(str3, "air H:  %03d %", iDryer.data.bmeHumidity);
-            sprintf(str4, "bed t: %.2f C", iDryer.data.ntcTemp);
-            dispalyPrint4(str1, str2, str3, str4);
-        }
-        regulator.setpoint = iDryer.temperature;
-        regulator.input = iDryer.data.ntcTemp;
-        dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-        break;
-    case AUTOPID:
-        while (pid_itr < 7) // AUTOPID
-        {
-            // направление, начальный сигнал, конечный, период плато, точность, время стабилизации, период итерации
-            tuner.setParameters(NORMAL, 0, 80, 6000, 0.05, 500);
 
-            tuner.setInput(ntc.getTempAverage());
-            tuner.compute();
-            dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
-            if (tuner.getState() != 7 && pid_itr != tuner.getState())
-            {
-                pid_itr = tuner.getState();
-                sprintf(str1, "PID ATOTUNE");
-                sprintf(str2, "Kp:  %.2f", tuner.getPID_p());
-                sprintf(str3, "Ki:  %.2f", tuner.getPID_i());
-                sprintf(str4, "Kd:  %.2f", tuner.getPID_d());
-                dispalyPrint4(str1, str2, str3, str4);
-            }
-            if (tuner.getState() == 7)
-            {
-                settings.pidKp = tuner.getPID_p(); // p для ПИД регулятора
-                settings.pidKi = tuner.getPID_i(); // i для ПИД регулятора
-                settings.pidKd = tuner.getPID_d(); //  d для ПИД регулятора
-                dimmer = 0;
-                //!* запихнуть все в епром
-                //!! EEPROM.put(0, settings);
-                //!! delay(50);
-                dispalyPrint4("PID", "IS", "COMPUTE", "AND SAVE");
-                tone(buzzerPin, 500, 100);
-                delay(100);
-                tone(buzzerPin, 500, 1000);
-                sprintf(str1, "CURRENT PID");
-                sprintf(str2, "Kp:  %.2f", tuner.getPID_p());
-                sprintf(str3, "Ki:  %.2f", tuner.getPID_i());
-                sprintf(str4, "Kd:  %.2f", tuner.getPID_d());
-                dispalyPrint4(str1, str2, str3, str4);
-                state = OFF;
-            }
-        }
-        break;
 
-    default:
-        break;
-    }
+    // if (iDryer.getData(dryTemp))
+    // {
+    //     sprintf(str1, "air t:\t%.2f C", iDryer.data.bmeTemp);
+    //     sprintf(str2, "air H:\t%03d %", iDryer.data.bmeHumidity);
+    //     sprintf(str3, "bed t:\t %.2f C", iDryer.data.ntcTemp);
+    //     sprintf(str4, "timer:\t%03d C", iDryer.data.timer);
+    //     Serial.println(str1);
+    //     Serial.println(str2);
+    //     Serial.println(str3);
+    //     Serial.println(str4);
+    // }
+
+    // enc.tick();
+
+    // int tmpTemp = analogRead(NTC_PIN);
+    // if (tmpTemp == 0 || tmpTemp >= 1023)
+    // {
+    //     state = NTC_ERROR;
+    // }
+
+    // if (enc.isHold())
+    // {
+    //     delay(700);
+    //     dispalyPrint4("", "", "", "RELEASE IT");
+    //     delay(500);
+    //     do
+    //     {
+    //         item = 4; //////////////////// item main menu
+    //         rotaryMenu(&select, &item);
+    //         menu(&select, &exitMenu, &first);
+    //     } while (exitMenu == LOW);
+    //     delay(300);
+    // }
+
+    // // МЕНЮ
+    // //-Сушка
+    // //--Температура
+    // //--Время
+    // //--Старт
+    // //-Подогрев
+    // //--Температура
+    // //--Старт
+    // //-Автопид
+    // //--Старт
+    // //-?
+
+    // switch (state)
+    // {
+    // case NTC_ERROR:
+    //     dimmer = 0;
+    //     digitalWrite(DIMMER_PIN, 0);
+    //     detachInterrupt(INT_NUM);
+    //     analogWrite(FAN, 255);
+    //     while (1)
+    //     {
+    //         dispalyPrint4("", "CHECK NTC", "AND RESTART", "");
+    //         tone(buzzerPin, 500, 500);
+    //         dispalyPrint4("", "ERROR", "ERROR", "");
+    //         tone(buzzerPin, 1000, 500);
+    //     }
+    //     // state = OFF;
+    //     break;
+    // case OFF:
+    //     /* code */
+    //     break;
+    // case ON:
+
+    //     break;
+    // case DRY:
+    //     // sprintf(bmePresureChar, "P: %04d mm", bme.readPressure() / 100.0F);
+    //     // sprintf(bmeAltitude, "A: %04d m", bme.readAltitude(SEALEVELPRESSURE_HPA));
+
+    //     if (iDryer.getData(dryTemp))
+    //     {
+    //         sprintf(str1, "air t:  %.2f C", iDryer.data.bmeTemp);
+    //         sprintf(str2, "air H:  %03d %", iDryer.data.bmeHumidity);
+    //         sprintf(str3, "bed t: %.2f C", iDryer.data.ntcTemp);
+    //         sprintf(str4, "timer: %03d C", iDryer.data.timer);
+    //         dispalyPrint4(str1, str2, str3, str4);
+    //     }
+    //     regulator.setpoint = iDryer.temperature;
+    //     regulator.input = iDryer.data.ntcTemp;
+    //     dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+    //     if (millis() - startDry > timeToDry)
+    //     {
+    //         dryTemp = storageTemp;
+    //     }
+    //     else
+    //     {
+    //         state = OFF;
+    //     }
+    //     break;
+    // case STORAGE:
+    //     if (iDryer.getData(storageTemp))
+    //     {
+    //         sprintf(str1, "STORAGE");
+    //         sprintf(str2, "air t:  %.2f C", iDryer.data.bmeTemp);
+    //         sprintf(str3, "air H:  %03d %", iDryer.data.bmeHumidity);
+    //         sprintf(str4, "bed t: %.2f C", iDryer.data.ntcTemp);
+    //         dispalyPrint4(str1, str2, str3, str4);
+    //     }
+    //     regulator.setpoint = iDryer.temperature;
+    //     regulator.input = iDryer.data.ntcTemp;
+    //     dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+    //     break;
+    // case AUTOPID:
+    //     while (pid_itr < 7) // AUTOPID
+    //     {
+    //         // направление, начальный сигнал, конечный, период плато, точность, время стабилизации, период итерации
+    //         tuner.setParameters(NORMAL, 0, 80, 6000, 0.05, 500);
+
+    //         tuner.setInput(ntc.getTempAverage());
+    //         tuner.compute();
+    //         dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
+    //         if (tuner.getState() != 7 && pid_itr != tuner.getState())
+    //         {
+    //             pid_itr = tuner.getState();
+    //             sprintf(str1, "PID ATOTUNE");
+    //             sprintf(str2, "Kp:  %.2f", tuner.getPID_p());
+    //             sprintf(str3, "Ki:  %.2f", tuner.getPID_i());
+    //             sprintf(str4, "Kd:  %.2f", tuner.getPID_d());
+    //             dispalyPrint4(str1, str2, str3, str4);
+    //         }
+    //         if (tuner.getState() == 7)
+    //         {
+    //             settings.pidKp = tuner.getPID_p(); // p для ПИД регулятора
+    //             settings.pidKi = tuner.getPID_i(); // i для ПИД регулятора
+    //             settings.pidKd = tuner.getPID_d(); //  d для ПИД регулятора
+    //             dimmer = 0;
+    //             //!* запихнуть все в епром
+    //             //!! EEPROM.put(0, settings);
+    //             //!! delay(50);
+    //             dispalyPrint4("PID", "IS", "COMPUTE", "AND SAVE");
+    //             tone(buzzerPin, 500, 100);
+    //             delay(100);
+    //             tone(buzzerPin, 500, 1000);
+    //             sprintf(str1, "CURRENT PID");
+    //             sprintf(str2, "Kp:  %.2f", tuner.getPID_p());
+    //             sprintf(str3, "Ki:  %.2f", tuner.getPID_i());
+    //             sprintf(str4, "Kd:  %.2f", tuner.getPID_d());
+    //             dispalyPrint4(str1, str2, str3, str4);
+    //             state = OFF;
+    //         }
+    //     }
+    //     break;
+
+    // default:
+    //     break;
+    // }
 }
