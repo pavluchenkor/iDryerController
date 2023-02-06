@@ -20,7 +20,7 @@
 #ifndef _GyverNTC_h
 #define _GyverNTC_h
 #include <Arduino.h>
-#define _T_SAMPLE_AVERAGE 20   // количество чтений для усреднения
+#define _T_SAMPLE_AVERAGE 10   // количество чтений для усреднения
 
 class GyverNTC {
 public:
