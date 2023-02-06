@@ -43,10 +43,10 @@
 
 // #define STRING_NUM_CHAR 10
 
-//#define TEMPERATURE_MIN_C 25
-//#define TEMPERATURE_MAX_C 100
-// #define TIME_MIN_min 30
-// #define TIME_MAX_min 600
+// #define TEMPERATURE_MIN_C 25
+// #define TEMPERATURE_MAX_C 100
+//  #define TIME_MIN_min 30
+//  #define TIME_MAX_min 600
 
 #define OFF 0
 #define ON 1
@@ -57,7 +57,7 @@
 #define NTC_ERROR 6
 
 uint8_t lineHight = 16; // !! Заменить 16 на переменную
-uint8_t dimmer; // переменная диммера
+uint8_t dimmer;         // переменная диммера
 uint8_t dryTemp = 0;
 uint64_t timeToDry = 0;
 uint64_t startDry = 0;
@@ -284,7 +284,7 @@ public:
 
     bool getData(int setTemperature)
     {
-        data.ntcTemp = ntc.getTempAverage();
+        data.ntcTemp = ntc.getTemp();
         data.bmeTemp = bme.readTemperature();
         data.bmeHumidity = bme.readHumidity();
 
@@ -501,11 +501,11 @@ void setup()
     oled.firstPage();
     do
     {
-        oled.drawUTF8(0, 16, "");
-        oled.drawUTF8(0, 32, "    iDryer");
-        oled.drawUTF8(0, 48, "   v 0.0.1");
-        oled.drawUTF8(0, 64, "");
-        oled.drawButtonUTF8(0, 32 - 1, U8G2_BTN_INV, 128, 1, 1, "");
+        // oled.drawUTF8(0, 16, "");
+        //  oled.drawUTF8(0, 32, "    iDryer");
+        //  oled.drawUTF8(0, 48, "   v 0.0.1");
+        // oled.drawUTF8(0, 64, "");
+        //  oled.drawButtonUTF8(0, 32 - 1, U8G2_BTN_INV, 128, 1, 1, "");
 
     } while (oled.nextPage());
     delay(1000);
@@ -551,17 +551,17 @@ void setup()
 void loop()
 {
 
-    if (iDryer.getData(dryTemp))
-    {
-        // sprintf(str1, "air t:\t%.2f C", iDryer.data.bmeTemp);
-        // sprintf(str2, "air H:\t%03d %", iDryer.data.bmeHumidity);
-        // sprintf(str3, "bed t:\t %.2f C", iDryer.data.ntcTemp);
-        // sprintf(str4, "timer:\t%03d C", iDryer.data.timer);
-        // Serial.println(str1);
-        // Serial.println(str2);
-        // Serial.println(str3);
-        // Serial.println(str4);
-    }
+    // if (iDryer.getData(dryTemp))
+    // {
+    //     // sprintf(str1, "air t:\t%.2f C", iDryer.data.bmeTemp);
+    //     // sprintf(str2, "air H:\t%03d %", iDryer.data.bmeHumidity);
+    //     // sprintf(str3, "bed t:\t %.2f C", iDryer.data.ntcTemp);
+    //     // sprintf(str4, "timer:\t%03d C", iDryer.data.timer);
+    //     // Serial.println(str1);
+    //     // Serial.println(str2);
+    //     // Serial.println(str3);
+    //     // Serial.println(str4);
+    // }
 
     enc.tick();
 
@@ -571,11 +571,13 @@ void loop()
     //     state = NTC_ERROR;
     // }
 
-    if (controls.hold && (state == DRY || state == STORAGE))
+    if (!digitalRead(encBut) && state == DRY)
     {
-        state = ON;
+        // Serial.println("STOP");
+        // delay(500);
+        state = MENU;
         digitalWrite(DIMMER_PIN, 0);
-        tone(buzzerPin, 500, 100);
+        // tone(buzzerPin, 500, 100);
         delay(500);
     }
 
@@ -589,9 +591,9 @@ void loop()
         while (1)
         {
             // dispalyPrint4("", "CHECK NTC", "AND RESTART", "");
-            tone(buzzerPin, 500, 500);
+            // tone(buzzerPin, 500, 500);
             // dispalyPrint4("", "ERROR", "ERROR", "");
-            tone(buzzerPin, 1000, 500);
+            // tone(buzzerPin, 1000, 500);
         }
         // state = OFF;
         break;
@@ -601,7 +603,7 @@ void loop()
     case ON:
         break;
     case MENU:
-        enc.tick();
+        // enc.tick();
         encoderSate(&controls);
         controlsHandler(menuPGM, menuVal, &controls, &subMenuM);
         if (subMenuM.levelUpdate)
@@ -676,9 +678,9 @@ void loop()
         //         //!! EEPROM.put(0, settings);
         //         //!! delay(50);
         //         // dispalyPrint4("PID", "IS", "COMPUTE", "AND SAVE");
-        //         tone(buzzerPin, 500, 100);
+        //         // tone(buzzerPin, 500, 100);
         //         delay(100);
-        //         tone(buzzerPin, 500, 1000);
+        //         // tone(buzzerPin, 500, 1000);
         //         // sprintf(str1, "CURRENT PID");
         //         // sprintf(str2, "Kp:  %.2f", tuner.getPID_p());
         //         // sprintf(str3, "Ki:  %.2f", tuner.getPID_i());
