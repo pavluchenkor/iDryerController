@@ -1,13 +1,10 @@
 #include <Arduino.h>
 #include <Wire.h>
-// #include <Adafruit_Sensor.h>
-// #include <Adafruit_BME280.h>
 #include <U8g2lib.h>
 #include "thermistorMinim.h"
 #include <EEPROM.h>
 #include <GyverTimers.h> // библиотека таймера
 #include <GyverEncoder.h>
-// #include <GyverButton.h>
 #include <GyverNTC.h>
 #include <GyverBME280.h>
 // #include "GyverPID.h"
@@ -20,8 +17,8 @@
 #define encBut 5 // Pin encoder Button
 
 #define NTC_PIN 0
-#define NTC_PIN 0
-#define SEALEVELPRESSURE_HPA (1013.25) // оценивает высоту в метрах на основе давления на уровне моря
+// #define NTC_PIN 0
+// #define SEALEVELPRESSURE_HPA (1013.25) // оценивает высоту в метрах на основе давления на уровне моря
 
 #define HESTERESIS 2
 // Димер
@@ -33,9 +30,9 @@
 #define buzzerPin 10
 #define FAN 11
 
-#define screenSizeV 64 // !! Заменить screenSizeY
-#define screenSizeX 64 // !! Заменить 128 на переменную
-#define fontHight 15
+// #define screenSizeV 64 // !! Заменить screenSizeY
+// #define screenSizeX 64 // !! Заменить 128 на переменную
+// #define fontHight 15
 
 #define SCREEN_LINES 4
 
@@ -56,13 +53,13 @@
 #define AUTOPID 5
 #define NTC_ERROR 6
 
-uint8_t lineHight = 16; // !! Заменить 16 на переменную
+uint8_t lineHight = 16;
 uint8_t dimmer;         // переменная диммера
-uint8_t dryTemp = 0;
-uint64_t timeToDry = 0;
+// uint8_t dryTemp = 0;
+// uint64_t timeToDry = 0;
 uint64_t startDry = 0;
 uint16_t timer = 0;
-uint16_t storageTemp = 35;
+// uint16_t storageTemp = 35;
 uint8_t pid_itr = 0;
 bool autoPid = OFF;
 uint8_t state = DRY;
@@ -93,12 +90,16 @@ enum levelV
 void dryStart()
 {
     state = DRY;
+    Serial.println("DRY START");
+    delay(400);
     // TODO: ВЫВОД НА ЭКРАН
 }
 void storageStart()
 {
     state = STORAGE;
     // TODO: ВЫВОД НА ЭКРАН
+    Serial.println("STORAGE START");
+    delay(400);
 }
 
 void changeTermistor() {}
@@ -252,14 +253,14 @@ uint16_t menuVal[] =
 
 struct Settings
 {
-    bool sate = 0;
+    bool state = 0;
     float pidKp = 0;
     float pidKi = 0;
     float pidKd = 0;
     uint16_t pidDt = 0;
-    uint8_t storageTemp = 35;
-    uint8_t dryTemp = 60;
-    uint16_t timeToDry = 4 * 60 * 60 * 1000;
+    // uint8_t storageTemp = 35;
+    // uint8_t dryTemp = 60;
+    // uint16_t timeToDry = 4 * 60 * 60 * 1000;
 };
 
 GyverNTC ntc(NTC_PIN, 10000, 3950);
@@ -276,8 +277,8 @@ struct Data
 class iDryer
 {
 public:
-    int timer = 0;
-    bool newDataFlag = false;
+    // int timer = 0;
+    // bool newDataFlag = false;
     uint8_t temperature = 0;
     // Data oldData;
     Data data;
@@ -463,7 +464,7 @@ void setup()
     Serial.begin(57600);
 
     EEPROM.get(0, settings);
-    if (settings.sate)
+    if (settings.state)
     {
         // regulator.Kd = settings.pidKd;
         // regulator.Kp = settings.pidKp;
@@ -476,8 +477,8 @@ void setup()
         // // сигнала (в И и Д составляющей). Устанавливается командой setDt(dt);  // установка времени итерации в мс
         // regulator.setDt(settings.pidDt); // время
 
-        dryTemp = settings.storageTemp;
-        timeToDry = settings.timeToDry;
+        // dryTemp = settings.storageTemp;
+        // timeToDry = settings.timeToDry;
     }
 
     // Диммер
@@ -563,7 +564,7 @@ void loop()
     //     // Serial.println(str4);
     // }
 
-    enc.tick();
+    // enc.tick();
 
     int tmpTemp = analogRead(NTC_PIN);
     // if (tmpTemp == 0 || tmpTemp >= 1023)
@@ -571,14 +572,16 @@ void loop()
     //     state = NTC_ERROR;
     // }
 
-    if (!digitalRead(encBut) && state == DRY)
+    if (!digitalRead(encBut) && (state == DRY || state == STORAGE))
     {
-        // Serial.println("STOP");
-        // delay(500);
         state = MENU;
         digitalWrite(DIMMER_PIN, 0);
         // tone(buzzerPin, 500, 100);
-        delay(500);
+        enc.resetStates();
+        subMenuM.levelUpdate = UP;
+        subMenuM.pointerUpdate = 1;
+        subMenuM.parentID = 0;
+        delay(300);
     }
 
     switch (state)
@@ -597,13 +600,13 @@ void loop()
         }
         // state = OFF;
         break;
-    case OFF:
-        /* code */
-        break;
+    // case OFF:
+    //     /* code */
+    //     break;
     case ON:
         break;
     case MENU:
-        // enc.tick();
+        enc.tick();
         encoderSate(&controls);
         controlsHandler(menuPGM, menuVal, &controls, &subMenuM);
         if (subMenuM.levelUpdate)
@@ -631,13 +634,10 @@ void loop()
         // regulator.setpoint = iDryer.temperature;
         // regulator.input = iDryer.data.ntcTemp;
         // dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-        if (millis() - startDry > timeToDry)
+        if (millis() - startDry > menuVal[3]) //!!НАПИСАТЬ ИМЕНА
         {
-            dryTemp = storageTemp;
-        }
-        else
-        {
-            //!! state = OFF;
+            Serial.println("DRY - > STORAGE");
+            state = STORAGE; // автоматический переход в режим хранения
         }
         break;
     case STORAGE:
@@ -733,7 +733,7 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], struct co
     if (encoder->ok)
     {
         encoder->ok = false;
-        Serial.print("encoder->ok");
+        // Serial.print("encoder->ok");
         if (!pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].min) &&
             !pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].max) &&
             !pgm_read_byte(&constMenu[subMenu->membersID[subMenu->position]].action)) // меню
@@ -747,9 +747,11 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], struct co
             {
 
                 Serial.print("subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]: ");
-                Serial.println(subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]);
+                Serial.println(subMenu->membersID[subMenu->linesToScreen[subMenu->pointerPos]]);
                 // TODO Проверил, должно запускаться
-                constMenu[subMenu->membersID[subMenu->linesToScreen[subMenu->pointerPos]]].action(); // запускаем функцию
+                // constMenu[subMenu->membersID[subMenu->linesToScreen[subMenu->pointerPos]]].action();
+                menuPGM[subMenu->membersID[subMenu->linesToScreen[subMenu->pointerPos]]].action();
+                // break; // запускаем функцию
             }
             else // подменю с изменяемыми параметрами
             {
