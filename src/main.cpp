@@ -80,10 +80,10 @@ int on = 1;
 int epr = 0;
 //!* menu
 
-char str1[12];
-char str2[12];
-char str3[12];
-char str4[12];
+char str1[30];
+char str2[30];
+char str3[30];
+char str4[30];
 
 struct Settings
 {
@@ -365,11 +365,32 @@ void loop()
 {
     // //!*
 
-            sprintf(str1, "AIR T: %.2f C", iDryer.data.bmeTemp);
-            sprintf(str2, "AIR H: %03d %", iDryer.data.bmeHumidity);
-            sprintf(str3, "BED t: %.2f C", iDryer.data.ntcTemp);
-            sprintf(str4, "TIM: %03d C", iDryer.data.timer);
+    float test = 3.14;
+
+            // sprintf(str1, "AIR T: %.2f C", iDryer.data.bmeTemp);
+            // sprintf(str2, "AIR H: %03d %", iDryer.data.bmeHumidity);
+            // sprintf(str3, "BED t: %.2f C", iDryer.data.ntcTemp);
+            // sprintf(str4, "TIM: %03d C", iDryer.data.timer);
+            sprintf(str1, "AIR: %d", int(bme.readTemperature()));
+            sprintf(str2, "HUM: %d", int(bme.readHumidity()));
+            sprintf(str3, "PRS: %d", int(bme.readPressure() / 100.0F));
+            sprintf(str4, "TIM: %03d", 100);
+            Serial.println(String(str1) + String(str2) + String(str3) + String(str4));
             dispalyPrint4(str1, str2, str3, str4);
+            delay(500);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     // if (iDryer.getData(dryTemp))
