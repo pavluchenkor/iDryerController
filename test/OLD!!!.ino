@@ -75,8 +75,7 @@
 #define INT_NUM 0    // соответствующий ему номер прерывания
 // Димер
 
-//!* 11,6,5,3
-#define buzzerPin 3 //10
+#define buzzerPin 10
 #define FAN 11
 
 // #define screenSizeV 64 // !! Заменить screenSizeY
@@ -129,8 +128,7 @@ const uint8_t u8g2_font[718] U8G2_FONT_SECTION("u8g2_font") =
 
 
 uint8_t lineHight = 16;
-uint16_t dimmer; // переменная диммера
-uint16_t lastDim;
+uint16_t dimmer;
 uint64_t startDry = 0;
 uint16_t timer = 0;
 uint8_t pid_itr = 0;
@@ -140,7 +138,6 @@ uint8_t ERROR_COUNTER = 0;
 
 uint8_t testPWM = 0;
 uint16_t testTIMER_COUNT = 0;
-uint16_t testTIMER_STATE = 0;
 
 const byte CLK = A1;
 const byte DT = A2;
@@ -151,10 +148,6 @@ volatile byte flagISR = 0, intsFound = 0;
 byte isr_1 = 0;
 byte isr_2 = 0;
 byte isr_3 = 0;
-
-
-uint8_t funcNum = 0;
-
 
 //!* menu
 uint8_t menuSize = 0;
@@ -271,37 +264,40 @@ struct menuS
     const char *text;
     uint16_t min;
     uint16_t max;
-    //ptrFunc action;
+    ptrFunc action;
 };
 
 const menuS menuPGM[] PROGMEM = {
-    {0, NULL, 0, i0, 0, 0},
-    {1, 0, 1, i1, 0, 0},
-    {2, 1, 2, i2, 0, 100},
-    {3, 1, 2, i3, 0, 600},
-    {4, 1, 2, i4, 0, 0},
-    {5, 0, 1, i5, 0, 0},
-    {6, 5, 2, i6, 0, 100},
-    {7, 5, 2, i7, 0, 0},
-    {8, 0, 1, i8, 0, 0},
-    {9, 8, 2, i9, 0, 0},
-    {10, 9, 3, i10, 0, 0},
-    {11, 9, 3, i11, 45, 100},
-    {12, 9, 3, i12, 120, 600},
-    {13, 8, 2, i13, 0, 0},
-    {14, 13, 3, i14, 0, 0},
-    {15, 13, 3, i15, 45, 100},
-    {16, 13, 3, i16, 120, 600},
-    {17, 8, 2, i17, 0, 0},
-    {18, 17, 3, i18, 0, 0},
-    {19, 17, 3, i19, 45, 100},
-    {20, 17, 3, i20, 120, 600},
-    {21, 0, 1, i21, 0, 0},
-    {22, 21, 2, i22, 0, 0},
-    {23, 22, 3, i23, 0, 0},
-    {24, 22, 3, i24, 0, 0},
-    {25, 21, 2, i25, 0, 0},
+    {0, NULL, 0, i0, 0, 0, NULL},
+    {1, 0, 1, i1, 0, 0, NULL},
+    {2, 1, 2, i2, 0, 100, NULL},
+    {3, 1, 2, i3, 0, 600, NULL},
+    {4, 1, 2, i4, 0, 0, &dryStart},
+    {5, 0, 1, i5, 0, 0, NULL},
+    {6, 5, 2, i6, 0, 100, NULL},
+    {7, 5, 2, i7, 0, 0, &storageStart},
+    {8, 0, 1, i8, 0, 0, NULL},
+    {9, 8, 2, i9, 0, 0, NULL},
+    {10, 9, 3, i10, 0, 0, &dryStart},
+    {11, 9, 3, i11, 45, 100, NULL},
+    {12, 9, 3, i12, 120, 600, NULL},
+    {13, 8, 2, i13, 0, 0, NULL},
+    {14, 13, 3, i14, 0, 0, &dryStart},
+    {15, 13, 3, i15, 45, 100, NULL},
+    {16, 13, 3, i16, 120, 600, NULL},
+    {17, 8, 2, i17, 0, 0, NULL},
+    {18, 17, 3, i18, 0, 0, &dryStart},
+    {19, 17, 3, i19, 45, 100, NULL},
+    {20, 17, 3, i20, 120, 600, NULL},
+    {21, 0, 1, i21, 0, 0, NULL},
+    {22, 21, 2, i22, 0, 0, NULL},
+    {23, 22, 3, i23, 0, 0, &changeTermistor},
+    {24, 22, 3, i24, 0, 0, &changeTermistor},
+    {25, 21, 2, i25, 0, 0, &autoPidM},
+    {26, 0, 1, i26, 0, 0, NULL},
 };
+
+
 
 uint16_t menuVal[] =
     {
@@ -333,36 +329,6 @@ uint16_t menuVal[] =
         0,
         0,
 };
-
-
-const ptrFunc menuFunc[]{
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    &dryStart,
-    NULL,
-    NULL,
-    &storageStart,
-    NULL,
-    NULL,
-    &dryStart,
-    NULL,
-    NULL,
-    NULL,
-    &dryStart,
-    NULL,
-    NULL,
-    NULL,
-    &dryStart,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    &changeTermistor,
-    &changeTermistor,
-    &autoPidM
-    };
 
 struct Settings
 {
@@ -447,19 +413,14 @@ PIDtuner2 tuner;
 void isr()
 {
     testTIMER_COUNT++;
+    static int lastDim;
     digitalWrite(DIMMER_PIN, 0); // выключаем симистор
     // если значение изменилось, устанавливаем новый период
     // если нет, то просто перезапускаем со старым
     if (lastDim != dimmer)
-    {
         Timer1.setPeriod(lastDim = dimmer);
-        testTIMER_STATE = 1;
-    }
     else
-    {
-        testTIMER_STATE = 0;
         Timer1.restart();
-    }
 }
 
 // прерывание таймера
@@ -468,8 +429,6 @@ ISR(TIMER1_A)
     digitalWrite(DIMMER_PIN, 1); // включаем симистор
     Timer1.stop();               // останавливаем таймер
 }
-
-
 
 char *printMenuItem(const char *const *text) // печать строки из prm
 {
@@ -495,7 +454,7 @@ void dispalyPrint(struct subMenu *subMenu)
     {
         oled.setFont(u8g2_font);
         uint8_t maxPos = SCREEN_LINES - MENU_HEADER < subMenu->membersQuantity ? SCREEN_LINES - MENU_HEADER : subMenu->membersQuantity;
-        // Serial.println("maxPos: " + String(maxPos));
+
         oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuPGM[subMenuM.parentID].text))) / 2, 16, printMenuItem(&menuPGM[subMenuM.parentID].text));
         oled.drawLine(0, lineHight + 2, 128, lineHight + 2);
         for (uint8_t i = 0; i < maxPos; i++)
@@ -514,12 +473,12 @@ void dispalyPrint(struct subMenu *subMenu)
             {
                 if (!subMenu->changeVal)
                 {
-                    oled.drawButtonUTF8(0, lineHight * (i + 2) - 0, U8G2_BTN_INV, 128, 0, 0, "");
+                    oled.drawButtonUTF8(0, lineHight * (i + 2) - 1, U8G2_BTN_INV, 128, 1, 1, "");
                 }
                 else
                 {
-                    oled.drawButtonUTF8(96, lineHight * (i + 2) - 0, U8G2_BTN_INV, 128, 0, 0, "");
-                }   
+                    oled.drawButtonUTF8(96, lineHight * (i + 2) - 1, U8G2_BTN_INV, 128, 1, 1, "");
+                }
             }
         }
     } while (oled.nextPage());
@@ -576,7 +535,7 @@ void dispalyPrintMode()
 }
 
 void encoderSate(struct control *control);
-void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], ptrFunc functionMenu[], struct control *encoder, struct subMenu *subMenu);
+void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], struct control *encoder, struct subMenu *subMenu);
 void screen(struct subMenu *subMenu);
 void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu);
 
@@ -621,6 +580,42 @@ void setup()
         // timeToDry = settings.timeToDry;
     }
 
+    EEPROM.get(0, menuVal);
+    if (menuVal[2] || menuVal[3])
+    {
+        //TODO ЗАИПИСЬ
+    }
+    else
+    {
+        menuVal[0] = 0;
+        menuVal[1] = 0;
+        menuVal[2] = 60;
+        menuVal[3] = 240;
+        menuVal[4] = 0;
+        menuVal[5] = 0;
+        menuVal[6] = 35;
+        menuVal[7] = 0;
+        menuVal[8] = 0;
+        menuVal[9] = 0;
+        menuVal[10] = 0;
+        menuVal[11] = 50;
+        menuVal[12] = 240;
+        menuVal[13] = 0;
+        menuVal[14] = 0;
+        menuVal[15] = 50;
+        menuVal[16] = 240;
+        menuVal[17] = 0;
+        menuVal[18] = 0;
+        menuVal[19] = 50;
+        menuVal[20] = 240;
+        menuVal[21] = 0;
+        menuVal[22] = 0;
+        menuVal[23] = 100;
+        menuVal[24] = 1000;
+        menuVal[25] = 0;
+        menuVal[26] = 0;
+    }
+
     // Диммер
     pinMode(ZERO_PIN, INPUT_PULLUP);
     pinMode(DIMMER_PIN, OUTPUT);
@@ -633,12 +628,11 @@ void setup()
     PCMSK1 |= (1<<PCINT9);
     PCMSK1 |= (1<<PCINT10);
     PCMSK1 |= (1<<PCINT11);
-    // Serial.println(PCMSK1,HEX);
+    Serial.println(PCMSK1,HEX);
     PCMask = PCMSK1;
     PCICR |= (1<<PCIE1);
     
     pinMode(buzzerPin, OUTPUT);
-    pinMode(FAN, OUTPUT);
 
     attachInterrupt(INT_NUM, isr, RISING); // для самодельной схемы ставь FALLING
     Timer1.enableISR();                    // Timer2.enableISR();
@@ -701,37 +695,28 @@ void setup()
 
 void loop()
 {
-    // if(funcNum)
-    // {
-    //     Serial.println("---> funcNum: " + String(funcNum));
-    //     // menuPGM[4].action();
-    //     menuFunc[funcNum]();
-    //     funcNum = 0;
-    // }
-    //     Serial.println("state: " + String(state));
-        
-    // if(flagISR) {
+    if(flagISR) {
             
-    //     // if(isr_1) Serial.println("-----------> isr_1");
-    //     // if(isr_2) Serial.println("-----------> isr_2");
-    //     // if(isr_3) Serial.println("-----------> isr_3");
+        // if(isr_1) Serial.println("-----------> isr_1");
+        // if(isr_2) Serial.println("-----------> isr_2");
+        // if(isr_3) Serial.println("-----------> isr_3");
 
-    //     intsFound = flagISR = 0;
-    //     flagISR = 0;
-    //     isr_1 = isr_2 = isr_3 = 0;
-    // }
+        intsFound = flagISR = 0;
+        flagISR = 0;
+        isr_1 = isr_2 = isr_3 = 0;
+    }
 
-    // testPWM++;
-    // analogWrite(buzzerPin, testPWM);
-    // analogWrite(FAN, testPWM);
-    // dimmer = map(testPWM, 0, 255, 500, 9300);
-    // Serial.println("testTIMER_COUNT: " + String(testTIMER_COUNT) + "\ttestPWM: " + String(testPWM) + "\ttestTIMER_STATE: " + String(testTIMER_STATE) + "\tlastDim: " + String(lastDim) + "\tDimmer" + String(dimmer));
+    testPWM++;
+    // analogWrite(DIMMER_PIN, testPWM);
+    dimmer = map(testPWM, 0, 255, 500, 9300);
+    analogWrite(buzzerPin, testPWM);
+    analogWrite(FAN, testPWM);
+    Serial.println("testTIMER_COUNT: " + String(testTIMER_COUNT) + "\ttestPWM: " + String(testPWM) + "\tdimmer: " + String(dimmer));
+
 
     int tmpTemp = analogRead(NTC_PIN);
     if (tmpTemp == ADC_MIN || tmpTemp >= ADC_MAX)
     {
-        // Serial.print("NTC ERROR");
-        // delay(500);
         state = NTC_ERROR;
     }
 
@@ -754,14 +739,21 @@ void loop()
         digitalWrite(DIMMER_PIN, 0);
         detachInterrupt(INT_NUM);
         analogWrite(FAN, 255);
+        do
+        {
+            oled.drawUTF8(32, 16, "ОШИБКА");
+            oled.drawUTF8(32, 32, "ПРОВЕРЬ");
+            oled.drawUTF8(26, 48, "ТЕРМИСТОР");
+            oled.drawUTF8(0, 64, "");
+            // oled.drawButtonUTF8(0, 32 - 1, U8G2_BTN_INV, 128, 1, 1, "");
+
+        } while (oled.nextPage());
         while (1)
         {
-            // dispalyPrint4("", "CHECK NTC", "AND RESTART", "");
             // tone(buzzerPin, 500, 500);
-            // dispalyPrint4("", "ERROR", "ERROR", "");
+            delay(500);
             // tone(buzzerPin, 1000, 500);
         }
-        // state = OFF;
         break;
     // case OFF:
     //     /* code */
@@ -771,7 +763,7 @@ void loop()
     case MENU:
         enc.tick();
         encoderSate(&controls);
-        controlsHandler(menuPGM, menuVal, menuFunc, &controls, &subMenuM);
+        controlsHandler(menuPGM, menuVal, &controls, &subMenuM);
         if (subMenuM.levelUpdate)
         {
             submenuHandler(menuPGM, menuSize, &subMenuM);
@@ -878,31 +870,31 @@ void encoderSate(struct control *control)
     if (enc.isClick())
     {
         control->ok = 1;
-        // Serial.println("\t\t  enc.isClick()");
+        Serial.println("\t\t  enc.isClick()");
     }
     if (enc.isHolded())
     {
         control->hold = 1;
-        // Serial.print("\t\t  enc.isHolded()");
+        Serial.print("\t\t  enc.isHolded()");
     }
     if (enc.isRelease())
     {
         enc.resetStates();
-        // Serial.print(" enc.isRelease() control->hold = 1;");
+        Serial.print(" enc.isRelease() control->hold = 1;");
     }
     if (enc.isLeft())
     {
         control->left = 1;
-        // Serial.print("enc.isLeft()");
+        Serial.print("enc.isLeft()");
     }
     if (enc.isRight())
     {
         control->right = 1;
-        // Serial.print("enc.isRight()");
+        Serial.print("enc.isRight()");
     }
 }
 
-void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], ptrFunc functionMenu[], struct control *encoder, struct subMenu *subMenu)
+void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], struct control *encoder, struct subMenu *subMenu)
 {
     if (encoder->ok)
     {
@@ -910,18 +902,22 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], ptrFunc f
         // Serial.print("encoder->ok");
         if (!pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].min) &&
             !pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].max) &&
-            //!pgm_read_byte(&constMenu[subMenu->membersID[subMenu->position]].action)) // меню˚
-            !functionMenu[subMenu->membersID[subMenu->position]]) // меню
+            !pgm_read_byte(&constMenu[subMenu->membersID[subMenu->position]].action)) // меню
         {
             subMenu->level + 1 > subMenu->levelMax ? subMenu->level : subMenu->level++;
             subMenu->levelUpdate = DOWN;
         }
         else
         {
-            if (functionMenu[subMenu->membersID[subMenu->position]]) // подменю с функцией
+            if (pgm_read_byte(&constMenu[subMenu->membersID[subMenu->linesToScreen[subMenu->pointerPos]]].action)) // подменю с функцией
             {
-                // funcNum = subMenu->membersID[subMenu->linesToScreen[subMenu->pointerPos]];
-                functionMenu[subMenu->membersID[subMenu->position]]();
+
+                // Serial.print("subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]: ");
+                // Serial.println(subMenu->membersID[subMenu->linesToScreen[subMenu->pointerPos]]);
+                // TODO Проверил, должно запускаться
+                // constMenu[subMenu->membersID[subMenu->linesToScreen[subMenu->pointerPos]]].action();
+                menuPGM[subMenu->membersID[subMenu->linesToScreen[subMenu->pointerPos]]].action();
+                // break; // запускаем функцию
             }
             else // подменю с изменяемыми параметрами
             {
