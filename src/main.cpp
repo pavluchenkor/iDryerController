@@ -14,9 +14,8 @@
 //!! Выбери свой термистор TEMP_SENSOR_0 из списка в файле Configuration.h
 //TODO перетащить дефайны етрмисторов сюда
 #define NTC_PIN 0
-// #define SEALEVELPRESSURE_HPA (1013.25) // оценивает высоту в метрах на основе давления на уровне моря
 
-#define DEBUG
+// #define DEBUG
 //!! Раскомментируй для своей версии платы
 #define v220V
 // #define v24V
@@ -106,10 +105,10 @@ enum levelV
     UP,
 };
 
-void testFuc_1()
-{
-    Serial.println("УРРРРА\nЗА\nРА\nБО\nТА\nЛА\n");
-}
+// void testFuc_1()
+// {
+//     Serial.println("УРРРРА\nЗА\nРА\nБО\nТА\nЛА\n");
+// }
 
 struct control // это могут быть и кнопки
 {
@@ -510,10 +509,9 @@ void loop()
         subMenuM.levelUpdate = UP;
         subMenuM.pointerUpdate = 1;
         subMenuM.parentID = 0;
-        delay(300);
+        delay(100);
     }
 
-    state = MENU;
 #ifdef DEBUG
     Serial.println("switch (state): " + String(state));
 #endif
@@ -835,9 +833,10 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
     if (subMenu->levelUpdate == DOWN)
     {
         subMenu->parentID = subMenu->membersID[subMenu->position];
+#ifdef DEBUG
         Serial.print("subMenu->parentID: ");
         Serial.println(subMenu->parentID);
-        // delay(800);
+#endif
         subMenu->position = 0;
         subMenu->pointerPos = 0;
     }
@@ -851,8 +850,6 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
     memset(subMenuM.membersID, 0, sizeof(subMenuM.membersID) / sizeof(subMenuM.membersID[0]));
     int8_t iCounter = 0;
     
-    Serial.println(".....................................");
-
     for (uint8_t i = 0; i < menuSize; i++)
     {   
         // Serial.println("i: " + String(i));
