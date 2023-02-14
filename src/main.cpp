@@ -647,7 +647,13 @@ void loop()
         }
         else
         {
+#ifdef v220V
             dimmer = 0;
+#endif
+
+#ifdef v24V
+            analogWrite(DIMMER_PIN, 0);
+#endif
         }
 
         break;
