@@ -12,7 +12,7 @@
 #include "font.h"
 
 //!! Выбери свой термистор TEMP_SENSOR_0 из списка в файле Configuration.h
-//TODO перетащить дефайны етрмисторов сюда
+// TODO перетащить дефайны етрмисторов сюда
 #define NTC_PIN 0
 
 // #define DEBUG
@@ -22,12 +22,12 @@
 
 // Димер
 #ifdef v220V
-    #define ZERO_PIN 2   // пин детектора нуля
-    #define INT_NUM 0    // соответствующий управляющему пину номер прерывания
+#define ZERO_PIN 2 // пин детектора нуля
+#define INT_NUM 0  // соответствующий управляющему пину номер прерывания
 #endif
 #define DIMMER_PIN 5 // управляющий пин симистора или пин ШИМ
 
-//!* 11,6,5,3 
+//!* 11,6,5,3
 #define BUZZER_PIN 3
 #define FAN 11
 
@@ -67,10 +67,10 @@ typedef enum stateS
 uint8_t lineHight = 16;
 uint16_t dimmer; // переменная диммера
 #ifdef v220V
-    uint16_t lastDim;
+uint16_t lastDim;
 #endif
 
-uint8_t autoPidAttemptCounter = 0; 
+uint8_t autoPidAttemptCounter = 0;
 
 // uint8_t state = MENU;
 stateS state = MENU;
@@ -136,7 +136,6 @@ struct subMenu
     int8_t max;
 };
 
-
 struct Settings
 {
     uint8_t state = 0;
@@ -150,11 +149,11 @@ control controls;
 subMenu subMenuM;
 Settings settings;
 
-thermistor ntc(NTC_PIN,0);
+thermistor ntc(NTC_PIN, 0);
 GyverBME280 bme;
 
-//В случае необходимости поменяй экран
-// U8G2_SH1106_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+// В случае необходимости поменяй экран
+//  U8G2_SH1106_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 
 Encoder enc(CLK, DT, encBut, TYPE1);
@@ -166,7 +165,7 @@ struct Data
     uint8_t ntcTemp = 0;
     float bmeTemp = 0;
     float bmeHumidity = 0;
-    
+
     unsigned long startTime = 0;
 
     uint8_t setTemp = 0;
@@ -185,12 +184,14 @@ public:
         data.bmeTemp = bme.readTemperature();
         data.bmeHumidity = bme.readHumidity();
 
-        if (data.bmeTemp < data.setTemp - HESTERESIS) temperature = data.setTemp + 10;
-        if (data.bmeTemp > data.setTemp + HESTERESIS) temperature = data.setTemp - 5;
+        if (data.bmeTemp < data.setTemp - HESTERESIS)
+            temperature = data.setTemp + 10;
+        if (data.bmeTemp > data.setTemp + HESTERESIS)
+            temperature = data.setTemp - 5;
         if (data.bmeTemp > data.setTemp - HESTERESIS && data.bmeTemp < data.setTemp + HESTERESIS)
             temperature = data.setTemp;
 
-        if (data.ntcTemp < TMP_MIN||
+        if (data.ntcTemp < TMP_MIN ||
             data.ntcTemp > TMP_MAX ||
             data.bmeTemp < TMP_MIN ||
             data.bmeTemp > TMP_MAX)
@@ -204,25 +205,25 @@ public:
 #ifdef v220V
 void isr()
 {
-    #ifdef DEBUG
+#ifdef DEBUG
     testTIMER_COUNT++;
-    #endif
+#endif
     digitalWrite(DIMMER_PIN, 0); // выключаем симистор
     // если значение изменилось, устанавливаем новый период
     // если нет, то просто перезапускаем со старым
     if (lastDim != dimmer)
     {
         Timer1.setPeriod(lastDim = dimmer);
-        #ifdef DEBUG
+#ifdef DEBUG
         testTIMER_STATE = 1;
-        #endif
+#endif
     }
     else
     {
         Timer1.restart();
-        #ifdef DEBUG
+#ifdef DEBUG
         testTIMER_STATE = 0;
-        #endif
+#endif
     }
 }
 
@@ -233,23 +234,28 @@ ISR(TIMER1_A)
 }
 #endif
 
-ISR( PCINT1_vect ) {
-  byte change, v1, v2, v3;
-  change = oldPorta ^ PINC;
+ISR(PCINT1_vect)
+{
+    byte change, v1, v2, v3;
+    change = oldPorta ^ PINC;
 
-  v1 = oldPorta & (1<<PCINT9);
-  v2 = oldPorta & (1<<PCINT10);
-  v3 = oldPorta & (1<<PCINT11);
+    v1 = oldPorta & (1 << PCINT9);
+    v2 = oldPorta & (1 << PCINT10);
+    v3 = oldPorta & (1 << PCINT11);
 
-  if (v1 == 0 && change & (1<<PCINT9) ) isr_1 = 1;
-  if (v2 == 0 && change & (1<<PCINT10)) isr_2 = 1;
-  if (v3 == 0 && change & (1<<PCINT11)) isr_3 = 1;
-  if (change && (v1 == 0 || v2 == 0 || v3 == 0) ) {
-    flagISR = 1;
-    enc.tick();
-    isr_1 = isr_2 = isr_3 = 0;
-  }
-  oldPorta = PINC;
+    if (v1 == 0 && change & (1 << PCINT9))
+        isr_1 = 1;
+    if (v2 == 0 && change & (1 << PCINT10))
+        isr_2 = 1;
+    if (v3 == 0 && change & (1 << PCINT11))
+        isr_3 = 1;
+    if (change && (v1 == 0 || v2 == 0 || v3 == 0))
+    {
+        flagISR = 1;
+        enc.tick();
+        isr_1 = isr_2 = isr_3 = 0;
+    }
+    oldPorta = PINC;
 }
 
 char *printMenuItem(const char *const *text) // печать строки из prm
@@ -259,10 +265,10 @@ char *printMenuItem(const char *const *text) // печать строки из p
     uint8_t i = 0;
 
     do
-    {                                             
-        buffer[i] = (char)(pgm_read_byte(ptr++)); 
+    {
+        buffer[i] = (char)(pgm_read_byte(ptr++));
     } while (i++ != 20);
-                                                  
+
     return buffer;
 }
 
@@ -298,7 +304,7 @@ void dispalyPrint(struct subMenu *subMenu)
                 else
                 {
                     oled.drawButtonUTF8(96, lineHight * (i + 2) - 0, U8G2_BTN_INV, 128, 0, 0, "");
-                }   
+                }
             }
         }
     } while (oled.nextPage());
@@ -367,12 +373,12 @@ void setup()
 
     settingsSize = sizeof(settings);
     menuSize = sizeof(menuPGM) / sizeof(menuPGM[0]);
-    
-    #ifdef DEBUG
+
+#ifdef DEBUG
     Serial.println("settingsSize: " + String(settingsSize));
     Serial.println("menuSize: " + String(menuSize));
-    #endif
-    
+#endif
+
     EEPROM.get(0, settings);
     if (settings.state != 123)
     {
@@ -409,18 +415,18 @@ void setup()
 
     uint16_t test;
     EEPROM.get(settingsSize, test);
-  
+
     if (test != 123)
     {
         EEPROM.put(settingsSize, menuVal);
     }
     delay(10);
-    EEPROM.get(settingsSize, menuVal);    
+    EEPROM.get(settingsSize, menuVal);
 
-    // Диммер
-    #ifdef v220V
-        pinMode(ZERO_PIN, INPUT_PULLUP);
-    #endif
+// Диммер
+#ifdef v220V
+    pinMode(ZERO_PIN, INPUT_PULLUP);
+#endif
 
     pinMode(DIMMER_PIN, OUTPUT);
 
@@ -429,26 +435,26 @@ void setup()
     pinMode(encBut, INPUT_PULLUP);
 
     oldPorta = PINC;
-    PCMSK1 |= (1<<PCINT9);
-    PCMSK1 |= (1<<PCINT10);
-    PCMSK1 |= (1<<PCINT11);
+    PCMSK1 |= (1 << PCINT9);
+    PCMSK1 |= (1 << PCINT10);
+    PCMSK1 |= (1 << PCINT11);
     // Serial.println(PCMSK1,HEX);
     PCMask = PCMSK1;
-    PCICR |= (1<<PCIE1);
-    
+    PCICR |= (1 << PCIE1);
+
     pinMode(BUZZER_PIN, OUTPUT);
     pinMode(FAN, OUTPUT);
 
-    #ifdef v220V
-        attachInterrupt(INT_NUM, isr, FALLING); // для самодельной схемы ставь FALLING
-        Timer1.enableISR();                    // Timer2.enableISR();
-    #endif
+#ifdef v220V
+    attachInterrupt(INT_NUM, isr, FALLING); // для самодельной схемы ставь FALLING
+    Timer1.enableISR();                     // Timer2.enableISR();
+#endif
 
     oled.begin();
     oled.setFlipMode(1);
     // oled.setContrast(1);
     oled.enableUTF8Print();
-    oled.setFont(u8g2_font); //u8g2_font   u8g2_font
+    oled.setFont(u8g2_font); // u8g2_font   u8g2_font
 
     oled.firstPage();
     do
@@ -483,12 +489,12 @@ void setup()
 
 void loop()
 {
-    #ifdef DEBUG
+#ifdef DEBUG
     analogWrite(FAN, 50);
     analogWrite(DIMMER_PIN, 50);
-    analogWrite(BUZZER_PIN, 490/255*1);
+    analogWrite(BUZZER_PIN, 490 / 255 * 1);
     Serial.println("state: " + String(state));
-    #endif
+#endif
 
     int tmpTemp = analogRead(NTC_PIN);
     if (tmpTemp == ADC_MIN || tmpTemp >= ADC_MAX)
@@ -516,7 +522,6 @@ void loop()
     Serial.println("switch (state): " + String(state));
 #endif
 
-
     switch (state)
     {
     case NTC_ERROR:
@@ -540,7 +545,7 @@ void loop()
             oled.drawButtonUTF8(0, 3 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
             oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
         } while (oled.nextPage());
-        
+
         while (1)
         {
             dimmer = 0;
@@ -753,7 +758,7 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
         // Serial.print("encoder->ok");
         if (!pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].min) &&
             !pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].max) &&
-            //!pgm_read_byte(&constMenu[subMenu->membersID[subMenu->position]].action)) // меню˚
+            //! pgm_read_byte(&constMenu[subMenu->membersID[subMenu->position]].action)) // меню˚
             !functionMenu[subMenu->membersID[subMenu->position]]) // меню
         {
             subMenu->level + 1 > subMenu->levelMax ? subMenu->level : subMenu->level++;
@@ -849,9 +854,9 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
 
     memset(subMenuM.membersID, 0, sizeof(subMenuM.membersID) / sizeof(subMenuM.membersID[0]));
     int8_t iCounter = 0;
-    
+
     for (uint8_t i = 0; i < menuSize; i++)
-    {   
+    {
         // Serial.println("i: " + String(i));
         if (pgm_read_byte(&constMenu[i].parentID) == subMenu->parentID && pgm_read_byte(&constMenu[i].id) != 0)
         {
@@ -869,7 +874,7 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
             }
             iCounter++;
         }
-        //Serial.println("");
+        // Serial.println("");
     }
     subMenu->membersQuantity = iCounter;
     // Serial.print("subMenu->membersQuantity: ");
@@ -908,7 +913,7 @@ void dryStart()
     analogWrite(FAN, menuVal[24]); //!! Что-то придумать!!!
 
     iDryer.data.startTime = millis();
-    
+
     Serial.println("DRY START");
 }
 
@@ -930,7 +935,7 @@ void autoPidM()
 
 void saveAll()
 {
-   EEPROM.put(0, settings);
-   EEPROM.put(settingsSize, menuVal);
-   Serial.println("SAVE ALL");
+    EEPROM.put(0, settings);
+    EEPROM.put(settingsSize, menuVal);
+    Serial.println("SAVE ALL");
 }
