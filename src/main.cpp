@@ -16,10 +16,10 @@
 #define NTC_PIN 0
 // #define SEALEVELPRESSURE_HPA (1013.25) // оценивает высоту в метрах на основе давления на уровне моря
 
-//#define DEBUG
+#define DEBUG
 //!! Раскомментируй для своей версии платы
-//#define v220V
-#define v24V
+#define v220V
+// #define v24V
 
 // Димер
 #ifdef v220V
@@ -37,13 +37,24 @@
 #define SCREEN_LINES 4
 #define MENU_HEADER 1
 
-#define OFF 0
-#define ON 1
-#define MENU 2
-#define DRY 3
-#define STORAGE 4
-#define AUTOPID 5
-#define NTC_ERROR 6
+// #define OFF 0
+// #define ON 1
+// #define MENU 2
+// #define DRY 3
+// #define STORAGE 4
+// #define AUTOPID 5
+// #define NTC_ERROR 6
+
+typedef enum stateS
+{
+    OFF,
+    ON,
+    MENU,
+    DRY,
+    STORAGE,
+    AUTOPID,
+    NTC_ERROR,
+};
 
 #define MAX_ERROR 10
 #define AUTOPID_ATTEMPT 7
@@ -61,7 +72,9 @@ uint16_t dimmer; // переменная диммера
 #endif
 
 uint8_t autoPidAttemptCounter = 0; 
-uint8_t state = MENU;
+
+// uint8_t state = MENU;
+stateS state = MENU;
 uint8_t ERROR_COUNTER = 0;
 
 #ifdef DEBUG
@@ -84,6 +97,7 @@ uint8_t funcNum = 0;
 
 uint8_t menuSize = 0;
 uint8_t settingsSize = 0;
+uint8_t buzzerAlarm = 0;
 
 enum levelV
 {
@@ -140,8 +154,10 @@ Settings settings;
 thermistor ntc(NTC_PIN,0);
 GyverBME280 bme;
 
+//В случае необходимости поменяй экран
 // U8G2_SH1106_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
+
 Encoder enc(CLK, DT, encBut, TYPE1);
 GyverPID regulator(0.1, 0.05, 0.01, 10);
 PIDtuner2 tuner;
@@ -352,11 +368,12 @@ void setup()
 
     settingsSize = sizeof(settings);
     menuSize = sizeof(menuPGM) / sizeof(menuPGM[0]);
+    
+    #ifdef DEBUG
     Serial.println("settingsSize: " + String(settingsSize));
     Serial.println("menuSize: " + String(menuSize));
-
-    delay(300);
-
+    #endif
+    
     EEPROM.get(0, settings);
     if (settings.state != 123)
     {
@@ -371,9 +388,10 @@ void setup()
         settings.pidKp = 5.2;
         settings.pidKi = 0.5;
         settings.pidKd = 0;
-        settings.pidDt = 1000;
+        settings.pidDt = 9000;
 
         EEPROM.put(0, settings);
+        delay(10);
     }
     regulator.Kd = settings.pidKd;
     regulator.Kp = settings.pidKp;
@@ -397,7 +415,7 @@ void setup()
     {
         EEPROM.put(settingsSize, menuVal);
     }
-    delay(50);
+    delay(10);
     EEPROM.get(settingsSize, menuVal);    
 
     // Диммер
@@ -460,27 +478,26 @@ void setup()
     subMenuM.levelUpdate = DOWN;
     subMenuM.pointerUpdate = 1;
     subMenuM.parentID = 0;
-    // level = 0;
     subMenuM.position = 0;
     memset(subMenuM.membersID, 0, sizeof(subMenuM.membersID) / sizeof(subMenuM.membersID[0]));
-    // Serial.println("menuSize: " + String(menuSize));
 }
 
 void loop()
 {
+    #ifdef DEBUG
     analogWrite(FAN, 50);
     analogWrite(DIMMER_PIN, 50);
     analogWrite(BUZZER_PIN, 490/255*1);
-
-    //dimmer = map(testPWM++, 0, 255, 500, 9300);
-    //Serial.println("testPWM: " + String(testPWM) + "\tdimmer: " + String(dimmer) + "\ttestTIMER_COUNT: " + String(testTIMER_COUNT));
-
+    Serial.println("state: " + String(state));
+    #endif
 
     int tmpTemp = analogRead(NTC_PIN);
     if (tmpTemp == ADC_MIN || tmpTemp >= ADC_MAX)
     {
-        // Serial.print("NTC ERROR");
-        // delay(500);
+#ifdef DEBUG
+        Serial.println("NTC ERROR");
+#endif
+
         state = NTC_ERROR;
     }
 
@@ -496,14 +513,20 @@ void loop()
         delay(300);
     }
 
+    state = MENU;
+#ifdef DEBUG
+    Serial.println("switch (state): " + String(state));
+#endif
+
+
     switch (state)
     {
     case NTC_ERROR:
         dimmer = 0;
         digitalWrite(DIMMER_PIN, 0);
-        #ifdef v220V
+#ifdef v220V
         detachInterrupt(INT_NUM);
-        #endif
+#endif
         analogWrite(FAN, 255);
         analogWrite(BUZZER_PIN, 150);
         oled.firstPage();
@@ -519,7 +542,7 @@ void loop()
             oled.drawButtonUTF8(0, 3 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
             oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
         } while (oled.nextPage());
-        uint8_t buzzerAlarm = 0;
+        
         while (1)
         {
             dimmer = 0;
@@ -532,14 +555,21 @@ void loop()
             analogWrite(FAN, 255);
             analogWrite(BUZZER_PIN, buzzerAlarm++);
         }
-        // state = OFF;
         break;
-    // case OFF:
-    //     /* code */
-    //     break;
+    case OFF:
+        /* code */
+        break;
     case ON:
+#ifdef DEBUG
+        Serial.println("-----------> state: ON");
+#endif
         break;
     case MENU:
+
+#ifdef DEBUG
+        Serial.println("-----------> state: MENU");
+#endif
+
         enc.tick();
         encoderSate(&controls);
         controlsHandler(menuPGM, menuVal, menuFunc, &controls, &subMenuM);
@@ -547,12 +577,10 @@ void loop()
         {
             submenuHandler(menuPGM, menuSize, &subMenuM);
             screen(&subMenuM); //!! добавить subMenuM.pointerUpdate  в submenuHandler
-                               // submenuPrint();
         }
         if (subMenuM.pointerUpdate)
         {
             screen(&subMenuM);
-            // submenuPrint();
         }
         dispalyPrint(&subMenuM);
         break;
@@ -564,19 +592,20 @@ void loop()
         else
         {
             ERROR_COUNTER++;
-            if (ERROR_COUNTER > MAX_ERROR) state = NTC_ERROR;
+            if (ERROR_COUNTER > MAX_ERROR)
+                state = NTC_ERROR;
         }
 
         regulator.setpoint = iDryer.temperature;
         regulator.input = iDryer.data.bmeTemp;
-        #ifdef v220V
-            dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-        #endif
-        
-        #ifdef v24V
-            analogWrite(DIMMER_PIN, regulator.getResultTimer());
-        #endif
-        
+#ifdef v220V
+        dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+#endif
+
+#ifdef v24V
+        analogWrite(DIMMER_PIN, regulator.getResultTimer());
+#endif
+
         if (millis() - iDryer.data.startTime >= 1000 * 60) //!!НАПИСАТЬ ИМЕНА
         {
             iDryer.data.setTime--;
@@ -586,7 +615,7 @@ void loop()
         {
             state = STORAGE; // автоматический переход в режим хранения
         }
-        
+
         break;
     case STORAGE:
         // Serial.println("STORAGE");
@@ -597,24 +626,25 @@ void loop()
         else
         {
             ERROR_COUNTER++;
-            if (ERROR_COUNTER > MAX_ERROR) state = NTC_ERROR;
+            if (ERROR_COUNTER > MAX_ERROR)
+                state = NTC_ERROR;
         }
         if (iDryer.data.setHumidity > iDryer.data.bmeHumidity)
         {
             regulator.setpoint = iDryer.temperature;
             regulator.input = iDryer.data.ntcTemp;
-            
-            #ifdef v220V
-                dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-            #endif
-            
-            #ifdef v24V
-                analogWrite(DIMMER_PIN, regulator.getResultTimer());
-            #endif
+
+#ifdef v220V
+            dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+#endif
+
+#ifdef v24V
+            analogWrite(DIMMER_PIN, regulator.getResultTimer());
+#endif
         }
         else
         {
-            dimmer = 0;            
+            dimmer = 0;
         }
 
         break;
@@ -628,19 +658,19 @@ void loop()
             tuner.compute();
             // dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
 
-            #ifdef v220V
-                dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-            #endif
-            
-            #ifdef v24V
-                analogWrite(DIMMER_PIN, regulator.getResultTimer());
-            #endif
+#ifdef v220V
+            dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+#endif
+
+#ifdef v24V
+            analogWrite(DIMMER_PIN, regulator.getResultTimer());
+#endif
 
             if (tuner.getState() != AUTOPID_ATTEMPT && autoPidAttemptCounter != tuner.getState())
             {
                 autoPidAttemptCounter = tuner.getState();
 
-                //TODO чтонить про процесс пидования написать
+                // TODO чтонить про процесс пидования написать
                 oled.firstPage();
                 do
                 {
@@ -657,7 +687,7 @@ void loop()
             }
             if (tuner.getState() == AUTOPID_ATTEMPT)
             {
-                settings.state = 123; // p для ПИД регулятора
+                settings.state = 123;              // p для ПИД регулятора
                 settings.pidKp = tuner.getPID_p(); // p для ПИД регулятора
                 settings.pidKi = tuner.getPID_i(); // i для ПИД регулятора
                 settings.pidKd = tuner.getPID_d(); //  d для ПИД регулятора
