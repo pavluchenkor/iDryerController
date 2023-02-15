@@ -27,6 +27,7 @@ const char l4[] PROGMEM = "ПРОВЕРЬ";
 const char l5[] PROGMEM = "ТЕРМИСТОР";
 const char l6[] PROGMEM = "ПЕРЕГУЗИ";
 
+
 const char *const txt[] PROGMEM = {
     s0,
     s1,

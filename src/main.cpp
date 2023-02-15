@@ -15,7 +15,7 @@
 // TODO перетащить дефайны етрмисторов сюда
 #define NTC_PIN 0
 
-// #define DEBUG
+#define DEBUG
 //!! Раскомментируй для своей версии платы
 #define v220V
 // #define v24V
@@ -80,6 +80,9 @@ uint8_t ERROR_COUNTER = 0;
 uint8_t testPWM = 0;
 uint16_t testTIMER_COUNT = 0;
 uint16_t testTIMER_STATE = 0;
+unsigned long oldTime1 = 0;
+unsigned long oldTime2 = 0;
+uint8_t isrFlag = 0;
 #endif
 
 const byte CLK = A1;
@@ -207,6 +210,10 @@ void isr()
 {
 #ifdef DEBUG
     testTIMER_COUNT++;
+    testTIMER_STATE = 1;
+    oldTime2 = millis() - oldTime1;
+    oldTime1 = millis();
+    isrFlag = 1;
 #endif
     digitalWrite(DIMMER_PIN, 0); // выключаем симистор
     // если значение изменилось, устанавливаем новый период
@@ -214,16 +221,10 @@ void isr()
     if (lastDim != dimmer)
     {
         Timer1.setPeriod(lastDim = dimmer);
-#ifdef DEBUG
-        testTIMER_STATE = 1;
-#endif
     }
     else
     {
         Timer1.restart();
-#ifdef DEBUG
-        testTIMER_STATE = 0;
-#endif
     }
 }
 
@@ -231,6 +232,9 @@ ISR(TIMER1_A)
 {
     digitalWrite(DIMMER_PIN, 1); // включаем симистор
     Timer1.stop();               // останавливаем таймер
+#ifdef DEBUG
+        testTIMER_STATE = 0;
+#endif
 }
 #endif
 
@@ -369,7 +373,7 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
 void setup()
 {
 
-    Serial.begin(57600);
+    Serial.begin(115200);
 
     settingsSize = sizeof(settings);
     menuSize = sizeof(menuPGM) / sizeof(menuPGM[0]);
@@ -446,7 +450,7 @@ void setup()
     pinMode(FAN, OUTPUT);
 
 #ifdef v220V
-    attachInterrupt(INT_NUM, isr, FALLING); // для самодельной схемы ставь FALLING
+    attachInterrupt(INT_NUM, isr, CHANGE); // для самодельной схемы ставь FALLING
     Timer1.enableISR();                     // Timer2.enableISR();
 #endif
 
@@ -490,10 +494,30 @@ void setup()
 void loop()
 {
 #ifdef DEBUG
-    analogWrite(FAN, 50);
-    analogWrite(DIMMER_PIN, 50);
-    analogWrite(BUZZER_PIN, 490 / 255 * 1);
-    Serial.println("state: " + String(state));
+    // analogWrite(FAN, 50);
+    // analogWrite(DIMMER_PIN, 50);
+    // analogWrite(BUZZER_PIN, 490 / 255 * 1);
+    // Serial.println("state: " + String(state));
+    
+    // if(millis() % 5 == 0) Serial.println("testPWM: " + String(testPWM) + "\ttestTIMER_STATE: " + String(testTIMER_STATE) + "\ttestTIMER_COUNT: " + String(testTIMER_COUNT) + "\tdimmer: " + String(dimmer));
+
+    if(isrFlag)
+    {
+    Serial.println("testPWM: " + String(testPWM++) + "\ttestTIMER_STATE: " + String(testTIMER_STATE) + "\ttestTIMER_COUNT: " + String(testTIMER_COUNT) + "\tdimmer: " + String(dimmer) + "\toldTime2: " + String(oldTime2));
+    isrFlag = 0;
+    }
+
+    //dimmer = map(testPWM, 0, 255, 500, 9300);
+    
+    // if (millis() >= oldTime + 10)
+    // {
+    //     PIND = PIND | 0b00001000;
+    //     oldTime = millis();
+    //     if(testTIMER_STATE % 10) testPWM++;
+    //     // dimmer = map(testPWM, 0, 255, 500, 9300);
+    //     dimmer = 0;
+    // }
+    dimmer = 0;
 #endif
 
     int tmpTemp = analogRead(NTC_PIN);
@@ -502,7 +526,6 @@ void loop()
 #ifdef DEBUG
         Serial.println("NTC ERROR");
 #endif
-
         state = NTC_ERROR;
     }
 
@@ -519,209 +542,199 @@ void loop()
     }
 
 #ifdef DEBUG
-    Serial.println("switch (state): " + String(state));
+    // Serial.println("switch (state): " + String(state));
 #endif
 
-    switch (state)
-    {
-    case NTC_ERROR:
-        dimmer = 0;
-        digitalWrite(DIMMER_PIN, 0);
-#ifdef v220V
-        detachInterrupt(INT_NUM);
-#endif
-        analogWrite(FAN, 255);
-        analogWrite(BUZZER_PIN, 150);
-        oled.firstPage();
-        do
-        {
-            oled.setFont(u8g2_font);
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&txt[5]))) / 2, lineHight, printMenuItem(&txt[5]));
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&txt[6]))) / 2, lineHight * 2, printMenuItem(&txt[6]));
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&txt[7]))) / 2, lineHight * 3, printMenuItem(&txt[7]));
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&txt[8]))) / 2, lineHight * 4, printMenuItem(&txt[8]));
-            oled.drawButtonUTF8(0, 1 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
-            oled.drawButtonUTF8(0, 2 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
-            oled.drawButtonUTF8(0, 3 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
-            oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
-        } while (oled.nextPage());
+//     switch (state)
+//     {
+//     case NTC_ERROR:
+//         dimmer = 0;
+//         digitalWrite(DIMMER_PIN, 0);
+// #ifdef v220V
+//         detachInterrupt(INT_NUM);
+// #endif
+//         analogWrite(FAN, 255);
+//         analogWrite(BUZZER_PIN, 150);
+//         oled.firstPage();
+//         do
+//         {
+//             oled.setFont(u8g2_font);
+//             oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&txt[5]))) / 2, lineHight, printMenuItem(&txt[5]));
+//             oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&txt[6]))) / 2, lineHight * 2, printMenuItem(&txt[6]));
+//             oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&txt[7]))) / 2, lineHight * 3, printMenuItem(&txt[7]));
+//             oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&txt[8]))) / 2, lineHight * 4, printMenuItem(&txt[8]));
+//             oled.drawButtonUTF8(0, 1 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+//             oled.drawButtonUTF8(0, 2 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+//             oled.drawButtonUTF8(0, 3 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+//             oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+//         } while (oled.nextPage());
 
-        while (1)
-        {
-            dimmer = 0;
-            digitalWrite(DIMMER_PIN, 0);
+//         while (1)
+//         {
+//             dimmer = 0;
+//             digitalWrite(DIMMER_PIN, 0);
 
-#ifdef v220V
-            detachInterrupt(INT_NUM);
-#endif
+// #ifdef v220V
+//             detachInterrupt(INT_NUM);
+// #endif
 
-            analogWrite(FAN, 255);
-            analogWrite(BUZZER_PIN, buzzerAlarm++);
-        }
-        break;
-    case OFF:
-        /* code */
-        break;
-    case ON:
-#ifdef DEBUG
-        Serial.println("-----------> state: ON");
-#endif
-        break;
-    case MENU:
+//             analogWrite(FAN, 255);
+//             analogWrite(BUZZER_PIN, buzzerAlarm++);
+//         }
+//         break;
+//     case OFF:
+//         /* code */
+//         break;
+//     case ON:
+// // #ifdef DEBUG
+// //         Serial.println("-----------> state: ON");
+// // #endif
+//         break;
+//     case MENU:
 
-#ifdef DEBUG
-        Serial.println("-----------> state: MENU");
-#endif
+// // #ifdef DEBUG
+// //         Serial.println("-----------> state: MENU");
+// // #endif
 
-        enc.tick();
-        encoderSate(&controls);
-        controlsHandler(menuPGM, menuVal, menuFunc, &controls, &subMenuM);
-        if (subMenuM.levelUpdate)
-        {
-            submenuHandler(menuPGM, menuSize, &subMenuM);
-            screen(&subMenuM); //!! добавить subMenuM.pointerUpdate  в submenuHandler
-        }
-        if (subMenuM.pointerUpdate)
-        {
-            screen(&subMenuM);
-        }
-        dispalyPrint(&subMenuM);
-        break;
-    case DRY:
-        if (iDryer.getData())
-        {
-            dispalyPrintMode();
-        }
-        else
-        {
-            ERROR_COUNTER++;
-            if (ERROR_COUNTER > MAX_ERROR)
-                state = NTC_ERROR;
-        }
+//         enc.tick();
+//         encoderSate(&controls);
+//         controlsHandler(menuPGM, menuVal, menuFunc, &controls, &subMenuM);
+//         if (subMenuM.levelUpdate)
+//         {
+//             submenuHandler(menuPGM, menuSize, &subMenuM);
+//             screen(&subMenuM); //!! добавить subMenuM.pointerUpdate  в submenuHandler
+//         }
+//         if (subMenuM.pointerUpdate)
+//         {
+//             screen(&subMenuM);
+//         }
+//         dispalyPrint(&subMenuM);
+//         break;
+//     case DRY:
+//         if (iDryer.getData())
+//         {
+//             dispalyPrintMode();
+//         }
+//         else
+//         {
+//             ERROR_COUNTER++;
+//             if (ERROR_COUNTER > MAX_ERROR)
+//                 state = NTC_ERROR;
+//         }
 
-        regulator.setpoint = iDryer.temperature;
-        regulator.input = iDryer.data.bmeTemp;
-#ifdef v220V
-        dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-#endif
+//         regulator.setpoint = iDryer.temperature;
+//         regulator.input = iDryer.data.bmeTemp;
+// #ifdef v220V
+//         dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+// #endif
 
-#ifdef v24V
-        analogWrite(DIMMER_PIN, regulator.getResultTimer());
-#endif
+// #ifdef v24V
+//         analogWrite(DIMMER_PIN, regulator.getResultTimer());
+// #endif
 
-        if (millis() - iDryer.data.startTime >= 1000 * 60) //!!НАПИСАТЬ ИМЕНА
-        {
-            iDryer.data.setTime--;
-        }
+//         if (millis() - iDryer.data.startTime >= 1000 * 60) //!!НАПИСАТЬ ИМЕНА
+//         {
+//             iDryer.data.setTime--;
+//         }
 
-        if (iDryer.data.setTime == 0)
-        {
-            state = STORAGE; // автоматический переход в режим хранения
-        }
+//         if (iDryer.data.setTime == 0)
+//         {
+//             state = STORAGE; // автоматический переход в режим хранения
+//         }
 
-        break;
-    case STORAGE:
-        // Serial.println("STORAGE");
-        if (iDryer.getData())
-        {
-            dispalyPrintMode();
-        }
-        else
-        {
-            ERROR_COUNTER++;
-            if (ERROR_COUNTER > MAX_ERROR)
-                state = NTC_ERROR;
-        }
-        if (iDryer.data.setHumidity > iDryer.data.bmeHumidity)
-        {
-            regulator.setpoint = iDryer.temperature;
-            regulator.input = iDryer.data.ntcTemp;
+//         break;
+//     case STORAGE:
+//         // Serial.println("STORAGE");
+//         if (iDryer.getData())
+//         {
+//             dispalyPrintMode();
+//         }
+//         else
+//         {
+//             ERROR_COUNTER++;
+//             if (ERROR_COUNTER > MAX_ERROR)
+//                 state = NTC_ERROR;
+//         }
+//         if (iDryer.data.setHumidity > iDryer.data.bmeHumidity)
+//         {
+//             regulator.setpoint = iDryer.temperature;
+//             regulator.input = iDryer.data.ntcTemp;
 
-#ifdef v220V
-            dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-#endif
+// #ifdef v220V
+//             dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+// #endif
 
-#ifdef v24V
-            analogWrite(DIMMER_PIN, regulator.getResultTimer());
-#endif
-        }
-        else
-        {
-#ifdef v220V
-            dimmer = 0;
-#endif
+// #ifdef v24V
+//             analogWrite(DIMMER_PIN, regulator.getResultTimer());
+// #endif
+//         }
+//         else
+//         {
+// #ifdef v220V
+//             dimmer = 0;
+// #endif
 
-#ifdef v24V
-            analogWrite(DIMMER_PIN, 0);
-#endif
-        }
+// #ifdef v24V
+//             analogWrite(DIMMER_PIN, 0);
+// #endif
+//         }
 
-        break;
-    case AUTOPID:
-        while (autoPidAttemptCounter < AUTOPID_ATTEMPT) // AUTOPID
-        {
-            // направление, начальный сигнал, конечный, период плато, точность, время стабилизации, период итерации
-            tuner.setParameters(NORMAL, 0, 80, 6000, 0.05, 500);
+//         break;
+//     case AUTOPID:
+//         while (autoPidAttemptCounter < AUTOPID_ATTEMPT) // AUTOPID
+//         {
+//             // направление, начальный сигнал, конечный, период плато, точность, время стабилизации, период итерации
+//             tuner.setParameters(NORMAL, 0, 80, 6000, 0.05, 500);
 
-            tuner.setInput(ntc.analog2temp());
-            tuner.compute();
-            // dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
+//             tuner.setInput(ntc.analog2temp());
+//             tuner.compute();
 
-#ifdef v220V
-            dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
-#endif
+// #ifdef v220V
+//             dimmer = map(regulator.getResultTimer(), 0, 255, 500, 9300);
+// #endif
 
-#ifdef v24V
-            analogWrite(DIMMER_PIN, regulator.getResultTimer());
-#endif
+// #ifdef v24V
+//             analogWrite(DIMMER_PIN, regulator.getResultTimer());
+// #endif
 
-            if (tuner.getState() != AUTOPID_ATTEMPT && autoPidAttemptCounter != tuner.getState())
-            {
-                autoPidAttemptCounter = tuner.getState();
+//             if (tuner.getState() != AUTOPID_ATTEMPT && autoPidAttemptCounter != tuner.getState())
+//             {
+//                 autoPidAttemptCounter = tuner.getState();
 
-                // TODO чтонить про процесс пидования написать
-                oled.firstPage();
-                do
-                {
-                    oled.setFont(u8g2_font);
-                    oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&txt[5]))) / 2, lineHight, printMenuItem(&txt[5]));
-                    oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&txt[6]))) / 2, lineHight * 2, printMenuItem(&txt[6]));
-                    oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&txt[7]))) / 2, lineHight * 3, printMenuItem(&txt[7]));
-                    oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&txt[8]))) / 2, lineHight * 4, printMenuItem(&txt[8]));
-                    oled.drawButtonUTF8(0, 1 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
-                    oled.drawButtonUTF8(0, 2 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
-                    oled.drawButtonUTF8(0, 3 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
-                    oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
-                } while (oled.nextPage());
-            }
-            if (tuner.getState() == AUTOPID_ATTEMPT)
-            {
-                settings.state = 123;              // p для ПИД регулятора
-                settings.pidKp = tuner.getPID_p(); // p для ПИД регулятора
-                settings.pidKi = tuner.getPID_i(); // i для ПИД регулятора
-                settings.pidKd = tuner.getPID_d(); //  d для ПИД регулятора
-                dimmer = 0;
+//                 // TODO чтонить про процесс пидования написать
+//                 oled.firstPage();
+//                 do
+//                 {
+//                     // char* pidTxt[10];
+//                     // sprintf(*pidTxt, "ТЕСТ %d", autoPidAttemptCounter);
+//                     oled.setFont(u8g2_font);
+//                     oled.drawUTF8(34, lineHight * 2, printMenuItem(&menuPGM[23].text));
+//                     // oled.drawUTF8(20, lineHight * 3, *pidTxt);
+//                     oled.drawButtonUTF8(0, 1 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+//                     oled.drawButtonUTF8(0, 2 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+//                     oled.drawButtonUTF8(0, 3 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+//                     oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+//                 } while (oled.nextPage());
+//             }
+//             if (tuner.getState() == AUTOPID_ATTEMPT)
+//             {
+//                 settings.state = 123;              // p для ПИД регулятора
+//                 settings.pidKp = tuner.getPID_p(); // p для ПИД регулятора
+//                 settings.pidKi = tuner.getPID_i(); // i для ПИД регулятора
+//                 settings.pidKd = tuner.getPID_d(); //  d для ПИД регулятора
+//                 dimmer = 0;
 
-                EEPROM.put(0, settings);
+//                 EEPROM.put(0, settings);
 
-                delay(50);
-                // dispalyPrint4("PID", "IS", "COMPUTE", "AND SAVE");
-                // tone(BUZZER_PIN, 500, 100);
+//                 delay(50);
+//                 state = MENU;
+//             }
+//         }
+//         break;
 
-                // tone(BUZZER_PIN, 500, 1000);
-                // sprintf(str1, "CURRENT PID");
-                // sprintf(str2, "Kp:  %.2f", tuner.getPID_p());
-                // sprintf(str3, "Ki:  %.2f", tuner.getPID_i());
-                // sprintf(str4, "Kd:  %.2f", tuner.getPID_d());
-                // // dispalyPrint4(str1, str2, str3, str4);
-                state = MENU;
-            }
-        }
-        break;
-
-    default:
-        break;
-    }
+//     default:
+//         break;
+//     }
 }
 
 // TODO запилить нормальный энкодер
