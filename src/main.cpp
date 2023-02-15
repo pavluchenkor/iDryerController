@@ -503,7 +503,8 @@ void loop()
 
     if(isrFlag)
     {
-    Serial.println("testPWM: " + String(testPWM++) + "\ttestTIMER_STATE: " + String(testTIMER_STATE) + "\ttestTIMER_COUNT: " + String(testTIMER_COUNT) + "\tdimmer: " + String(dimmer) + "\toldTime2: " + String(oldTime2));
+    Serial.println("\toldTime2: " + String(oldTime2));
+    // Serial.println("testPWM: " + String(testPWM++) + "\ttestTIMER_STATE: " + String(testTIMER_STATE) + "\ttestTIMER_COUNT: " + String(testTIMER_COUNT) + "\tdimmer: " + String(dimmer) + "\toldTime2: " + String(oldTime2));
     isrFlag = 0;
     }
 
