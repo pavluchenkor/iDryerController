@@ -507,16 +507,16 @@ void loop()
     // Serial.println("testPWM: " + String(testPWM++) + "\tdimmer: " + String(dimmer) + "\ttestTIMER_STATE: " + String(testTIMER_STATE) + "\ttestTIMER_COUNT: " + String(testTIMER_COUNT) + "\toldTime2: " + String(oldTime2));
     // Serial.println("\tdimmer: " + String(dimmer) + "\ttestTIMER_STATE: " + String(testTIMER_STATE) + "\ttestTIMER_COUNT: " + String(testTIMER_COUNT) + "\toldTime2: " + String(oldTime2));
     Serial.println("\tdimmer: " + String(dimmer));
+    dimmer < 9300 ? dimmer++ : dimmer = 230;
     isrFlag = 0;
     // dimmer = map(testPWM++, 0, 255, 500, 9300);
-    // dimmer < 9300 ? dimmer++ : dimmer = 230;
-    if (dimmer > 9300) dimmer = 230;
-    dimmer++;
+    // // dimmer < 9300 ? dimmer++ : dimmer = 230;
+    // if (dimmer > 9300) dimmer = 230;
+    // dimmer++;
 
     }
 
-    
-    // if (millis() >= oldTime + 10)
+        // if (millis() >= oldTime + 10)
     // {
     //     PIND = PIND | 0b00001000;
     //     oldTime = millis();
@@ -524,29 +524,29 @@ void loop()
     //     // dimmer = map(testPWM, 0, 255, 500, 9300);
     //     dimmer = 0;
     // }
-    dimmer = 0;
+    // dimmer = 0;
 #endif
 
-    int tmpTemp = analogRead(NTC_PIN);
-    if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
-    {
-#ifdef DEBUG
-        Serial.println("NTC ERROR");
-#endif
-        state = NTC_ERROR;
-    }
+//     int tmpTemp = analogRead(NTC_PIN);
+//     if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
+//     {
+// #ifdef DEBUG
+//         Serial.println("NTC ERROR");
+// #endif
+//         state = NTC_ERROR;
+//     }
 
-    if (!digitalRead(encBut) && (state == DRY || state == STORAGE))
-    {
-        state = MENU;
-        digitalWrite(DIMMER_PIN, 0);
-        // tone(BUZZER_PIN, 500, 100);
-        enc.resetStates();
-        subMenuM.levelUpdate = UP;
-        subMenuM.pointerUpdate = 1;
-        subMenuM.parentID = 0;
-        delay(100);
-    }
+//     if (!digitalRead(encBut) && (state == DRY || state == STORAGE))
+//     {
+//         state = MENU;
+//         digitalWrite(DIMMER_PIN, 0);
+//         // tone(BUZZER_PIN, 500, 100);
+//         enc.resetStates();
+//         subMenuM.levelUpdate = UP;
+//         subMenuM.pointerUpdate = 1;
+//         subMenuM.parentID = 0;
+//         delay(100);
+//     }
 
 #ifdef DEBUG
     // Serial.println("switch (state): " + String(state));
