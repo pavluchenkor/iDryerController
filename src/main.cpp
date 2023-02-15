@@ -65,7 +65,7 @@ typedef enum stateS
 #define ADC_MAX 1000
 
 uint8_t lineHight = 16;
-uint16_t dimmer; // переменная диммера
+uint16_t dimmer = 230; // переменная диммера
 #ifdef v220V
 uint16_t lastDim;
 #endif
@@ -509,7 +509,9 @@ void loop()
     Serial.println("\tdimmer: " + String(dimmer));
     isrFlag = 0;
     // dimmer = map(testPWM++, 0, 255, 500, 9300);
-    dimmer < 9300 ? dimmer++ : dimmer = 230;
+    // dimmer < 9300 ? dimmer++ : dimmer = 230;
+    if (dimmer > 9300) dimmer = 230;
+    dimmer++;
 
     }
 
@@ -526,7 +528,7 @@ void loop()
 #endif
 
     int tmpTemp = analogRead(NTC_PIN);
-    if (tmpTemp == ADC_MIN || tmpTemp >= ADC_MAX)
+    if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
     {
 #ifdef DEBUG
         Serial.println("NTC ERROR");
