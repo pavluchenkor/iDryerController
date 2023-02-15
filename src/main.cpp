@@ -450,7 +450,7 @@ void setup()
     pinMode(FAN, OUTPUT);
 
 #ifdef v220V
-    attachInterrupt(INT_NUM, isr, CHANGE); // для самодельной схемы ставь FALLING
+    attachInterrupt(INT_NUM, isr, FALLING); // для самодельной схемы ставь FALLING
     Timer1.enableISR();                     // Timer2.enableISR();
 #endif
 
