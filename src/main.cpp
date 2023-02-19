@@ -5,9 +5,6 @@
 #include <GyverTimers.h> // библиотека таймера
 #include <GyverEncoder.h>
 #include <GyverBME280.h>
-// #include "GyverPID.h"
-// #include "PIDtuner2.h"
-// #include "PIDtuner.h"
 #include <PID_v1.h>
 #include <pidautotuner.h> //!! https://github.com/jackw01/arduino-pid-autotuner
 #include <thermistor.h>
@@ -16,24 +13,67 @@
 
 //!! Выбери свой термистор TEMP_SENSOR_0 из списка в файле Configuration.h
 // TODO перетащить дефайны етрмисторов сюда
+
+//===========================================================================
+//============================= Thermal Settings ============================
+//===========================================================================
+
+/**
+ * --NORMAL IS 4.7kohm PULLUP!-- 1kohm pullup can be used on hotend sensor, using correct resistor and table
+ *
+ * Temperature sensors available:
+ *
+ *    -3 : thermocouple with MAX31855 (only for sensor 0)
+ *    -2 : thermocouple with MAX6675 (only for sensor 0)
+ *    -1 : thermocouple with AD595
+ *     0 : not used
+ *     1 : 100k thermistor - best choice for EPCOS 100k (4.7k pullup)
+ *     2 : 200k thermistor - ATC Semitec 204GT-2 (4.7k pullup)
+ *     3 : Mendel-parts thermistor (4.7k pullup)
+ *     4 : 10k thermistor !! do not use it for a hotend. It gives bad resolution at high temp. !!
+ *     5 : 100K thermistor - ATC Semitec 104GT-2 (Used in ParCan & J-Head) (4.7k pullup)
+ *     6 : 100k EPCOS - Not as accurate as table 1 (created using a fluke thermocouple) (4.7k pullup)
+ *     7 : 100k Honeywell thermistor 135-104LAG-J01 (4.7k pullup)
+ *    71 : 100k Honeywell thermistor 135-104LAF-J01 (4.7k pullup)
+ *     8 : 100k 0603 SMD Vishay NTCS0603E3104FXT (4.7k pullup)
+ *     9 : 100k GE Sensing AL03006-58.2K-97-G1 (4.7k pullup)
+ *    10 : 100k RS thermistor 198-961 (4.7k pullup)
+ *    11 : 100k beta 3950 1% thermistor (4.7k pullup)
+ *    12 : 100k 0603 SMD Vishay NTCS0603E3104FXT (4.7k pullup) (calibrated for Makibox hot bed)
+ *    13 : 100k Hisens 3950  1% up to 300°C for hotend "Simple ONE " & "Hotend "All In ONE"
+ *    20 : the PT100 circuit found in the Ultimainboard V2.x
+ *    60 : 100k Maker's Tool Works Kapton Bed Thermistor beta=3950
+ *    66 : 4.7M High Temperature thermistor from Dyze Design
+ *    70 : the 100K thermistor found in the bq Hephestos 2
+ *    75 : 100k Generic Silicon Heat Pad with NTC 100K MGB18-104F39050L32 thermistor
+ *
+ *       1k ohm pullup tables - This is atypical, and requires changing out the 4.7k pullup for 1k.
+ *                              (but gives greater accuracy and more stable PID)
+ *    51 : 100k thermistor - EPCOS (1k pullup)
+ *    52 : 200k thermistor - ATC Semitec 204GT-2 (1k pullup)
+ *    55 : 100k thermistor - ATC Semitec 104GT-2 (Used in ParCan & J-Head) (1k pullup)
+ *
+ *  1047 : Pt1000 with 4k7 pullup
+ *  1010 : Pt1000 with 1k pullup (non standard)
+ *   147 : Pt100 with 4k7 pullup
+ *   148 : E3D Pt100 with 4k7 pullup
+ *   110 : Pt100 with 1k pullup (non standard)
+ *
+ *         Use these for Testing or Development purposes. NEVER for production machine.
+ *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
+ *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
+ * */
+
+// #define TEMP_SENSOR_0 4 
+// Переворот экрана 0 - нормально, 1 - перевернуто
+#define SCREEN_FLIP 1 
+
 #define NTC_PIN 0
 
 // #define DEBUG
 //!! Раскомментируй для своей версии платы
 // #define v220V
 #define v24V
-// Укажи мощность нагревателя YUOR_HEATER_POWER
-#define HEATER_POWER   80
-// Переворот экрана 0 - нормально, 1 - перевернуто
-#define SCREEN_FLIP 1 
-
-
-//Точность в процентах (диапазон 95-100). 
-//Если автопид крутится бесконечно, снизь точность
-#define ACCURANCY   100 //TODO перенести в меню
-#define MIN_POWER   40
-#define MAX_POWER   500
-#define HEATER_PWM map(HEATER_POWER, MIN_POWER, MAX_POWER, 210, 100)
 
 // Димер
 #ifdef v220V
@@ -50,14 +90,6 @@
 
 #define SCREEN_LINES 4
 #define MENU_HEADER 1
-
-// #define OFF 0
-// #define ON 1
-// #define MENU 2
-// #define DRY 3
-// #define STORAGE 4
-// #define AUTOPID 5
-// #define NTC_ERROR 6
 
 typedef enum stateS
 {
@@ -87,7 +119,6 @@ uint16_t lastDim;
 
 uint8_t autoPidAttemptCounter = 0;
 
-// uint8_t state = MENU;
 stateS state = MENU;
 uint8_t ERROR_COUNTER = 0;
 
@@ -155,18 +186,18 @@ struct subMenu
     int8_t max;
 };
 
-struct Settings
-{
-    uint8_t state = 0;
-    double pidKp = 0;
-    double pidKi = 0;
-    double pidKd = 0;
-    uint16_t pidDt = 0;
-};
+// struct Settings
+// {
+//     uint8_t state = 0;
+//     float pidKp = 0;
+//     float pidKi = 0;
+//     float pidKd = 0;
+//     uint16_t pidDt = 0;
+// };
 
 control controls;
 subMenu subMenuM;
-Settings settings;
+// Settings settings;
 
 thermistor ntc(NTC_PIN, 0);
 GyverBME280 bme;
@@ -406,7 +437,7 @@ void setup()
 
     Serial.begin(115200);
 
-    settingsSize = sizeof(settings);
+    // settingsSize = sizeof(settings);
     menuSize = sizeof(menuPGM) / sizeof(menuPGM[0]);
 
 #ifdef DEBUG
@@ -414,41 +445,45 @@ void setup()
     Serial.println("menuSize: " + String(menuSize));
 #endif
 
-    EEPROM.get(0, settings);
-
-    if (settings.state != 123)
-    {
-        settings.state = 123;
-        settings.pidKp = 148.70;
-        settings.pidKi = 22.86;
-        settings.pidKd = 241.85;
-        settings.pidDt = 500;
-
-        EEPROM.put(0, settings);
-        delay(10);
-    }
-
-    myPID.SetMode(AUTOMATIC); //
-    myPID.SetControllerDirection(DIRECT);
-    myPID.SetTunings(double(settings.pidKp), double(settings.pidKi), double(settings.pidKd), P_ON_M);
-    myPID.SetSampleTime(settings.pidDt);
-
-
-    Serial.println(settings.state);
-    Serial.println(settings.pidKp);
-    Serial.println(settings.pidKi);
-    Serial.println(settings.pidKd);
-    Serial.println(settings.pidDt);
+    // EEPROM.get(0, settings);
+    // if (settings.state != 123)
+    // {
+    //     settings.state = 123;
+    //     settings.pidKp = 148.70;
+    //     settings.pidKi = 22.86;
+    //     settings.pidKd = 241.85;
+    //     menuVal[27] = 500;
+    //     EEPROM.put(0, menuVal);
+    //     delay(10);
+    // }
+    // myPID.SetMode(AUTOMATIC); //
+    // myPID.SetControllerDirection(DIRECT);
+    // myPID.SetTunings(double(settings.pidKp), double(settings.pidKi), double(settings.pidKd), P_ON_M);
+    // myPID.SetSampleTime(menuVal[27]);
+    // Serial.println(settings.state);
+    // Serial.println(settings.pidKp);
+    // Serial.println(settings.pidKi);
+    // Serial.println(settings.pidKd);
+    // Serial.println(menuVal[27]);
 
     uint16_t test;
-    EEPROM.get(settingsSize, test);
+    EEPROM.get(0, test);
 
     if (test != 123)
     {
-        EEPROM.put(settingsSize, menuVal);
+        EEPROM.put(0, menuVal);
     }
+
     delay(10);
-    EEPROM.get(settingsSize, menuVal);
+    EEPROM.get(0, menuVal);
+
+    myPID.SetMode(AUTOMATIC); //
+    myPID.SetControllerDirection(DIRECT);
+    // myPID.SetTunings(double(settings.pidKp), double(settings.pidKi), double(settings.pidKd), P_ON_M);
+    // myPID.SetSampleTime(menuVal[27]);
+    myPID.SetTunings(double(menuVal[24]), double(menuVal[25]), double(menuVal[26]), P_ON_M);
+    myPID.SetSampleTime(menuVal[26]);
+
 
 // Диммер
 #ifdef v220V
@@ -654,15 +689,15 @@ void loop()
         {
             myPID.SetMode(AUTOMATIC); //
             myPID.SetControllerDirection(DIRECT);
-            myPID.SetSampleTime(settings.pidDt);
-            myPID.SetTunings(double(settings.pidKp), double(settings.pidKi), double(settings.pidKd), P_ON_E);
+            myPID.SetSampleTime(menuVal[27]);
+            myPID.SetTunings(double(menuVal[24]), double(menuVal[25]), double(menuVal[26]), P_ON_E);
         }
         else
         {
             myPID.SetMode(AUTOMATIC); //
             myPID.SetControllerDirection(DIRECT);
-            myPID.SetSampleTime(settings.pidDt);
-            myPID.SetTunings(double(settings.pidKp), double(settings.pidKi), double(settings.pidKd),P_ON_M);
+            myPID.SetSampleTime(menuVal[27]);
+            myPID.SetTunings(double(menuVal[24]), double(menuVal[25]), double(menuVal[26]), P_ON_M);
         }
 
         if (iDryer.data.ntcTemp >= iDryer.temperature) //TODO:  првоерить что это целевая температура iDryer.temperature
@@ -729,15 +764,15 @@ void loop()
         {
             myPID.SetMode(AUTOMATIC); //
             myPID.SetControllerDirection(DIRECT);
-            myPID.SetSampleTime(settings.pidDt);
-            myPID.SetTunings(double(settings.pidKp), double(settings.pidKi), double(settings.pidKd), P_ON_E);
+            myPID.SetSampleTime(menuVal[27]);
+            myPID.SetTunings(double(menuVal[24]), double(menuVal[25]), double(menuVal[26]), P_ON_E);
         }
         else
         {
             myPID.SetMode(AUTOMATIC); //
             myPID.SetControllerDirection(DIRECT);
-            myPID.SetSampleTime(settings.pidDt);
-            myPID.SetTunings(double(settings.pidKp), double(settings.pidKi), double(settings.pidKd), P_ON_M);            
+            myPID.SetSampleTime(menuVal[27]);
+            myPID.SetTunings(double(menuVal[24]), double(menuVal[25]), double(menuVal[26]),P_ON_M);            
         }
 
         if (iDryer.data.ntcTemp >= iDryer.temperature) //TODO:  првоерить что это целевая температура iDryer.temperature
@@ -790,7 +825,7 @@ void loop()
         PIDAutotuner tuner = PIDAutotuner();
         // tuner.setTargetInputValue(targetInputValue);
         tuner.setTargetInputValue(iDryer.data.setTemp);
-        tuner.setLoopInterval(uint32_t(settings.pidDt) * 1000);
+        tuner.setLoopInterval(uint32_t(menuVal[27]) * 1000);
         tuner.setTuningCycles(20);
         tuner.setOutputRange(0, 255);
         tuner.setZNMode(PIDAutotuner::ZNModeNoOvershoot); // ZNModeNoOvershoot - Defaults,   ZNModeBasicPID
@@ -814,7 +849,7 @@ void loop()
             analogWrite(DIMMER_PIN, uint8_t(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)));
 #endif
 
-            uint32_t new_loop = uint32_t(settings.pidDt) * 1000;
+            uint32_t new_loop = uint32_t(menuVal[27]) * 1000;
 
                 // TODO чтонить про процесс пидования написать
                 oled.firstPage();
@@ -843,7 +878,7 @@ void loop()
                     oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
                 } while (oled.nextPage());
 
-            delay(settings.pidDt); //while (micros() - microseconds < new_loop)
+            delay(menuVal[27]); //while (micros() - microseconds < new_loop)
 
             // Serial.println("ntc:" + String(ntc.analog2temp()));
             // Serial.print("\toutput:" + String(output));
@@ -856,12 +891,11 @@ void loop()
         analogWrite(DIMMER_PIN, 0);
 
         // Сохраняем
-        settings.state = 123;
-        settings.pidKp = tuner.getKp();
-        settings.pidKi = tuner.getKi();
-        settings.pidKd = tuner.getKd();
-        settings.pidDt = settings.pidDt;
-        EEPROM.put(0, settings);
+        // settings.state = 123;
+        menuVal[24] = tuner.getKp();
+        menuVal[25] = tuner.getKi();
+        menuVal[26] = tuner.getKd();
+        EEPROM.put(0, menuVal);
 
         do
         {
@@ -1094,7 +1128,7 @@ void screen(struct subMenu *subMenu)
 void dryStart()
 {
     state = DRY;
-    EEPROM.put(settingsSize, menuVal);
+    EEPROM.put(0, menuVal);
     iDryer.data.setTemp = menuVal[subMenuM.parentID + 1];
     iDryer.data.setTime = menuVal[subMenuM.parentID + 2];
     analogWrite(FAN, map(menuVal[24], 0, 100, 0, 255)); //!! Что-то придумать!!!
@@ -1107,7 +1141,7 @@ void dryStart()
 void storageStart()
 {
     state = STORAGE;
-    EEPROM.put(settingsSize, menuVal);
+    EEPROM.put(0, menuVal);
     iDryer.data.setTemp = menuVal[subMenuM.parentID + 1];
     iDryer.data.setHumidity = menuVal[subMenuM.parentID + 2];
 
@@ -1122,7 +1156,7 @@ void autoPidM()
 
 void saveAll()
 {
-    EEPROM.put(0, settings);
-    EEPROM.put(settingsSize, menuVal);
+    EEPROM.put(0, menuVal);
+    //EEPROM.put(settingsSize, menuVal);
     // Serial.println("SAVE ALL");
 }
