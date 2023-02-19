@@ -8,75 +8,21 @@
 #include <PID_v1.h>
 #include <pidautotuner.h> //!! https://github.com/jackw01/arduino-pid-autotuner
 #include <thermistor.h>
+#include <Configuration.h>
 #include "menu.h"
 #include "font.h"
 
-//!! Выбери свой термистор TEMP_SENSOR_0 из списка в файле Configuration.h
-// TODO перетащить дефайны етрмисторов сюда
-
-//===========================================================================
-//============================= Thermal Settings ============================
-//===========================================================================
-
-/**
- * --NORMAL IS 4.7kohm PULLUP!-- 1kohm pullup can be used on hotend sensor, using correct resistor and table
- *
- * Temperature sensors available:
- *
- *    -3 : thermocouple with MAX31855 (only for sensor 0)
- *    -2 : thermocouple with MAX6675 (only for sensor 0)
- *    -1 : thermocouple with AD595
- *     0 : not used
- *     1 : 100k thermistor - best choice for EPCOS 100k (4.7k pullup)
- *     2 : 200k thermistor - ATC Semitec 204GT-2 (4.7k pullup)
- *     3 : Mendel-parts thermistor (4.7k pullup)
- *     4 : 10k thermistor !! do not use it for a hotend. It gives bad resolution at high temp. !!
- *     5 : 100K thermistor - ATC Semitec 104GT-2 (Used in ParCan & J-Head) (4.7k pullup)
- *     6 : 100k EPCOS - Not as accurate as table 1 (created using a fluke thermocouple) (4.7k pullup)
- *     7 : 100k Honeywell thermistor 135-104LAG-J01 (4.7k pullup)
- *    71 : 100k Honeywell thermistor 135-104LAF-J01 (4.7k pullup)
- *     8 : 100k 0603 SMD Vishay NTCS0603E3104FXT (4.7k pullup)
- *     9 : 100k GE Sensing AL03006-58.2K-97-G1 (4.7k pullup)
- *    10 : 100k RS thermistor 198-961 (4.7k pullup)
- *    11 : 100k beta 3950 1% thermistor (4.7k pullup)
- *    12 : 100k 0603 SMD Vishay NTCS0603E3104FXT (4.7k pullup) (calibrated for Makibox hot bed)
- *    13 : 100k Hisens 3950  1% up to 300°C for hotend "Simple ONE " & "Hotend "All In ONE"
- *    20 : the PT100 circuit found in the Ultimainboard V2.x
- *    60 : 100k Maker's Tool Works Kapton Bed Thermistor beta=3950
- *    66 : 4.7M High Temperature thermistor from Dyze Design
- *    70 : the 100K thermistor found in the bq Hephestos 2
- *    75 : 100k Generic Silicon Heat Pad with NTC 100K MGB18-104F39050L32 thermistor
- *
- *       1k ohm pullup tables - This is atypical, and requires changing out the 4.7k pullup for 1k.
- *                              (but gives greater accuracy and more stable PID)
- *    51 : 100k thermistor - EPCOS (1k pullup)
- *    52 : 200k thermistor - ATC Semitec 204GT-2 (1k pullup)
- *    55 : 100k thermistor - ATC Semitec 104GT-2 (Used in ParCan & J-Head) (1k pullup)
- *
- *  1047 : Pt1000 with 4k7 pullup
- *  1010 : Pt1000 with 1k pullup (non standard)
- *   147 : Pt100 with 4k7 pullup
- *   148 : E3D Pt100 with 4k7 pullup
- *   110 : Pt100 with 1k pullup (non standard)
- *
- *         Use these for Testing or Development purposes. NEVER for production machine.
- *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
- *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
- * */
-
-// #define TEMP_SENSOR_0 4
-// Screen rotation 0 - norm, 1 - rev
-#define SCREEN_FLIP 1
-#define HEATER_MAX 255     // 0-255 PWM 8bit
-#define AUTOPID_ATTEMPT 20 // Autopid attemption
-
-#define NTC_PIN 0
+#if REV == 0
+  #define ERROR
+#elif REV == 1
+  #define v220V
+#elif REV == 2
+  #define v24V
+#endif
 
 // #define DEBUG
-//!! Раскомментируй для своей версии платы
-// #define v220V
-#define v24V
 
+#define NTC_PIN 0
 // Димер
 #ifdef v220V
 #define ZERO_PIN 2 // пин детектора нуля
@@ -93,7 +39,7 @@
 #define SCREEN_LINES 4
 #define MENU_HEADER 1
 
-typedef enum stateS
+enum stateS
 {
     OFF,
     ON,
@@ -157,11 +103,6 @@ enum levelV
     UP,
 };
 
-// void testFuc_1()
-// {
-//     Serial.println("УРРРРА\nЗА\nРА\nБО\nТА\nЛА\n");
-// }
-
 struct control // это могут быть и кнопки
 {
     bool ok = 0;
@@ -188,25 +129,21 @@ struct subMenu
     int8_t max;
 };
 
-// struct Settings
-// {
-//     uint8_t state = 0;
-//     float pidKp = 0;
-//     float pidKi = 0;
-//     float pidKd = 0;
-//     uint16_t pidDt = 0;
-// };
-
 control controls;
 subMenu subMenuM;
-// Settings settings;
 
 thermistor ntc(NTC_PIN, 0);
 GyverBME280 bme;
 
-// В случае необходимости поменяй экран
-//  U8G2_SH1106_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
-U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
+
+#if SCREEN == 0
+  #define ERROR
+#elif SCREEN == 1
+  U8G2_SH1106_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+#elif SCREEN == 2
+  U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
+#endif
+
 
 Encoder enc(CLK, DT, encBut, TYPE1);
 
@@ -246,23 +183,6 @@ public:
         data.bmeTemp = bme.readTemperature();
         data.bmeHumidity = bme.readHumidity();
 
-        // if (data.bmeTemp < data.setTemp - HESTERESIS)
-        //     temperature = data.setTemp + 10;
-        // if (data.bmeTemp > data.setTemp - HESTERESIS / 2)
-        //     temperature = data.setTemp + 5;
-        // if (data.bmeTemp > data.setTemp - HESTERESIS && data.bmeTemp < data.setTemp + HESTERESIS)
-        //     temperature = data.setTemp;
-        // if (data.bmeTemp >= data.setTemp - HESTERESIS / 2)
-        //     temperature = data.setTemp;
-
-        // if (data.bmeTemp <= data.setTemp)
-        // {
-        // temperature = (data.ntcTemp + data.bmeTemp) / 2;
-        // }
-        // else
-        // {
-        //     temperature = data.setTemp;
-        // }
 
         if (data.ntcTemp < TMP_MIN ||
             data.ntcTemp > TMP_MAX ||
@@ -444,10 +364,8 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
 
 void setup()
 {
-
     Serial.begin(115200);
 
-    // settingsSize = sizeof(settings);
     menuSize = sizeof(menuPGM) / sizeof(menuPGM[0]);
 
 #ifdef DEBUG
@@ -455,31 +373,10 @@ void setup()
     Serial.println("menuSize: " + String(menuSize));
 #endif
 
-    // EEPROM.get(0, settings);
-    // if (settings.state != 123)
-    // {
-    //     settings.state = 123;
-    //     settings.pidKp = 148.70;
-    //     settings.pidKi = 22.86;
-    //     settings.pidKd = 241.85;
-    //     menuVal[27] = 500;
-    //     EEPROM.put(0, menuVal);
-    //     delay(10);
-    // }
-    // myPID.SetMode(AUTOMATIC); //
-    // myPID.SetControllerDirection(DIRECT);
-    // myPID.SetTunings(double(settings.pidKp), double(settings.pidKi), double(settings.pidKd), P_ON_M);
-    // myPID.SetSampleTime(menuVal[27]);
-    // Serial.println(settings.state);
-    // Serial.println(settings.pidKp);
-    // Serial.println(settings.pidKi);
-    // Serial.println(settings.pidKd);
-    // Serial.println(menuVal[27]);
-
     uint16_t test;
     EEPROM.get(0, test);
 
-    if (test != 123)
+    if (test != 1234)
     {
         EEPROM.put(0, menuVal);
     }
@@ -815,9 +712,12 @@ void loop()
         break;
     case AUTOPID:
         analogWrite(FAN, 200);
-        PIDAutotuner tuner = PIDAutotuner();
+        char pidTxt[25];
+
+        // PIDAutotuner tuner = PIDAutotuner();
+        PIDAutotuner tuner;
         // tuner.setTargetInputValue(targetInputValue);
-        tuner.setTargetInputValue(iDryer.data.setTemp); // TODO вынести переменную температуры для калибровки пидов в меню
+        tuner.setTargetInputValue(iDryer.data.setTemp);
         tuner.setLoopInterval(uint32_t(iDryer.data.sampleTime) * 1000);
         tuner.setTuningCycles(AUTOPID_ATTEMPT);
         tuner.setOutputRange(0, HEATER_MAX);
@@ -827,11 +727,11 @@ void loop()
         unsigned long microseconds;
         while (!tuner.isFinished())
         {
-            unsigned long prevMicroseconds = microseconds;
+            // unsigned long prevMicroseconds = microseconds;
             microseconds = micros();
 
             iDryer.getData();
-            double output = tuner.tunePID(double(iDryer.data.ntcTemp), microseconds);
+            // double output = tuner.tunePID(double(iDryer.data.ntcTemp), microseconds);
 
 #ifdef v220V
             // dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
@@ -843,11 +743,9 @@ void loop()
 
             // uint32_t new_loop = uint32_t(iDryer.data.sampleTime) * 1000;
 
-            // TODO чтонить про процесс пидования написать
             oled.firstPage();
             do
             {
-                char pidTxt[10];
                 oled.setFont(u8g2_font);
 
                 // oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuPGM[28].text))) / 2, lineHight * 1, printMenuItem(&menuPGM[28].text));
@@ -893,7 +791,6 @@ void loop()
 
         do
         {
-            char pidTxt[10];
             oled.setFont(u8g2_font);
             oled.drawUTF8(34, lineHight * 2, printMenuItem(&menuPGM[23].text));
             sprintf(pidTxt, "СОХРАНЕНЕНО");
@@ -911,7 +808,6 @@ void loop()
         do
         {
             oled.setFont(u8g2_font);
-            char pidTxt[10];
             oled.drawUTF8(34, lineHight * 2, printMenuItem(&menuPGM[23].text));
             sprintf(pidTxt, "ОХЛАЖДЕНИЕ");
             oled.drawUTF8(28, lineHight * 3, pidTxt);
@@ -927,8 +823,6 @@ void loop()
         delay(60000);
 
         state = MENU;
-        break;
-    default:
         break;
     }
 }
@@ -1100,7 +994,7 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
 
 void screen(struct subMenu *subMenu)
 {
-    uint8_t lineHight = 16;
+    // uint8_t lineHight = 16;
     uint8_t maxPos = SCREEN_LINES - MENU_HEADER <= subMenu->membersQuantity ? SCREEN_LINES - MENU_HEADER - 1 : subMenu->membersQuantity - 1;
     uint8_t pointerPos = constrain(subMenu->position, 0, maxPos);
     uint8_t screenStartPos = subMenu->position < SCREEN_LINES - MENU_HEADER - 1 ? 0 : subMenu->position - maxPos;
@@ -1127,10 +1021,9 @@ void dryStart()
     iDryer.data.setTime = menuVal[subMenuM.parentID + 2];
     iDryer.temperature = iDryer.data.setTemp;
 
-    analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)); //!! Что-то придумать!!!
+    analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
 
     iDryer.data.startTime = millis();
-
     // Serial.println("DRY START");
 }
 
@@ -1142,7 +1035,7 @@ void storageStart()
     iDryer.data.setTime = menuVal[subMenuM.parentID + 2];
     iDryer.temperature = iDryer.data.setTemp;
 
-    analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)); //!! Что-то придумать!!!
+    analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
     // Serial.println("STORAGE START");
 }
 

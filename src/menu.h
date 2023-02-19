@@ -3,13 +3,11 @@
 
 struct menuS
 {
-  uint8_t id;
-  uint8_t parentID;
-  // uint8_t level;
-  const char *text;
-  uint16_t min;
-  uint16_t max;
-  // double inc; //TODO
+    uint8_t id;
+    uint8_t parentID;
+    const char *text;
+    uint16_t min;
+    uint16_t max;
 };
 
 void dryStart();
@@ -28,7 +26,6 @@ const char l4[] PROGMEM = "ПРОВЕРЬ";
 const char l5[] PROGMEM = "ТЕРМИСТОР";
 const char l6[] PROGMEM = "ПЕРЕГУЗИ";
 
-
 const char *const txt[] PROGMEM = {
     s0,
     s1,
@@ -39,7 +36,7 @@ const char *const txt[] PROGMEM = {
     l4,
     l5,
     l6,
-    };
+};
 //!! НЕ УДАЛЯТЬ
 
 const char i0[] PROGMEM = "МЕНЮ";
@@ -69,10 +66,12 @@ const char i23[] PROGMEM = "ПИД";
 const char i24[] PROGMEM = "П";
 const char i25[] PROGMEM = "И";
 const char i26[] PROGMEM = "Д";
-const char i27[] PROGMEM = "ВРЕМЯ";
-const char i28[] PROGMEM = "АВТОПИД";
-const char i29[] PROGMEM = "ОБДУВ";
-const char i30[] PROGMEM = "СОХРАНИТЬ";
+const char i27[] PROGMEM = "АВТОПИД";
+const char i28[] PROGMEM = "ВРЕМЯ/МС";
+const char i29[] PROGMEM = "ТЕМП.";
+const char i30[] PROGMEM = "СТАРТ";
+const char i31[] PROGMEM = "ОБДУВ";
+const char i32[] PROGMEM = "СОХРАНИТЬ";
 
 const menuS menuPGM[] PROGMEM = {
     {0, NULL, i0, 0, 0},
@@ -102,10 +101,12 @@ const menuS menuPGM[] PROGMEM = {
     {24, 23, i24, 0, 10000},
     {25, 23, i25, 0, 10000},
     {26, 23, i26, 0, 10000},
-    {27, 23, i27, 500, 10000},
-    {28, 23, i28, 0, 0},
-    {29, 22, i29, 20, 100},
-    {30, 22, i30, 0, 0},
+    {27, 23, i27, 0, 0},
+    {28, 27, i28, 200, 10000},
+    {29, 27, i29, 30, 100},
+    {30, 27, i30, 0, 0},
+    {31, 22, i31, 20, 100},
+    {32, 22, i32, 0, 0},
 };
 
 uint16_t menuVal[] =
@@ -137,7 +138,9 @@ uint16_t menuVal[] =
         400,
         200,
         200,
+        0,
         500,
+        60,
         0,
         50,
         0,
@@ -168,6 +171,8 @@ const ptrFunc menuFunc[]{
     NULL,
     NULL,
     &dryStart,
+    NULL,
+    NULL,
     NULL,
     NULL,
     NULL,
