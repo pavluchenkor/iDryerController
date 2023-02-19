@@ -64,9 +64,11 @@
  *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
  * */
 
-// #define TEMP_SENSOR_0 4 
-// Переворот экрана 0 - нормально, 1 - перевернуто
-#define SCREEN_FLIP 1 
+// #define TEMP_SENSOR_0 4
+// Screen rotation 0 - norm, 1 - rev
+#define SCREEN_FLIP 1
+#define HEATER_MAX 255     // 0-255 PWM 8bit
+#define AUTOPID_ATTEMPT 20 // Autopid attemption
 
 #define NTC_PIN 0
 
@@ -103,7 +105,6 @@ typedef enum stateS
 };
 
 #define MAX_ERROR 10
-#define AUTOPID_ATTEMPT 7
 
 #define TMP_MIN 10
 #define TMP_MAX 120
@@ -147,6 +148,7 @@ uint8_t menuSize = 0;
 uint8_t settingsSize = 0;
 uint8_t buzzerAlarm = 0;
 unsigned long oldTime = 0;
+unsigned long oldTimer = 0;
 
 enum levelV
 {
@@ -223,6 +225,14 @@ struct Data
     uint8_t setTemp = 0;
     uint8_t setHumidity = 0;
     uint16_t setTime = 0;
+
+    uint8_t setFan = 0;
+    double Kp = 0.0;
+    double Ki = 0.0;
+    double Kd = 0.0;
+    uint16_t sampleTime = 0;
+
+    // uint8_t setFan = 0;
 };
 
 class iDryer
@@ -253,9 +263,7 @@ public:
         // {
         //     temperature = data.setTemp;
         // }
-        temperature = data.setTemp;
 
-        
         if (data.ntcTemp < TMP_MIN ||
             data.ntcTemp > TMP_MAX ||
             data.bmeTemp < TMP_MIN ||
@@ -265,6 +273,7 @@ public:
         }
         return true;
     }
+
 } iDryer;
 
 #ifdef v220V
@@ -295,7 +304,7 @@ ISR(TIMER1_A)
     digitalWrite(DIMMER_PIN, 1); // включаем симистор
     Timer1.stop();               // останавливаем таймер
 #ifdef DEBUG
-        testTIMER_STATE = 0;
+    testTIMER_STATE = 0;
 #endif
 }
 #endif
@@ -427,6 +436,7 @@ void dispalyPrintMode()
     } while (oled.nextPage());
 }
 
+void updateIDyerData();
 void encoderSate(struct control *control);
 void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct control *encoder, struct subMenu *subMenu);
 void screen(struct subMenu *subMenu);
@@ -477,13 +487,13 @@ void setup()
     delay(10);
     EEPROM.get(0, menuVal);
 
+    updateIDyerData();
+
     myPID.SetMode(AUTOMATIC); //
     myPID.SetControllerDirection(DIRECT);
-    // myPID.SetTunings(double(settings.pidKp), double(settings.pidKi), double(settings.pidKd), P_ON_M);
-    // myPID.SetSampleTime(menuVal[27]);
-    myPID.SetTunings(double(menuVal[24]), double(menuVal[25]), double(menuVal[26]), P_ON_M);
-    myPID.SetSampleTime(menuVal[26]);
-
+    myPID.SetOutputLimits(0, HEATER_MAX);
+    myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_M);
+    myPID.SetSampleTime(iDryer.data.sampleTime);
 
 // Диммер
 #ifdef v220V
@@ -547,7 +557,6 @@ void setup()
     subMenuM.parentID = 0;
     subMenuM.position = 0;
     memset(subMenuM.membersID, 0, sizeof(subMenuM.membersID) / sizeof(subMenuM.membersID[0]));
-
 }
 
 void loop()
@@ -555,9 +564,9 @@ void loop()
 #ifdef DEBUG
     // analogWrite(FAN, 230);
     // analogWrite(DIMMER_PIN, 230);
-    //analogWrite(BUZZER_PIN, 490 / 255 * 1);
+    // analogWrite(BUZZER_PIN, 490 / 255 * 1);
     // Serial.println("state: " + String(state));
-    
+
     // if(millis() % 5 == 0) Serial.println("testPWM: " + String(testPWM) + "\ttestTIMER_STATE: " + String(testTIMER_STATE) + "\ttestTIMER_COUNT: " + String(testTIMER_COUNT) + "\tdimmer: " + String(dimmer));
 
     // if(isrFlag)
@@ -648,16 +657,16 @@ void loop()
         /* code */
         break;
     case ON:
-// #ifdef DEBUG
-//         Serial.println("-----------> state: ON");
-// #endif
+        // #ifdef DEBUG
+        //         Serial.println("-----------> state: ON");
+        // #endif
         break;
     case MENU:
 
-// #ifdef DEBUG
-//         Serial.println("-----------> state: MENU");
-// #endif
-        analogWrite(FAN, 0); //!! Что-то придумать!!!
+        // #ifdef DEBUG
+        //         Serial.println("-----------> state: MENU");
+        // #endif
+        analogWrite(FAN, 0);        //!! Что-то придумать!!!
         analogWrite(DIMMER_PIN, 0); //!! Что-то придумать!!!
         enc.tick();
         encoderSate(&controls);
@@ -687,36 +696,30 @@ void loop()
 
         if (iDryer.data.ntcTemp < Setpoint && iDryer.temperature - Setpoint > 5)
         {
-            myPID.SetMode(AUTOMATIC); //
-            myPID.SetControllerDirection(DIRECT);
-            myPID.SetSampleTime(menuVal[27]);
-            myPID.SetTunings(double(menuVal[24]), double(menuVal[25]), double(menuVal[26]), P_ON_E);
+            myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
         }
         else
         {
-            myPID.SetMode(AUTOMATIC); //
-            myPID.SetControllerDirection(DIRECT);
-            myPID.SetSampleTime(menuVal[27]);
-            myPID.SetTunings(double(menuVal[24]), double(menuVal[25]), double(menuVal[26]), P_ON_M);
+            myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_M);
         }
 
-        if (iDryer.data.ntcTemp >= iDryer.temperature) //TODO:  првоерить что это целевая температура iDryer.temperature
+        if (iDryer.data.ntcTemp >= iDryer.temperature) // TODO:  првоерить что это целевая температура iDryer.temperature
         {
             if (millis() - oldTime > 1000)
             {
-            oldTime = millis();
-            Setpoint = iDryer.temperature + iDryer.data.ntcTemp - iDryer.data.bmeTemp;
-            if (Setpoint > iDryer.temperature + 10) Setpoint = iDryer.temperature + 10;
+                oldTime = millis();
+                Setpoint = iDryer.temperature + iDryer.data.ntcTemp - iDryer.data.bmeTemp;
+                if (Setpoint > iDryer.temperature + 10)
+                    Setpoint = iDryer.temperature + 10;
             }
         }
         else
         {
-        Setpoint = iDryer.temperature + 2;
+            Setpoint = iDryer.temperature + 2;
         }
 
         Input = double(iDryer.data.ntcTemp);
         myPID.Compute();
-
 
 #ifdef v220V
 #ifdef DEBUG
@@ -731,20 +734,19 @@ void loop()
         // Serial.println("setpoint: " + String(regulator.setpoint) + "\tntcTemp: " + String(iDryer.data.ntcTemp) +  "PWM: " + String(regulator.getResult()));
         analogWrite(DIMMER_PIN, Output);
 #endif
-        //Serial.println("ntcTemp: " + String(uint8_t(iDryer.data.ntcTemp)) +  "\tbmeTemp: " + String(uint8_t(iDryer.data.bmeTemp)) + "\tPWM: " + String(uint8_t(regulator.getResult()))); //
-        if (millis() - oldTime >= 1000 * 60) //!!НАПИСАТЬ ИМЕНА
+        // Serial.println("ntcTemp: " + String(uint8_t(iDryer.data.ntcTemp)) +  "\tbmeTemp: " + String(uint8_t(iDryer.data.bmeTemp)) + "\tPWM: " + String(uint8_t(regulator.getResult()))); //
+        if (millis() - oldTimer >= 60000) //!!НАПИСАТЬ ИМЕНА
         {
-            oldTime = millis();
-            // Serial.println("Прошла минута");
+            oldTimer = millis();
             iDryer.data.setTime--;
         }
 
         if (iDryer.data.setTime == 0)
         {
-            oldTime = 0;
+            oldTimer = 0;
             state = STORAGE; // автоматический переход в режим хранения
         }
-        
+
         break;
     case STORAGE:
         // Serial.println("STORAGE");
@@ -759,43 +761,34 @@ void loop()
                 state = NTC_ERROR;
         }
 
-
         if (iDryer.data.ntcTemp < Setpoint && iDryer.temperature - Setpoint > 5)
         {
-            myPID.SetMode(AUTOMATIC); //
-            myPID.SetControllerDirection(DIRECT);
-            myPID.SetSampleTime(menuVal[27]);
-            myPID.SetTunings(double(menuVal[24]), double(menuVal[25]), double(menuVal[26]), P_ON_E);
+            myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
         }
         else
         {
-            myPID.SetMode(AUTOMATIC); //
-            myPID.SetControllerDirection(DIRECT);
-            myPID.SetSampleTime(menuVal[27]);
-            myPID.SetTunings(double(menuVal[24]), double(menuVal[25]), double(menuVal[26]),P_ON_M);            
+            myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_M);
         }
 
-        if (iDryer.data.ntcTemp >= iDryer.temperature) //TODO:  првоерить что это целевая температура iDryer.temperature
+        if (iDryer.data.ntcTemp >= iDryer.temperature) // TODO:  првоерить что это целевая температура iDryer.temperature
         {
             if (millis() - oldTime > 1000)
             {
-            oldTime = millis();
-            Setpoint = iDryer.temperature + iDryer.data.ntcTemp - iDryer.data.bmeTemp;
-            if (Setpoint > iDryer.temperature + 10) Setpoint = iDryer.temperature + 10;
+                oldTime = millis();
+                Setpoint = iDryer.temperature + iDryer.data.ntcTemp - iDryer.data.bmeTemp;
+                if (Setpoint > iDryer.temperature + 10)
+                    Setpoint = iDryer.temperature + 10;
             }
         }
         else
         {
-        Setpoint = iDryer.temperature + 2;
+            Setpoint = iDryer.temperature + 2;
         }
 
         if (iDryer.data.setHumidity > iDryer.data.bmeHumidity)
         {
             Input = double(iDryer.data.ntcTemp);
             myPID.Compute();
-
-            // regulator.setpoint = iDryer.temperature;
-            // regulator.input = iDryer.data.ntcTemp;
 
 #ifdef v220V
             dimmer = map(Output, 0, 255, 500, 9300);
@@ -824,10 +817,10 @@ void loop()
         analogWrite(FAN, 200);
         PIDAutotuner tuner = PIDAutotuner();
         // tuner.setTargetInputValue(targetInputValue);
-        tuner.setTargetInputValue(iDryer.data.setTemp);
-        tuner.setLoopInterval(uint32_t(menuVal[27]) * 1000);
-        tuner.setTuningCycles(20);
-        tuner.setOutputRange(0, 255);
+        tuner.setTargetInputValue(iDryer.data.setTemp); // TODO вынести переменную температуры для калибровки пидов в меню
+        tuner.setLoopInterval(uint32_t(iDryer.data.sampleTime) * 1000);
+        tuner.setTuningCycles(AUTOPID_ATTEMPT);
+        tuner.setOutputRange(0, HEATER_MAX);
         tuner.setZNMode(PIDAutotuner::ZNModeNoOvershoot); // ZNModeNoOvershoot - Defaults,   ZNModeBasicPID
         tuner.startTuningLoop(micros());
 
@@ -844,41 +837,41 @@ void loop()
             // dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
             dimmer = map(uint8_t(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)), 0, 255, 500, 9300);
 #endif
-
 #ifdef v24V
             analogWrite(DIMMER_PIN, uint8_t(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)));
 #endif
 
-            uint32_t new_loop = uint32_t(menuVal[27]) * 1000;
+            // uint32_t new_loop = uint32_t(iDryer.data.sampleTime) * 1000;
 
-                // TODO чтонить про процесс пидования написать
-                oled.firstPage();
-                do
-                {
-                    char pidTxt[10];
-                    oled.setFont(u8g2_font);
-                    oled.drawUTF8(34, lineHight * 2, printMenuItem(&menuPGM[23].text));
+            // TODO чтонить про процесс пидования написать
+            oled.firstPage();
+            do
+            {
+                char pidTxt[10];
+                oled.setFont(u8g2_font);
 
-                    sprintf(pidTxt, "C: %d  T: %d", tuner.getCycle(), (uint8_t)ntc.analog2temp());
-                    oled.drawUTF8(10, lineHight * 1, pidTxt);
+                // oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuPGM[28].text))) / 2, lineHight * 1, printMenuItem(&menuPGM[28].text));
 
-                    sprintf(pidTxt, "Кп %d", (uint8_t)tuner.getKp());
-                    oled.drawUTF8(14, lineHight * 2, pidTxt);
+                sprintf(pidTxt, "ТСТ-%d/%d  %dС", tuner.getCycle() + 1, AUTOPID_ATTEMPT, (uint8_t)ntc.analog2temp());
+                oled.drawUTF8((128 - oled.getUTF8Width(pidTxt)) / 2, lineHight * 1, pidTxt);
 
-                    sprintf(pidTxt, "Ки %d", (uint8_t)tuner.getKi());
-                    oled.drawUTF8(14, lineHight * 3, pidTxt);
+                sprintf(pidTxt, "КП %5d", (uint16_t)tuner.getKp());
+                oled.drawUTF8((128 - oled.getUTF8Width(pidTxt)) / 2, lineHight * 2, pidTxt);
 
-                    sprintf(pidTxt, "Кд %d", (uint8_t)tuner.getKd());
-                    oled.drawUTF8(14, lineHight * 4, pidTxt);
+                sprintf(pidTxt, "КИ %5d", (uint16_t)tuner.getKi());
+                oled.drawUTF8((128 - oled.getUTF8Width(pidTxt)) / 2, lineHight * 3, pidTxt);
 
-                    // oled.drawUTF8(20, lineHight * 3, *pidTxt);
-                    oled.drawButtonUTF8(0, 1 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
-                    oled.drawButtonUTF8(0, 2 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
-                    oled.drawButtonUTF8(0, 3 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
-                    oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
-                } while (oled.nextPage());
+                sprintf(pidTxt, "КД %5d", (uint16_t)tuner.getKd());
+                oled.drawUTF8((128 - oled.getUTF8Width(pidTxt)) / 2, lineHight * 4, pidTxt);
 
-            delay(menuVal[27]); //while (micros() - microseconds < new_loop)
+                // oled.drawUTF8(20, lineHight * 3, *pidTxt);
+                oled.drawButtonUTF8(0, 1 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+                oled.drawButtonUTF8(0, 2 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+                oled.drawButtonUTF8(0, 3 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+                oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+            } while (oled.nextPage());
+
+            delay(iDryer.data.sampleTime); // while (micros() - microseconds < new_loop)
 
             // Serial.println("ntc:" + String(ntc.analog2temp()));
             // Serial.print("\toutput:" + String(output));
@@ -895,6 +888,7 @@ void loop()
         menuVal[24] = tuner.getKp();
         menuVal[25] = tuner.getKi();
         menuVal[26] = tuner.getKd();
+        updateIDyerData();
         EEPROM.put(0, menuVal);
 
         do
@@ -910,7 +904,7 @@ void loop()
             oled.drawButtonUTF8(0, 3 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
             oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
         } while (oled.nextPage());
-        
+
         analogWrite(FAN, 250);
         delay(1000);
 
@@ -1131,7 +1125,9 @@ void dryStart()
     EEPROM.put(0, menuVal);
     iDryer.data.setTemp = menuVal[subMenuM.parentID + 1];
     iDryer.data.setTime = menuVal[subMenuM.parentID + 2];
-    analogWrite(FAN, map(menuVal[24], 0, 100, 0, 255)); //!! Что-то придумать!!!
+    iDryer.temperature = iDryer.data.setTemp;
+
+    analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)); //!! Что-то придумать!!!
 
     iDryer.data.startTime = millis();
 
@@ -1143,9 +1139,10 @@ void storageStart()
     state = STORAGE;
     EEPROM.put(0, menuVal);
     iDryer.data.setTemp = menuVal[subMenuM.parentID + 1];
-    iDryer.data.setHumidity = menuVal[subMenuM.parentID + 2];
+    iDryer.data.setTime = menuVal[subMenuM.parentID + 2];
+    iDryer.temperature = iDryer.data.setTemp;
 
-    analogWrite(FAN, map(menuVal[24], 0, 100, 0, 255)); //!! Что-то придумать!!!
+    analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)); //!! Что-то придумать!!!
     // Serial.println("STORAGE START");
 }
 
@@ -1154,9 +1151,20 @@ void autoPidM()
     state = AUTOPID;
 }
 
+void updateIDyerData()
+{
+    iDryer.data.setFan = menuVal[29];
+    iDryer.data.Kp = menuVal[24];
+    iDryer.data.Ki = menuVal[25];
+    iDryer.data.Kd = menuVal[26];
+    iDryer.data.sampleTime = menuVal[27];
+    myPID.SetSampleTime(iDryer.data.sampleTime);
+}
+
 void saveAll()
 {
+    updateIDyerData();
     EEPROM.put(0, menuVal);
-    //EEPROM.put(settingsSize, menuVal);
-    // Serial.println("SAVE ALL");
+    // EEPROM.put(settingsSize, menuVal);
+    //  Serial.println("SAVE ALL");
 }
