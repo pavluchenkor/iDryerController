@@ -1,6 +1,7 @@
 ﻿#ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
+
 /**
  * --NORMAL IS 4.7kohm PULLUP!-- 1kohm pullup can be used on hotend sensor, using correct resistor and table
  *

@@ -255,14 +255,14 @@ ISR(PCINT1_vect)
 
 char *printMenuItem(const char *const *text) // печать строки из prm
 {
-    static char buffer[20];
+    static char buffer[22]; //TODO Проверить 11 символов на экране 20/22
     uint16_t ptr = pgm_read_word(text);
     uint8_t i = 0;
 
     do
     {
         buffer[i] = (char)(pgm_read_byte(ptr++));
-    } while (i++ != 20);
+    } while (i++ != 22);
 
     return buffer;
 }
