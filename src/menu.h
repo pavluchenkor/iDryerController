@@ -71,7 +71,8 @@ const char i28[] PROGMEM = "ВРЕМЯ/МС";
 const char i29[] PROGMEM = "ТЕМПЕРАТУРА";
 const char i30[] PROGMEM = "СТАРТ";
 const char i31[] PROGMEM = "ОБДУВ";
-const char i32[] PROGMEM = "СОХРАНИТЬ";
+const char i32[] PROGMEM = "ДЕЛЬТА";
+const char i33[] PROGMEM = "СОХРАНИТЬ";
 
 const menuS menuPGM[] PROGMEM = {
     {0, NULL, i0, 0, 0},
@@ -106,7 +107,8 @@ const menuS menuPGM[] PROGMEM = {
     {29, 27, i29, 30, 100},
     {30, 27, i30, 0, 0},
     {31, 22, i31, 20, 100},
-    {32, 22, i32, 0, 0},
+    {32, 22, i32, 0, 15},
+    {33, 22, i33, 0, 0},
 };
 
 uint16_t menuVal[] =
@@ -143,6 +145,7 @@ uint16_t menuVal[] =
         60,
         0,
         50,
+        8,
         0,
 };
 
@@ -180,6 +183,7 @@ const ptrFunc menuFunc[]{
     NULL,
     NULL,
     &autoPidM,
+    NULL,
     NULL,
     &saveAll,
 };

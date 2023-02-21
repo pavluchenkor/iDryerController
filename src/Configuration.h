@@ -62,13 +62,18 @@
 
 /** Autopid attemption **/
 #define AUTOPID_ATTEMPT 20
+//TODO: !!
+#define K_PROPRTIONAL 0
+#define K_INTEGRAL 0
+#define K_DERIVATIVE 0
+#define K_SAMPLE_TIME 0
 
 /**
  * Your revision PCB
  * 1 - 220v revision
  * 2 - 24v revision
  **/
-#define REV 1
+#define REV 2
 
 /**
  * 1 - SH1106
@@ -76,4 +81,12 @@
  */
 #define SCREEN 2
 
+/**
+ * Encoder Type 
+ *  0
+ *  1
+ * если энкодер невменяшка, попробуй поменять значение
+ */
+
+#define MY_ENCODER_TYPE 1 //0
 #endif
