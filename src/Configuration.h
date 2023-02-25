@@ -47,46 +47,83 @@
  */
 #define TEMP_SENSOR_0 5 // This is thermistor 0
 
-/** Screen rotation 
- * 0 - norm, 
- * 1 - rev 
- * **/
-#define SCREEN_FLIP 1
-
-/** 0-255 PWM 8bit
+/**********************
+ * 0-255 PWM 8bit
  * If your heater is very powerful,
  * for example more than 300-400 watts,
  * this can be reduced to 200-150
- * **/
+ ********************/
 #define HEATER_MAX 255
 
-/** Autopid attemption **/
+/** Autopid attemption 
+ * aprox 1min per attempt
+ * **/
 #define AUTOPID_ATTEMPT 20
-//TODO: !!
-#define K_PROPRTIONAL 0
-#define K_INTEGRAL 0
-#define K_DERIVATIVE 0
-#define K_SAMPLE_TIME 0
 
-/**
+/**********************
+ * Manual PID setup
+ * if K_PROPRTIONAL - 0, pid, after burning, will be 0
+ **********************/
+#define K_PROPRTIONAL 0
+#define K_INTEGRAL 20
+#define K_DERIVATIVE 100
+#define K_SAMPLE_TIME 500
+
+/*********************
  * Your revision PCB
  * 1 - 220v revision
  * 2 - 24v revision
- **/
+ ********************/
 #define REV 2
 
-/**
+/**********************
  * 1 - SH1106
  * 2 - SSD1306
  */
 #define SCREEN 2
 
-/**
+/**********************
+ * Screen rotation 
+ * 0 - norm, 
+ * 1 - rev 
+ * **/
+#define SCREEN_FLIP 1
+
+/**********************
  * Encoder Type 
  *  0
  *  1
  * если энкодер невменяшка, попробуй поменять значение
- */
+ ********************/
 
 #define MY_ENCODER_TYPE 1 //0
+
+/**********************
+* only! if you use custom bottloader with WDT support!
+ ********************/
+// #define BOOTLOADER_WDT
+
+
+/**********************
+ * screen update time, change if you know what you're doing. 
+ ********************/
+#define SCREEN_UPADATE_TIME 5000
+
+/**********************
+ * BUZZER
+ * 180 pwm busser 
+ * 250 active buzzer 
+ ********************/
+#define BUZZER_PWM 180
+
+/**********************
+ * SERVO
+ * the minimum and maximum pulse widths that will suit most servos (in us)
+ * https://en.wikipedia.org/wiki/Servo_control
+ * SERVO_CUCKOO - Servo sound notification time 0 - off, 50-100 - normal
+ ********************/
+#define SERVO_MIN_PULSE 500
+#define SERVO_MAX_PULSE 2000
+#define SERVO_REIOD_MS 20
+#define SERVO_CUCKOO 50 //0
 #endif

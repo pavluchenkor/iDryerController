@@ -16,6 +16,22 @@ void autoPidM();
 void saveAll();
 
 //!! НЕ УДАЛЯТЬ
+const char f0[] PROGMEM = "ПРОШИВКА";
+const char f1[] PROGMEM = "АЙДРАЙ";
+const char f2[] PROGMEM = "ВЕРСИЯ";
+const char f3[] PROGMEM = "0.1.0";
+const char f4[] PROGMEM = "ОХЛАЖДЕНИЕ";
+const char f5[] PROGMEM = "СОХРАНЕНЕНО";
+
+const char *const serviceTxt[] PROGMEM = {
+    f0,
+    f1,
+    f2,
+    f3,
+    f4
+    };
+
+//!! НЕ УДАЛЯТЬ
 const char s0[] PROGMEM = "СУШКА";
 const char s1[] PROGMEM = "ХРАНЕНИЕ";
 const char l0[] PROGMEM = "ВОЗДУХ";
