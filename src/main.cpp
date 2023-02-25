@@ -416,9 +416,9 @@ void dispalyPrintMode()
             sprintf(val, "%3d", data);
             oled.drawUTF8(100, (i)*lineHight, val);
         }
-        Serial.print(">- ");
+        // Serial.print(">- ");
     } while (oled.nextPage());
-    Serial.println("->");
+    // Serial.println("->");
     iDryer.data.flagScreenUpdate = 0;
 }
 
@@ -552,23 +552,12 @@ void setup()
 
 void loop()
 {
-    delay(500);
-        servoPulse(SERVO_1, 0);
-    delay(500);
-        servoPulse(SERVO_1, 90);
-    delay(500);
-        servoPulse(SERVO_1, 180);
-
-    // for (int i = 0; i <= 50; i++)
-    // {
-    //     servoPulse(SERVO_1, 90);
-    // }
-
-    // for (int i = 0; i <= 50; i++)
-    // {
+    // delay(500);
     //     servoPulse(SERVO_1, 0);
-    // }
-
+    // delay(500);
+    //     servoPulse(SERVO_1, 90);
+    // delay(500);
+    //     servoPulse(SERVO_1, 180);
 
     int tmpTemp = analogRead(NTC_PIN);
     // if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX || !iDryer.getData())
@@ -740,6 +729,7 @@ void loop()
         if (iDryer.data.setTime == 0)
         {
             oldTimer = 0;
+            subMenuM.parentID = 5; // ID пункта хранение
             state = STORAGE; // автоматический переход в режим хранения
         }
         break;
@@ -1130,7 +1120,7 @@ void storageStart()
     iDryer.data.flag = 1;
     iDryer.data.flagTimeUpdate = 0;
     iDryer.data.flagScreenUpdate = 1;
-    iDryer.data.setTemp = menuVal[subMenuM.parentID + 1];
+    iDryer.data.setTemp = menuVal[subMenuM.parentID + 1];// TODO
     iDryer.data.setHumidity = menuVal[subMenuM.parentID + 2];
     analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
 }
@@ -1200,9 +1190,9 @@ uint8_t printError(uint16_t error)
 {
     for (uint8_t i = 0; i < 16; i++)
     {
-        Serial.print(i);
-        Serial.print(": ");
-        Serial.println(((error) >> (i)) & 0x01);
+        // Serial.print(i);
+        // Serial.print(": ");
+        // Serial.println(((error) >> (i)) & 0x01);
     }
     for (uint8_t i = 0; i < 16; i++)
     {
