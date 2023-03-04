@@ -1,6 +1,47 @@
 ﻿#ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
+/******************************************************************************
+ * Если используется версия без замены бутлоатера ардуино то:
+ * - нет ватчдога(это такая фигня которая в случае зависания ардуины перезагрузит ее и, как вариант, нагреватель не рподпалит дом)
+ * - нет поддержки серв и как следсттвие...
+ * - нет функции провертривания
+ * - нет весов
+ * 
+ * Перд прошивкой микроконтроллера сконфигурируй прошивку, все дефайны подписаны, 
+ * а если не подписаны, то луше оставь как есть
+ * 
+ * Для прошивки кастрата запускаем в терминале плавтформио команду
+ * pio run -e nanoatmega328new -t upload
+ * все, ардуина готова к использованию с платой https://oshwlab.com/svet_team/idryer
+ * 
+ * Для прошивки ардуины в нормальный контроллер потребуется программатор USBasp,
+ * можно восопльзоваться и usbisp или ардуиной прешитой в usbisp но это не тестировалось
+ * подключаем по схеме //TODO
+ * раскомментируем строку  #define WITH_BLACKJACK_AND_HOOKERS
+ * В терминале платформио запускаем:
+ * 1) pio run -e fuses_bootloader -t bootloader
+ *    ардуина станет нормальным контроллером
+ * 2) pio run -e eep -t upload
+ * все, ардуина готова к использованию с платой https://oshwlab.com/svet_team/idryer
+******************************************************************************/
+
+
+/**********************
+* if you have USBasp programmer,
+* make several easy steps
+* end uncomment WITH_BLACKJACK_AND_HOOKERS
+ ********************/
+#define WITH_BLACKJACK_AND_HOOKERS
+
+/**********************
+* 0 - русский
+* 1 - not russian
+ ********************/
+#define LANG 0
+
+/* eeprom */
+
 
 /**
  * --NORMAL IS 4.7kohm PULLUP!-- 1kohm pullup can be used on hotend sensor, using correct resistor and table
@@ -55,9 +96,10 @@
  ********************/
 #define HEATER_MAX 255
 
-/** Autopid attemption 
+/**********************
+ * Autopid attemption 
  * aprox 1min per attempt
- * **/
+ ********************/
 #define AUTOPID_ATTEMPT 20
 
 /**********************
@@ -75,6 +117,7 @@
  * 2 - 24v revision
  ********************/
 #define REV 2
+
 
 /**********************
  * 1 - SH1106
@@ -95,14 +138,7 @@
  *  1
  * если энкодер невменяшка, попробуй поменять значение
  ********************/
-
 #define MY_ENCODER_TYPE 1 //0
-
-/**********************
-* only! if you use custom bottloader with WDT support!
- ********************/
-// #define BOOTLOADER_WDT
-
 
 /**********************
  * screen update time, change if you know what you're doing. 
@@ -124,6 +160,6 @@
  ********************/
 #define SERVO_MIN_PULSE 500
 #define SERVO_MAX_PULSE 2000
-#define SERVO_REIOD_MS 20
+#define SERVO_PERIOD_MS 20
 #define SERVO_CUCKOO 50 //0
 #endif
