@@ -32,7 +32,7 @@
 * make several easy steps
 * end uncomment WITH_BLACKJACK_AND_HOOKERS
  ********************/
-// #define WITH_BLACKJACK_AND_HOOKERS
+#define WITH_BLACKJACK_AND_HOOKERS
 
 /**********************
 * 0 - русский

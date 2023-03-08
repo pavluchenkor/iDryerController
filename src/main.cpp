@@ -29,8 +29,6 @@ uint16_t ERROR_CODE EEMEM;
 #define v24V
 #endif
 
-// #define DEBUG
-
 #define NTC_PIN 0
 // Димер
 #ifdef v220V
@@ -42,11 +40,10 @@ uint16_t ERROR_CODE EEMEM;
 //!* 11,6,5,3
 #define BUZZER_PIN 3
 #define FAN 11
+#define EXT_PWM 6
 
 #define SERVO_1_PIN 7
 #define SERVO_2_PIN 8
-
-#define EXT_PWM 6
 
 #define SCREEN_LINES 4
 #define MENU_HEADER 1
@@ -195,7 +192,9 @@ struct Data
 
     bool operator!=(const Data &other) const
     {
-        if (int(this->ntcTemp) != int(other.ntcTemp) || int(this->bmeTemp) != int(other.bmeTemp) || int(this->bmeHumidity) != int(other.bmeHumidity)
+        if (int(this->ntcTemp) != int(other.ntcTemp) 
+        || int(this->bmeTemp) != int(other.bmeTemp) 
+        || int(this->bmeHumidity) != int(other.bmeHumidity)
             // || int(this->startTime) == int(other.startTime)
             // || int(this->setTemp) == int(other.setTemp)
             // || int(this->setHumidity) == int(other.setHumidity)
@@ -206,12 +205,10 @@ struct Data
             // || int(this->Kd) == int(other.Kd)
         )
         {
-            // Serial.println("!=");
             return true;
         }
         else
         {
-            // Serial.println("==");
             return false;
         }
     }
@@ -242,6 +239,7 @@ public:
         data.ntcTemp = ((uint8_t)ntc.analog2temp() + data.ntcTemp) / 2;
         data.bmeTemp = (bme.readTemperature() + data.bmeTemp) / 2;
         data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2;
+
         if (data != oldData && millis() - screenTime > SCREEN_UPADATE_TIME)
         {
             screenTime = millis();
@@ -433,32 +431,12 @@ ISR(PCINT1_vect)
 char *printMenuItem(PGM_P const *text) // печать строки из prm
 {
     static char buffer[22]; // TODO Проверить 11 символов на экране 20/22
-                            // #ifdef WITH_BLACKJACK_AND_HOOKERS
-                            //     uint16_t ptr = (uint16_t)&text; //!! Проверить
-                            //     uint8_t i = 0;
-                            //     const uint8_t *test = "";
-                            //     do
-                            //     {
-                            //         // buffer[i] = (char)(eeprom_read_byte(ptr++));
-                            //         // buffer[i] = (char)(eeprom_read_byte(test));
-                            //         buffer[i] = (char)(eeprom_read_byte((uint8_t *)35000));
-                            //         // buffer[i] = (char)(eeprom_read_byte((uint8_t*)text));
-                            //         if (buffer[i] == '!')
-                            //         {
-                            //             Serial.print("-=!=-");
-                            //             buffer[i] = 255;
-                            //             i = 22;
-                            //         }
-                            //     } while (i++ != 22);
-                            // #else
     uint16_t ptr = pgm_read_word(text);
     uint8_t i = 0;
-
     do
     {
         buffer[i] = (char)(pgm_read_byte(ptr++));
     } while (i++ != 22);
-    // #endif
     return buffer;
 }
 
@@ -477,12 +455,6 @@ void dispalyPrint(struct subMenu *subMenu)
         for (uint8_t i = 0; i < maxPos; i++)
         {
             oled.drawUTF8(0, (i + 2) * lineHight, printMenuItem(&menuTxt[subMenuM.membersID[subMenuM.linesToScreen[i]]]));
-            // controls.ok = 0;
-            Serial.print(" i: " + String(i));
-            Serial.print(" n: " + String(subMenuM.membersID[subMenuM.linesToScreen[i]]));
-            Serial.print(" min: " + String(pgm_read_word(&menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]].min)));
-            Serial.print(" max: " + String(pgm_read_word(&menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]].max)));
-            Serial.println(" linesToScreen: " + String(eeprom_read_word(&menuVal[subMenuM.membersID[subMenuM.linesToScreen[i]]])));
             if (pgm_read_word(&menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]].min) ||
                 pgm_read_word(&menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]].max) ||
                 eeprom_read_word(&menuVal[subMenuM.membersID[subMenuM.linesToScreen[i]]]))
@@ -581,6 +553,7 @@ void setup()
 
     test = eeprom_read_word(&menuVal[0]);
 
+    // Serial.println("chek:" + String(test));
     if (test != 123)
     {
 #if K_PROPRTIONAL != 0
@@ -594,10 +567,14 @@ void setup()
         {
             uint16_t val;
             val = eeprom_read_word((uint16_t *)&menuVal[i]);
-            Serial.print(i);
-            Serial.print(": ");
-            Serial.println(val);
+            // Serial.print(i);
+            // Serial.print(": ");
+            // Serial.println(val);
         }
+    }
+    else
+    {
+        // Serial.println("EEPROM READY");
     }
 
     updateIDyerData();
@@ -710,10 +687,8 @@ void loop()
 {
     enc.tick();
     int tmpTemp = analogRead(NTC_PIN);
-    // if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX || !iDryer.getData())
     if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
     {
-        Serial.println("NTC ERROR");
         setError(15);
         state = NTC_ERROR;
     }
@@ -770,7 +745,7 @@ void loop()
 #endif
             analogWrite(FAN, 255);
             // analogWrite(BUZZER_PIN, BUZZER_PWM);
-            Serial.println("NTC ERROR CASE");
+            // Serial.println("NTC ERROR CASE");
         }
         break;
     case OFF:
@@ -802,311 +777,312 @@ void loop()
             dispalyPrint(&subMenuM);
         }
         break;
-        //     case DRY:
-        //         WDT(WDTO_500MS);
-        //         if (iDryer.getData())
-        //         {
-        //             if (iDryer.data.flagScreenUpdate)
-        //                 dispalyPrintMode();
-        //         }
-        //         else
-        //         {
-        //             ERROR_COUNTER++;
-        //             if (ERROR_COUNTER > MAX_ERROR)
-        //             {
-        //                 //!! setError(1(14);
-        //                 state = NTC_ERROR;
-        //             }
-        //         }
+    case DRY:
+        WDT(WDTO_500MS);
+        if (iDryer.getData())
+        {
+            if (iDryer.data.flagScreenUpdate)
+                dispalyPrintMode();
+        }
+        else
+        {
+            ERROR_COUNTER++;
+            if (ERROR_COUNTER > MAX_ERROR)
+            {
+                setError(14);
+                state = NTC_ERROR;
+            }
+        }
 
-        //         if (iDryer.data.bmeTemp < iDryer.data.setTemp - 2)
-        //         {
-        //             myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
-        //         }
-        //         else
-        //         {
-        //             myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_M);
-        //         }
+        if (iDryer.data.bmeTemp < iDryer.data.setTemp - 2)
+        {
+            myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
+        }
+        else
+        {
+            myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_M);
+        }
 
-        //         if (iDryer.data.ntcTemp >= iDryer.data.setTemp) // TODO:  првоерить что это целевая температура iDryer.temperature
-        //         {
-        //             if (millis() - oldTime > 1000)
-        //             {
-        //                 oldTime = millis();
-        //                 Setpoint = iDryer.data.setTemp + iDryer.data.ntcTemp - iDryer.data.bmeTemp;
-        //                 if (Setpoint > iDryer.data.setTemp + iDryer.data.deltaT)
-        //                     Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
-        //             }
-        //         }
-        //         else
-        //         {
-        //             Setpoint = iDryer.data.setTemp + iDryer.data.deltaT / 2;
-        //         }
+        if (iDryer.data.ntcTemp >= iDryer.data.setTemp) // TODO:  првоерить что это целевая температура iDryer.temperature
+        {
+            if (millis() - oldTime > 1000)
+            {
+                oldTime = millis();
+                Setpoint = iDryer.data.setTemp + iDryer.data.ntcTemp - iDryer.data.bmeTemp;
+                if (Setpoint > iDryer.data.setTemp + iDryer.data.deltaT)
+                    Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
+            }
+        }
+        else
+        {
+            Setpoint = iDryer.data.setTemp + iDryer.data.deltaT / 2;
+        }
 
-        //         Input = double(iDryer.data.ntcTemp);
-        //         myPID.Compute();
+        Input = double(iDryer.data.ntcTemp);
+        myPID.Compute();
 
-        // #ifdef v220V
-        // #ifdef DEBUG
-        //         Serial.println(regulator.getResult());
-        // #endif
-        //         dimmer = map(Output, 0, 255, 500, 9300);
-        // #endif
+#ifdef v220V
+        dimmer = map(Output, 0, 255, 500, 9300);
+#endif
 
-        // #ifdef v24V
-        // #ifdef DEBUG
-        // #endif
-        //         // Serial.println("setpoint: " + String(regulator.setpoint) + "\tntcTemp: " + String(iDryer.data.ntcTemp) +  "PWM: " + String(regulator.getResult()));
-        //         analogWrite(DIMMER_PIN, Output);
-        // #endif
-        //         // TODO подобрать условие включения часов
+#ifdef v24V
+#ifdef DEBUG
+#endif
+        // Serial.println("setpoint: " + String(regulator.setpoint) + "\tntcTemp: " + String(iDryer.data.ntcTemp) +  "PWM: " + String(regulator.getResult()));
+        analogWrite(DIMMER_PIN, Output);
+#endif
+        // TODO подобрать условие включения часов
 
-        //         if (millis() - oldTimer >= 60000 && iDryer.data.flagTimeUpdate)
-        //         {
+        if (millis() - oldTimer >= 60000 && iDryer.data.flagTimeUpdate)
+        {
 
-        //             oldTimer = millis();
-        //             iDryer.data.setTime--;
-        //         }
+            oldTimer = millis();
+            iDryer.data.setTime--;
+        }
 
-        //         if (iDryer.data.setTime == 0)
-        //         {
-        //             oldTimer = 0;
-        //             subMenuM.parentID = 5; // ID пункта хранение
-        //             delay(500);
-        //             storageStart();
-        //         }
+        if (iDryer.data.setTime == 0)
+        {
+            oldTimer = 0;
+            subMenuM.parentID = 5; // ID пункта хранение
+            delay(500);
+            storageStart();
+        }
 
-        // #ifdef WITH_BLACKJACK_AND_HOOKERS
-        //         if (servoState1 == CLOSED && millis() - servoOldTime1 > menuVal[DEF_SERVO_SERVO1 + 1] * 1000 * 60)
-        //         {
-        //             servoPulse(SERVO_1_PIN, 90 + menuVal[DEF_SERVO_SERVO1 + 3]);
-        //             servoState1 = OPEN;
-        //             servoOldTime1 = millis();
-        //         }
-        //         if (servoState1 == OPEN && millis() - servoOldTime1 > menuVal[DEF_SERVO_SERVO1 + 2] * 1000 * 60)
-        //         {
-        //             servoPulse(SERVO_1_PIN, 90);
-        //             servoState1 = CLOSED;
-        //             servoOldTime1 = millis();
-        //         }
+#ifdef WITH_BLACKJACK_AND_HOOKERS
+        if (servoState1 == CLOSED && millis() - servoOldTime1 > menuVal[DEF_SERVO_SERVO1 + 1] * 1000 * 60)
+        {
+            servoPulse(SERVO_1_PIN, 90 + menuVal[DEF_SERVO_SERVO1 + 3]);
+            servoState1 = OPEN;
+            servoOldTime1 = millis();
+        }
+        if (servoState1 == OPEN && millis() - servoOldTime1 > menuVal[DEF_SERVO_SERVO1 + 2] * 1000 * 60)
+        {
+            servoPulse(SERVO_1_PIN, 90);
+            servoState1 = CLOSED;
+            servoOldTime1 = millis();
+        }
 
-        //         if (servoState2 == CLOSED && millis() - servoOldTime2 > menuVal[DEF_SERVO_SERVO2 + 1] * 1000 * 60)
-        //         {
-        //             servoPulse(SERVO_2_PIN, 90 + menuVal[DEF_SERVO_SERVO2 + 3]);
-        //             servoState2 = OPEN;
-        //             servoOldTime2 = millis();
-        //         }
-        //         if (servoState2 == OPEN && millis() - servoOldTime2 > menuVal[DEF_SERVO_SERVO2 + 2] * 1000 * 60)
-        //         {
-        //             servoPulse(SERVO_2_PIN, 90);
-        //             servoState2 = CLOSED;
-        //             servoOldTime2 = millis();
-        //         }
-        //         // Servo1.check();
-        //         // Servo2.check();
-        // #endif
+        if (servoState2 == CLOSED && millis() - servoOldTime2 > menuVal[DEF_SERVO_SERVO2 + 1] * 1000 * 60)
+        {
+            servoPulse(SERVO_2_PIN, 90 + menuVal[DEF_SERVO_SERVO2 + 3]);
+            servoState2 = OPEN;
+            servoOldTime2 = millis();
+        }
+        if (servoState2 == OPEN && millis() - servoOldTime2 > menuVal[DEF_SERVO_SERVO2 + 2] * 1000 * 60)
+        {
+            servoPulse(SERVO_2_PIN, 90);
+            servoState2 = CLOSED;
+            servoOldTime2 = millis();
+        }
+        // Servo1.check();
+        // Servo2.check();
+#endif
+        break;
+    case STORAGE:
+        WDT(WDTO_500MS);
+        if (iDryer.getData())
+        {
+            if (iDryer.data.flagScreenUpdate)
+                dispalyPrintMode();
+        }
+        else
+        {
+            ERROR_COUNTER++;
+            if (ERROR_COUNTER > MAX_ERROR)
+            {
+                setError(15);
+                state = NTC_ERROR;
+            }
+        }
 
-        //         break;
-        //     case STORAGE:
-        //         WDT(WDTO_500MS);
-        //         if (iDryer.getData())
-        //         {
-        //             if (iDryer.data.flagScreenUpdate)
-        //                 dispalyPrintMode();
-        //         }
-        //         else
-        //         {
-        //             ERROR_COUNTER++;
-        //             if (ERROR_COUNTER > MAX_ERROR)
-        //             {
-        //                 //!! setError(1(15);
-        //                 state = NTC_ERROR;
-        //             }
-        //         }
+        // if (iDryer.data.ntcTemp < Setpoint && iDryer.data.setTemp - Setpoint > 5)
+        if (iDryer.data.bmeTemp < iDryer.data.setTemp - 2)
+        {
+            myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
+        }
+        else
+        {
+            myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_M);
+        }
 
-        //         // if (iDryer.data.ntcTemp < Setpoint && iDryer.data.setTemp - Setpoint > 5)
-        //         if (iDryer.data.bmeTemp < iDryer.data.setTemp - 2)
-        //         {
-        //             myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
-        //         }
-        //         else
-        //         {
-        //             myPID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_M);
-        //         }
+        if (iDryer.data.ntcTemp >= iDryer.data.setTemp) // TODO:  првоерить что это целевая температура iDryer.temperature
+        {
+            if (millis() - oldTime > 1000)
+            {
+                oldTime = millis();
+                Setpoint = iDryer.data.setTemp + iDryer.data.ntcTemp - iDryer.data.bmeTemp;
+                if (Setpoint > iDryer.data.setTemp + iDryer.data.deltaT)
+                    Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
+            }
+        }
+        else
+        {
+            Setpoint = iDryer.data.setTemp + iDryer.data.deltaT / 2;
+        }
 
-        //         if (iDryer.data.ntcTemp >= iDryer.data.setTemp) // TODO:  првоерить что это целевая температура iDryer.temperature
-        //         {
-        //             if (millis() - oldTime > 1000)
-        //             {
-        //                 oldTime = millis();
-        //                 Setpoint = iDryer.data.setTemp + iDryer.data.ntcTemp - iDryer.data.bmeTemp;
-        //                 if (Setpoint > iDryer.data.setTemp + iDryer.data.deltaT)
-        //                     Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
-        //             }
-        //         }
-        //         else
-        //         {
-        //             Setpoint = iDryer.data.setTemp + iDryer.data.deltaT / 2;
-        //         }
+        if ((iDryer.data.bmeHumidity > iDryer.data.setHumidity && iDryer.data.flag) ||
+            (iDryer.data.bmeHumidity > iDryer.data.setHumidity + 2 && !iDryer.data.flag)) // TODO 5 вынести куданить
+        {
+            iDryer.data.flag = 1;
+            Input = double(iDryer.data.ntcTemp);
+            myPID.Compute();
 
-        //         if ((iDryer.data.bmeHumidity > iDryer.data.setHumidity && iDryer.data.flag) ||
-        //             (iDryer.data.bmeHumidity > iDryer.data.setHumidity + 2 && !iDryer.data.flag)) // TODO 5 вынести куданить
-        //         {
-        //             iDryer.data.flag = 1;
-        //             Input = double(iDryer.data.ntcTemp);
-        //             myPID.Compute();
+#ifdef v220V
+            dimmer = map(Output, 0, 255, 500, 9300);
+#endif
 
-        // #ifdef v220V
-        //             dimmer = map(Output, 0, 255, 500, 9300);
-        // #endif
+#ifdef v24V
+            analogWrite(DIMMER_PIN, Output);
+#endif
+        }
+        else
+        {
+            iDryer.data.flag = 0;
+            Input = double(iDryer.data.ntcTemp);
+            Setpoint = 0;
+            myPID.Compute();
+#ifdef v220V
+            dimmer = 0;
+#endif
 
-        // #ifdef v24V
-        //             analogWrite(DIMMER_PIN, Output);
-        // #endif
-        //         }
-        //         else
-        //         {
-        //             iDryer.data.flag = 0;
-        //             Input = double(iDryer.data.ntcTemp);
-        //             Setpoint = 0;
-        //             myPID.Compute();
-        // #ifdef v220V
-        //             dimmer = 0;
-        // #endif
+#ifdef v24V
+            analogWrite(DIMMER_PIN, 0);
+#endif
+            // Serial.print("\tHEATER NAH!: ");
+        }
 
-        // #ifdef v24V
-        //             analogWrite(DIMMER_PIN, 0);
-        // #endif
-        //             // Serial.print("\tHEATER NAH!: ");
-        //         }
+#ifdef WITH_BLACKJACK_AND_HOOKERS
+        if (servoState1 == CLOSED && millis() - servoOldTime1 > menuVal[DEF_SERVO_SERVO1 + 1] * 1000 * 60)
+        {
+            servoPulse(SERVO_1_PIN, 90 + menuVal[DEF_SERVO_SERVO1 + 3]);
+            servoState1 = OPEN;
+            servoOldTime1 = millis();
+        }
+        if (servoState1 == OPEN && millis() - servoOldTime1 > menuVal[DEF_SERVO_SERVO1 + 2] * 1000 * 60)
+        {
+            servoPulse(SERVO_1_PIN, 90);
+            servoState1 = CLOSED;
+            servoOldTime1 = millis();
+        }
 
-        // #ifdef WITH_BLACKJACK_AND_HOOKERS
-        //         if (servoState1 == CLOSED && millis() - servoOldTime1 > menuVal[DEF_SERVO_SERVO1 + 1] * 1000 * 60)
-        //         {
-        //             servoPulse(SERVO_1_PIN, 90 + menuVal[DEF_SERVO_SERVO1 + 3]);
-        //             servoState1 = OPEN;
-        //             servoOldTime1 = millis();
-        //         }
-        //         if (servoState1 == OPEN && millis() - servoOldTime1 > menuVal[DEF_SERVO_SERVO1 + 2] * 1000 * 60)
-        //         {
-        //             servoPulse(SERVO_1_PIN, 90);
-        //             servoState1 = CLOSED;
-        //             servoOldTime1 = millis();
-        //         }
+        if (servoState2 == CLOSED && millis() - servoOldTime2 > menuVal[DEF_SERVO_SERVO2 + 1] * 1000 * 60)
+        {
+            servoPulse(SERVO_2_PIN, 90 + menuVal[DEF_SERVO_SERVO2 + 3]);
+            servoState2 = OPEN;
+            servoOldTime2 = millis();
+        }
+        if (servoState2 == OPEN && millis() - servoOldTime2 > menuVal[DEF_SERVO_SERVO2 + 2] * 1000 * 60)
+        {
+            servoPulse(SERVO_2_PIN, 90);
+            servoState2 = CLOSED;
+            servoOldTime2 = millis();
+        }
+        // Servo1.check();
+        // Servo2.check();
+#endif
 
-        //         if (servoState2 == CLOSED && millis() - servoOldTime2 > menuVal[DEF_SERVO_SERVO2 + 1] * 1000 * 60)
-        //         {
-        //             servoPulse(SERVO_2_PIN, 90 + menuVal[DEF_SERVO_SERVO2 + 3]);
-        //             servoState2 = OPEN;
-        //             servoOldTime2 = millis();
-        //         }
-        //         if (servoState2 == OPEN && millis() - servoOldTime2 > menuVal[DEF_SERVO_SERVO2 + 2] * 1000 * 60)
-        //         {
-        //             servoPulse(SERVO_2_PIN, 90);
-        //             servoState2 = CLOSED;
-        //             servoOldTime2 = millis();
-        //         }
-        //         // Servo1.check();
-        //         // Servo2.check();
-        // #endif
+        break;
+    case AUTOPID:
+        //         WDT(WDTO_1S);
+        //         analogWrite(FAN, iDryer.data.setFan);
 
-        //         break;
-        //     case AUTOPID:
-        // //         WDT(WDTO_1S);
-        // //         analogWrite(FAN, iDryer.data.setFan);
+        PIDAutotuner tuner = PIDAutotuner();
+        tuner.setTargetInputValue(iDryer.data.setTemp);
+        tuner.setLoopInterval(uint32_t(iDryer.data.sampleTime) * 1000);
+        tuner.setTuningCycles(AUTOPID_ATTEMPT);
+        tuner.setOutputRange(0, HEATER_MAX);
+        // ZNModeNoOvershoot - Defaults,   ZNModeBasicPID
+        tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
+        tuner.startTuningLoop(micros());
 
-        // //         PIDAutotuner tuner = PIDAutotuner();
-        // //         tuner.setTargetInputValue(iDryer.data.setTemp);
-        // //         tuner.setLoopInterval(uint32_t(iDryer.data.sampleTime) * 1000);
-        // //         tuner.setTuningCycles(AUTOPID_ATTEMPT);
-        // //         tuner.setOutputRange(0, HEATER_MAX);
-        // //         // ZNModeNoOvershoot - Defaults,   ZNModeBasicPID
-        // //         tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
-        // //         tuner.startTuningLoop(micros());
+        oled.clear();
+        unsigned long microseconds;
+        // oldTime = millis();
+        // oldTimer = micros();
+        WDT(WDTO_1S);
+        while (!tuner.isFinished())
+        {
+            WDT(WDTO_4S);
+            microseconds = micros();
+            iDryer.getData();
 
-        // //         oled.clear();
-        // //         unsigned long microseconds;
-        // //         // oldTime = millis();
-        // //         // oldTimer = micros();
-        // //         WDT(WDTO_1S);
-        // //         while (!tuner.isFinished())
-        // //         {
-        // //             WDT(WDTO_4S);
-        // //             microseconds = micros();
-        // //             iDryer.getData();
+#ifdef v220V
+            // dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
+            dimmer = map(uint8_t(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)), 0, 255, 500, 9300);
+#endif
+#ifdef v24V
+            analogWrite(DIMMER_PIN, uint8_t(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)));
+#endif
 
-        // // #ifdef v220V
-        // //             // dimmer = map(tuner.getOutput(), 0, 255, 500, 9300);
-        // //             dimmer = map(uint8_t(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)), 0, 255, 500, 9300);
-        // // #endif
-        // // #ifdef v24V
-        // //             analogWrite(DIMMER_PIN, uint8_t(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)));
-        // // #endif
+            screenTime = millis();
+            uint32_t new_loop = uint32_t(iDryer.data.sampleTime) * 1000;
+            oled.firstPage();
+            do
+            {
+                oled.setFont(u8g2_font);
 
-        // //             screenTime = millis();
-        // //             uint32_t new_loop = uint32_t(iDryer.data.sampleTime) * 1000;
-        // //             oled.firstPage();
-        // //             do
-        // //             {
-        // //                 oled.setFont(u8g2_font);
+                sprintf(seviceString, "ТСТ-%d/%d  %dС", tuner.getCycle(), AUTOPID_ATTEMPT, (uint8_t)ntc.analog2temp());
+                oled.drawUTF8((128 - oled.getUTF8Width(seviceString)) / 2, lineHight * 1, seviceString);
 
-        // //                 sprintf(seviceString, "ТСТ-%d/%d  %dС", tuner.getCycle(), AUTOPID_ATTEMPT, (uint8_t)ntc.analog2temp());
-        // //                 oled.drawUTF8((128 - oled.getUTF8Width(seviceString)) / 2, lineHight * 1, seviceString);
+                // sprintf(seviceString, "КП %5d", (uint16_t)(round(double(tuner.getKp()))));
+                //!! Проверить дефайнв
+                sprintf(seviceString, "%4s %5d", printMenuItem(&menuTxt[DEF_PID_KP]), (uint16_t)(round(double(tuner.getKp()))));
 
-        // //                 // sprintf(seviceString, "КП %5d", (uint16_t)(round(double(tuner.getKp()))));
-        // //                 //!! Проверить дефайнв
-        // //                 sprintf(seviceString, "%4s %5d", printMenuItem(&menuTxt[DEF_PID_KP]), (uint16_t)(round(double(tuner.getKp()))));
+                oled.drawUTF8((128 - oled.getUTF8Width(seviceString)) / 2, lineHight * 2, seviceString);
 
-        // //                 oled.drawUTF8((128 - oled.getUTF8Width(seviceString)) / 2, lineHight * 2, seviceString);
+                sprintf(seviceString, "%4s %5d", printMenuItem(&menuTxt[DEF_PID_KI]), (uint16_t)(round(double(tuner.getKi()))));
+                oled.drawUTF8((128 - oled.getUTF8Width(seviceString)) / 2, lineHight * 3, seviceString);
 
-        // //                 sprintf(seviceString, "%4s %5d", printMenuItem(&menuTxt[DEF_PID_KI]), (uint16_t)(round(double(tuner.getKi()))));
-        // //                 oled.drawUTF8((128 - oled.getUTF8Width(seviceString)) / 2, lineHight * 3, seviceString);
+                sprintf(seviceString, "%4s %5d", printMenuItem(&menuTxt[DEF_PID_KD]), (uint16_t)(round(double(tuner.getKd()))));
+                oled.drawUTF8((128 - oled.getUTF8Width(seviceString)) / 2, lineHight * 4, seviceString);
 
-        // //                 sprintf(seviceString, "%4s %5d", printMenuItem(&menuTxt[DEF_PID_KD]), (uint16_t)(round(double(tuner.getKd()))));
-        // //                 oled.drawUTF8((128 - oled.getUTF8Width(seviceString)) / 2, lineHight * 4, seviceString);
+            } while (oled.nextPage());
+            delay(iDryer.data.sampleTime - uint16_t(millis() - screenTime)); // while (micros() - microseconds < new_loop)
+        }
+        WDT(WDTO_1S);
+        dimmer = 0;
+        delay(20);
+        analogWrite(DIMMER_PIN, 0);
 
-        // //             } while (oled.nextPage());
-        // //             delay(iDryer.data.sampleTime - uint16_t(millis() - screenTime)); // while (micros() - microseconds < new_loop)
-        // //         }
-        // //         WDT(WDTO_1S);
-        // //         dimmer = 0;
-        // //         delay(20);
-        // //         analogWrite(DIMMER_PIN, 0);
+        // Сохраняем
+        menuVal[DEF_PID_KP] = (uint16_t)(round(double(tuner.getKp())));
+        menuVal[DEF_PID_KI] = (uint16_t)(round(double(tuner.getKi())));
+        menuVal[DEF_PID_KD] = (uint16_t)(round(double(tuner.getKd())));
+        menuVal[DEF_SETTINGS_DELTA] = iDryer.data.ntcTemp - iDryer.data.bmeTemp;
 
-        // //         // Сохраняем
-        // //         menuVal[DEF_PID_KP] = (uint16_t)(round(double(tuner.getKp())));
-        // //         menuVal[DEF_PID_KI] = (uint16_t)(round(double(tuner.getKi())));
-        // //         menuVal[DEF_PID_KD] = (uint16_t)(round(double(tuner.getKd())));
-        // //         menuVal[DEF_SETTINGS_DELTA] = iDryer.data.ntcTemp - iDryer.data.bmeTemp;
-        // //         saveAll();
+        eeprom_update_word(&menuVal[DEF_PID_KP], menuVal[DEF_PID_KP]);
+        eeprom_update_word(&menuVal[DEF_PID_KI], menuVal[DEF_PID_KI]);
+        eeprom_update_word(&menuVal[DEF_PID_KD], menuVal[DEF_PID_KD]);
+        eeprom_update_word(&menuVal[DEF_SETTINGS_DELTA], menuVal[DEF_SETTINGS_DELTA]);
 
-        // //         oled.clear();
-        // //         do
-        // //         {
-        // //             oled.setFont(u8g2_font);
-        // //             oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[DEF_SETTINGS_PID]))) / 2, lineHight * 2, printMenuItem(&menuTxt[DEF_SETTINGS_PID]));
-        // //             oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[5]))) / 2, lineHight * 2, printMenuItem(&serviceTxt[5]));
-        // //         } while (oled.nextPage());
+        oled.clear();
+        do
+        {
+            oled.setFont(u8g2_font);
+            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[DEF_SETTINGS_PID]))) / 2, lineHight * 2, printMenuItem(&menuTxt[DEF_SETTINGS_PID]));
+            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[5]))) / 2, lineHight * 2, printMenuItem(&serviceTxt[5]));
+        } while (oled.nextPage());
 
-        // //         analogWrite(FAN, 250);
-        // //         delay(1000);
+        analogWrite(FAN, 250);
+        delay(1000);
 
-        // //         oled.clear();
-        // //         // TODO Сделать обратный отсчет секунд
-        // //         do
-        // //         {
-        // //             oled.setFont(u8g2_font);
-        // //             // sprintf(seviceString, "ОХЛАЖДЕНИЕ");
-        // //             sprintf(seviceString, "%12s", printMenuItem(&serviceTxt[4]));
-        // //             oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[4]))) / 2, lineHight * 2, printMenuItem(&serviceTxt[4]));
+        oled.clear();
+        // TODO Сделать обратный отсчет секунд
 
-        // //         } while (oled.nextPage());
-        // //         wdt_disable();
-        // //         delay(60000);
+        do
+        {
+            oled.setFont(u8g2_font);
+            // sprintf(seviceString, "ОХЛАЖДЕНИЕ");
+            sprintf(seviceString, "%12s", printMenuItem(&serviceTxt[4]));
+            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[4]))) / 2, lineHight * 2, printMenuItem(&serviceTxt[4]));
 
-        // //         iDryer.data.flagScreenUpdate = 1;
-        // //         state = MENU;
-        // //         WDT(WDTO_2S);
+        } while (oled.nextPage());
+        wdt_disable();
+        delay(60000);
+
+        iDryer.data.flagScreenUpdate = 1;
+        state = MENU;
+        WDT(WDTO_2S);
         break;
     }
 }
@@ -1153,8 +1129,6 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
 
         if (!pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].min) &&
             !pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].max) &&
-
-            //! pgm_read_byte(&constMenu[subMenu->membersID[subMenu->position]].action)) // меню˚
             !functionMenu[subMenu->membersID[subMenu->position]]) // меню
         {
             subMenu->level + 1 > subMenu->levelMax ? subMenu->level : subMenu->level++;
@@ -1228,11 +1202,6 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
                 val--;
                 eeprom_write_word((uint16_t *)&editableMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]], val);
             }
-            Serial.println(eeprom_read_word(&editableMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]]));
-            // eeprom_read_word(&editableMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]]) ==
-            // pgm_read_word(&constMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]].min)
-            // ? pgm_read_word(&constMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]].min)
-            // : editableMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]]--;
         }
         subMenu->pointerUpdate = true;
     }
@@ -1263,8 +1232,6 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
     memset(subMenuM.membersID, 0, sizeof(subMenuM.membersID) / sizeof(subMenuM.membersID[0]));
     int8_t iCounter = 0;
 
-    Serial.print("menuSize: ");
-    Serial.println(menuSize);
     for (uint8_t i = 0; i < menuSize; i++)
     {
         // Serial.println("i: " + String(i));
@@ -1277,7 +1244,7 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
             // Serial.print(" id): " + String(pgm_read_byte(&constMenu[i].id)));
             // Serial.print(" mbrs: " + String(printMenuItem(&menuTxt[subMenu->membersID[iCounter]])));
             // Serial.println(" Val: " + String(eeprom_read_word(&menuVal[subMenu->membersID[iCounter]])));
-            delay(20);
+            // delay(20);
             if (i == posTmp)
             {
                 // Serial.println(String(i) + " : " + String(printMenuItem(&constMenu[i].text)) + "\tsubmenuHandler subMenu->position" + String(subMenu->position));
@@ -1289,8 +1256,6 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
         // Serial.println("");
     }
     subMenu->membersQuantity = iCounter;
-    // Serial.print("subMenu->membersQuantity: ");
-    // Serial.println(subMenu->membersQuantity);
     subMenu->min = 0;
     iCounter > 0 ? subMenu->max = iCounter - 1 : 0;
 }
@@ -1319,13 +1284,9 @@ void screen(struct subMenu *subMenu)
 void dryStart()
 {
     piii(100);
-    saveAll();
+    // saveAll();
     state = DRY;
-#ifdef WITH_BLACKJACK_AND_HOOKERS
-// TODO save menuVal
-#else
-    EEPROM.put(0, menuVal);
-#endif
+
     iDryer.data.flag = 1;
     iDryer.data.flagTimeUpdate = 0;
     iDryer.data.flagScreenUpdate = 1;
@@ -1344,21 +1305,17 @@ void dryStart()
     servoState2 == CLOSED;
     // servoOldTime1 = millis() + menuVal[DEF_SERVO1 + 1] * 1000 * 60;
     // servoOldTime2 = millis() + menuVal[DEF_SERVO2 + 1] * 1000 * 60;
-    servoOldTime1 = millis() + eeprom_read_word(&menuVal[DEF_SERVO_SERVO1 + 1] * 1000 * 60);
-    servoOldTime2 = millis() + eeprom_read_word(&menuVal[DEF_SERVO_SERVO2 + 1] * 1000 * 60);
+    servoOldTime1 = millis() + eeprom_read_word(&menuVal[DEF_SERVO_SERVO1 + 1]) * 1000 * 60;
+    servoOldTime2 = millis() + eeprom_read_word(&menuVal[DEF_SERVO_SERVO2 + 1]) * 1000 * 60;
 #endif
 }
 
 void storageStart()
 {
     piii(100);
-    saveAll();
+    // saveAll();
     state = STORAGE;
-#ifdef WITH_BLACKJACK_AND_HOOKERS
-// TODO save menuVal
-#else
-    EEPROM.put(0, menuVal);
-#endif
+
     iDryer.data.flag = 1;
     iDryer.data.flagTimeUpdate = 0;
     iDryer.data.flagScreenUpdate = 1;
@@ -1375,15 +1332,15 @@ void storageStart()
     servoState2 == CLOSED;
     // servoOldTime1 = millis() + menuVal[DEF_SERVO1 + 1] * 1000 * 60;
     // servoOldTime2 = millis() + menuVal[DEF_SERVO2 + 1] * 1000 * 60;
-    servoOldTime1 = millis() + eeprom_read_word(&menuVal[DEF_SERVO_SERVO1 + 1] * 1000 * 60);
-    servoOldTime2 = millis() + eeprom_read_word(&menuVal[DEF_SERVO_SERVO2 + 1] * 1000 * 60);
+    servoOldTime1 = millis() + eeprom_read_word(&menuVal[DEF_SERVO_SERVO1 + 1]) * 1000 * 60;
+    servoOldTime2 = millis() + eeprom_read_word(&menuVal[DEF_SERVO_SERVO2 + 1]) * 1000 * 60;
 #endif
 }
 
 void autoPidM()
 {
     piii(100);
-    saveAll();
+    // saveAll();
     state = AUTOPID;
     iDryer.data.flag = 1;
     iDryer.data.flagTimeUpdate = 0;
@@ -1439,20 +1396,14 @@ void WDT(uint16_t time)
 bool setError(uint16_t errorCode)
 {
     ERROR_CODE |= (1 << errorCode);
-#ifdef WITH_BLACKJACK_AND_HOOKERS
-    eeprom_write_word((uint16_t *)&ERROR_CODE, ERROR_CODE) // TODO проверить
-#else
     eeprom_write_word((uint16_t *)&ERROR_CODE, ERROR_CODE);
-#endif
-        printError(ERROR_CODE);
+    printError(ERROR_CODE);
     return true;
 }
 
 uint8_t readError()
 {
     uint16_t errorCode = eeprom_read_word((uint16_t *)&ERROR_CODE);
-    Serial.print("errorCode: ");
-    Serial.println(errorCode);
     return printError(errorCode);
 }
 
@@ -1472,8 +1423,6 @@ uint8_t printError(uint16_t error)
         uint8_t errorTmp = ((error) >> (i)) & 0x01;
         if (errorTmp == 1)
         {
-            Serial.print(" error: ");
-            Serial.println(i);
             eeprom_write_word((uint16_t *)&ERROR_CODE, 0b0000000000000000);
             return i;
         }
@@ -1488,6 +1437,7 @@ void piii(uint16_t time_ms)
     analogWrite(BUZZER_PIN, 0);
 }
 
+#ifdef WITH_BLACKJACK_AND_HOOKERS
 void servoPulse(int pin, int angle)
 {
     piii(SERVO_CUCKOO);
@@ -1505,3 +1455,4 @@ void servoPulse(int pin, int angle)
         }
     }
 }
+#endif
