@@ -32,7 +32,7 @@
 * make several easy steps
 * end uncomment WITH_BLACKJACK_AND_HOOKERS
  ********************/
-#define WITH_BLACKJACK_AND_HOOKERS
+// #define WITH_BLACKJACK_AND_HOOKERS
 
 /**********************
 * 0 - русский
@@ -86,7 +86,7 @@
  *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
  *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
  */
-#define TEMP_SENSOR_0 5 // This is thermistor 0
+#define TEMP_SENSOR_0 4 // This is thermistor 0
 
 /**********************
  * 0-255 PWM 8bit
@@ -104,7 +104,7 @@
 
 /**********************
  * Manual PID setup
- * if K_PROPRTIONAL - 0, pid, after burning, will be 0
+ * if K_PROPRTIONAL - 0, pid, after burning, will be default
  **********************/
 #define K_PROPRTIONAL 0
 #define K_INTEGRAL 20
