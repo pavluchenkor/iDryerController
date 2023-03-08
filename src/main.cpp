@@ -17,10 +17,6 @@
 // uint16_t ERROR_CODE EEMEM = 0b0000000000000000;
 uint16_t ERROR_CODE EEMEM;
 
-#ifdef WITH_BLACKJACK_AND_HOOKERS
-
-#endif
-
 #if REV == 0
 #define ERROR
 #elif REV == 1
@@ -172,17 +168,13 @@ struct Data
     uint8_t ntcTemp = 0;
     float bmeTemp = 0;
     float bmeHumidity = 0;
-
     unsigned long startTime = 0;
-
     uint8_t setTemp = 0;
     uint8_t setHumidity = 0;
     uint16_t setTime = 0;
-
     uint8_t flag = 0;
     uint8_t flagScreenUpdate = 0;
     uint8_t flagTimeUpdate = 0;
-
     uint8_t setFan = 0;
     double Kp = 0.0;
     double Ki = 0.0;
@@ -367,7 +359,6 @@ public:
 //         }
 //     }
 // };
-
 // servo Servo1(SERVO_1_PIN, menuVal[DEF_SERVO1 + 1], menuVal[DEF_SERVO1 + 2], menuVal[DEF_SERVO1 + 3]);
 // servo Servo2(SERVO_2_PIN, menuVal[DEF_SERVO2 + 1], menuVal[DEF_SERVO2 + 2], menuVal[DEF_SERVO2 + 3]);
 
@@ -1372,9 +1363,9 @@ void saveAll()
 {
     updateIDyerData();
 #ifdef WITH_BLACKJACK_AND_HOOKERS
-// TODO save menuVal
+
 #else
-    EEPROM.put(0, menuVal);
+
 #endif
 }
 
