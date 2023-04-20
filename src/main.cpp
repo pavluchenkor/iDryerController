@@ -680,7 +680,7 @@ void loop()
     int tmpTemp = analogRead(NTC_PIN);
     if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
     {
-        setError(15);
+        // setError(15);
         state = NTC_ERROR;
     }
 
@@ -1156,10 +1156,15 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
             break;
         }
     }
-
-    if (encoder->right)
+#ifdef ENCODER_REVERSE
+    if (encoder->left) 
+    {
+        encoder->left = false;
+#else
+    if (encoder->right)                 // Timer2.enableISR();
     {
         encoder->right = false;
+#endif
         if (!subMenu->changeVal)
         {
             subMenu->position == subMenu->max ? subMenu->position = 0 : subMenu->position++;
@@ -1177,9 +1182,15 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
         subMenu->pointerUpdate = true;
     }
 
-    if (encoder->left)
+#ifdef ENCODER_REVERSE
+    if (encoder->right) 
+    {
+        encoder->right = false;
+#else
+    if (encoder->left)                 // Timer2.enableISR();
     {
         encoder->left = false;
+#endif
         if (!subMenu->changeVal)
         {
             subMenu->position == subMenu->min ? subMenu->position = subMenu->max : subMenu->position--;

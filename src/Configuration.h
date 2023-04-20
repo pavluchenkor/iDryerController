@@ -86,12 +86,12 @@
  *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
  *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
  */
-#define TEMP_SENSOR_0 4 // This is thermistor 0
+#define TEMP_SENSOR_0 6 // This is thermistor 0  /реборн сток EPCOS 100K B57560G104F - 6
 
 /**********************
  * 0-255 PWM 8bit
  * If your heater is very powerful,
- * for example more than 300-400 watts,
+ * for example more than 150-200 watts,
  * this can be reduced to 200-150
  ********************/
 #define HEATER_MAX 255
@@ -139,6 +139,12 @@
  * если энкодер невменяшка, попробуй поменять значение
  ********************/
 #define MY_ENCODER_TYPE 1 //0
+
+
+/**********************
+ * Encoder direction 
+ ********************/
+#define ENCODER_REVERSE
 
 /**********************
  * screen update time, change if you know what you're doing. 
