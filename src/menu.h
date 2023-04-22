@@ -176,6 +176,10 @@ const menuS menuPGM[] PROGMEM = {
     {42, 22, 0, 0},
 };
 
+
+#ifdef WITH_BLACKJACK_AND_HOOKERS
+
+#else
 uint16_t menuValDefault[] = {
     123, // id: 0
     0,   // id: 1
@@ -221,6 +225,7 @@ uint16_t menuValDefault[] = {
     60,  // id: 41
     0,   // id: 42
 };
+#endif
 
 uint16_t menuVal[] EEMEM = {
     123, // id: 0

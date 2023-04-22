@@ -96,6 +96,9 @@
  ********************/
 #define HEATER_MAX 255
 
+#define TMP_MIN 1
+#define TMP_MAX 100
+
 /**********************
  * Autopid attemption 
  * aprox 1min per attempt
@@ -106,10 +109,10 @@
  * Manual PID setup
  * if K_PROPRTIONAL - 0, pid, after burning, will be default
  **********************/
-#define K_PROPRTIONAL 0
-#define K_INTEGRAL 20
-#define K_DERIVATIVE 100
-#define K_SAMPLE_TIME 500
+#define K_PROPRTIONAL 10 //1300
+#define K_INTEGRAL 10
+#define K_DERIVATIVE 2000
+#define K_SAMPLE_TIME 500 // Чем более инертная система тем больше времени примерно от 1000 для легких и быстрых нагреватеелей до 10000 для толстых с длительным временем нагрева
 
 /*********************
  * Your revision PCB
@@ -117,7 +120,6 @@
  * 2 - 24v revision
  ********************/
 #define REV 2
-
 
 /**********************
  * 1 - SH1106
@@ -139,7 +141,6 @@
  * если энкодер невменяшка, попробуй поменять значение
  ********************/
 #define MY_ENCODER_TYPE 1 //0
-
 
 /**********************
  * Encoder direction 
