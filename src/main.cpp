@@ -858,7 +858,7 @@ void loop()
         if (Setpoint > TMP_MAX)
             Setpoint = TMP_MAX;
 
-        if (millis() - oldTime > 10)
+        if (millis() - oldTime > 500)
         {
             oldTime = millis();
             Input = double(iDryer.data.ntcTemp);
