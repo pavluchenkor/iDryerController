@@ -31,6 +31,7 @@
   - нет WDT
   - нет поддержки серво
   - нет поддержки дополнительного ШИМ канала
+  - не будет весов для катушек в сшилке
 - прошивка под ядро MiniCore
   - работает watch dog timer / в случае любого непонятного чиха просто перезагрузит прошивку
   - [поддержка двух серв](https://t.me/iDryer/361)(используются для регулярного проветривания камеры)
@@ -52,6 +53,8 @@ pio run -e nanoatmega328new -t upload -t monitor
 2.1 смена бутлоадера
 pio run -e fuses_bootloader -t bootloader
 2.2 прошивка МК
-2.2 pio run -e eep -t upload -t monitor
+    pio run -e eep -t upload -t monitor
+2.3 прошивка EEPROM
+    pio run -e eep -t uploadeep -t monitor
 
 https://github.com/yzhang-gh/vscode-markdown#table-of-contents
