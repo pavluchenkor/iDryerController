@@ -3,7 +3,7 @@
 #include <EEPROM.h>
 #include <avr/wdt.h>
 #include <U8g2lib.h>
-#include <GyverTimers.h> // библиотека таймера
+// #include <GyverTimers.h> // библиотека таймера
 #include <GyverEncoder.h>
 #include <GyverBME280.h>
 #include <PID_v1.h>
@@ -246,7 +246,7 @@ public:
             data.flagScreenUpdate = 0;
         }
 
-        if (data.bmeTemp > data.setTemp - data.deltaT / 2)
+        if (data.bmeTemp > data.setTemp && !data.flagTimeUpdate)
         {
             data.flagTimeUpdate = true;
         }

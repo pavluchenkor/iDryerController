@@ -230,7 +230,7 @@ uint16_t menuValDefault[] = {
 uint16_t menuVal[] EEMEM = {
     123, // id: 0
     0,   // id: 1
-    60,  // id: 2
+    65,  // id: 2
     240, // id: 3
     0,   // id: 4
     0,   // id: 5

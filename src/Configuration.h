@@ -109,9 +109,9 @@
  * Manual PID setup
  * if K_PROPRTIONAL - 0, pid, after burning, will be default
  **********************/
-#define K_PROPRTIONAL 10 //1300
-#define K_INTEGRAL 10
-#define K_DERIVATIVE 2000
+#define K_PROPRTIONAL 0 //3718
+#define K_INTEGRAL 0
+#define K_DERIVATIVE 24772
 #define K_SAMPLE_TIME 500 // Чем более инертная система тем больше времени примерно от 1000 для легких и быстрых нагреватеелей до 10000 для толстых с длительным временем нагрева
 
 /*********************
