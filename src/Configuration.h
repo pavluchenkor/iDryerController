@@ -88,14 +88,6 @@
  */
 #define TEMP_SENSOR_0 6 // This is thermistor 0  /реборн сток EPCOS 100K B57560G104F - 6
 
-/**********************
- * 0-255 PWM 8bit
- * If your heater is very powerful,
- * for example more than 150-200 watts,
- * this can be reduced to 200-150
- ********************/
-#define HEATER_MAX 255
-
 #define TMP_MIN 1
 #define TMP_MAX 100
 
@@ -110,16 +102,16 @@
  * if K_PROPRTIONAL - 0, pid, after burning, will be default
  **********************/
 #define K_PROPRTIONAL 0 //3718
-#define K_INTEGRAL 0
-#define K_DERIVATIVE 24772
-#define K_SAMPLE_TIME 500 // Чем более инертная система тем больше времени примерно от 1000 для легких и быстрых нагреватеелей до 10000 для толстых с длительным временем нагрева
+#define K_INTEGRAL 10
+#define K_DERIVATIVE 5000
+#define K_SAMPLE_TIME 1000 // Чем более инертная система тем больше времени примерно от 500(не менее 200) для легких и быстрых нагреватеелей до 10000 для толстых с длительным временем нагрева
 
 /*********************
  * Your revision PCB
  * 1 - 220v revision
  * 2 - 24v revision
  ********************/
-#define REV 2
+#define REV 1
 
 /**********************
  * 1 - SH1106
@@ -145,7 +137,7 @@
 /**********************
  * Encoder direction 
  ********************/
-#define ENCODER_REVERSE
+// #define ENCODER_REVERSE
 
 /**********************
  * screen update time, change if you know what you're doing. 

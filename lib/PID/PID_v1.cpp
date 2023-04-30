@@ -222,3 +222,7 @@ double PID::GetKd(){ return  dispKd;}
 int PID::GetMode(){ return  inAuto ? AUTOMATIC : MANUAL;}
 int PID::GetDirection(){ return controllerDirection;}
 
+double PID::GetOutputLimitsMin(){ return  outMin; }
+double PID::GetOutputLimitsMax(){ return  outMax; }
+
+
