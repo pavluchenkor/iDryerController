@@ -912,6 +912,7 @@ void loop()
 #ifdef v220V
         // dimmer = map(Output, 0, 255, HEATER_MIN, HEATER_MIN);
         dimmer = (uint16_t)(HEATER_MIN - Output + HEATER_MAX);
+        #ifdef DEBUG
         if(millis() - printOldTime > 500)
         {
             Serial.print("Setpoint: ");
@@ -924,9 +925,8 @@ void loop()
             Serial.print(pid.GetKd());
             Serial.print("\tdimmer: ");
             Serial.println(dimmer);
-
-            
         }
+        #endif
 #endif
 
 #ifdef v24V
