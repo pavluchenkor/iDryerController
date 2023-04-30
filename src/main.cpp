@@ -183,7 +183,7 @@ Encoder enc(CLK, DT, encBut, MY_ENCODER_TYPE);
 
 double mainSetpoint, Setpoint, Input, Output;
 
-PID PID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT);
+PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
 
 struct Data
 {
@@ -646,16 +646,16 @@ void setup()
 
     updateIDyerData();
 
-    PID.SetMode(AUTOMATIC); //
-    PID.SetControllerDirection(DIRECT); // REVERSE
+    pid.SetMode(AUTOMATIC); //
+    pid.SetControllerDirection(DIRECT); // REVERSE
     #ifdef v24V
-    PID.SetOutputLimits(HEATER_MIN, HEATER_MAX);
+    pid.SetOutputLimits(HEATER_MIN, HEATER_MAX);
     #endif
     #ifdef v220V
-    PID.SetOutputLimits(HEATER_MAX, HEATER_MIN);
+    pid.SetOutputLimits(HEATER_MAX, HEATER_MIN);
     #endif
-    PID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_M);
-    PID.SetSampleTime(iDryer.data.sampleTime);
+    pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
+    pid.SetSampleTime(iDryer.data.sampleTime);
 
 // Диммер
 #ifdef v220V
@@ -889,7 +889,7 @@ void loop()
             }
         }
 
-        PID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
+        pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
         analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
 
         if (iDryer.data.bmeTemp < iDryer.data.setTemp)
@@ -906,7 +906,7 @@ void loop()
         if (Setpoint > TMP_MAX)
             Setpoint = TMP_MAX;
 
-        PID.Compute();
+        pid.Compute();
         Input = double(iDryer.data.ntcTemp);
 
 #ifdef v220V
@@ -916,12 +916,15 @@ void loop()
         {
             Serial.print("Setpoint: ");
             Serial.print(Setpoint);
+            Serial.print("\tKp: ");
+            Serial.print(pid.GetKp());
+            Serial.print("\tKi: ");
+            Serial.print(pid.GetKi());
+            Serial.print("\tKd: ");
+            Serial.print(pid.GetKd());
             Serial.print("\tdimmer: ");
-            Serial.print(dimmer);
-            Serial.print("\t min: ");
-            Serial.print(PID.GetOutputLimitsMin());
-            Serial.print("\t max: ");
-            Serial.println(PID.GetOutputLimitsMax());
+            Serial.println(dimmer);
+
             
         }
 #endif
@@ -992,18 +995,8 @@ void loop()
             }
         }
 
-        PID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
+        pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
         analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
-        // if (iDryer.data.bmeTemp < iDryer.data.setTemp - 2)
-        // {
-        //     PID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
-        //     analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
-        // }
-        // else
-        // {
-        //     PID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_M);
-        //     analogWrite(FAN, 255);
-        // }
 
         if (iDryer.data.bmeTemp < iDryer.data.setTemp)
         {
@@ -1024,7 +1017,7 @@ void loop()
         {
             iDryer.data.flag = 1;
             Input = double(iDryer.data.ntcTemp);
-            PID.Compute();
+            pid.Compute();
 
 #ifdef v220V
             // dimmer = map(Output, 0, 255, HEATER_MIN, HEATER_MAX);
@@ -1040,7 +1033,7 @@ void loop()
             iDryer.data.flag = 0;
             Input = double(iDryer.data.ntcTemp);
             Setpoint = 0;
-            PID.Compute();
+            pid.Compute();
 #ifdef v220V
             dimmer = HEATER_MIN;
 #endif
@@ -1084,26 +1077,39 @@ void loop()
         break;
     case AUTOPID:
         WDT(WDTO_4S);
-        //         analogWrite(FAN, iDryer.data.setFan);
         PIDAutotuner tuner = PIDAutotuner();
-        tuner.setTargetInputValue(iDryer.data.setTemp);
-        // tuner.setLoopInterval(uint32_t(iDryer.data.sampleTime) * 1000);
-        tuner.setLoopInterval(uint32_t(iDryer.data.sampleTime));
+        Serial.println(iDryer.data.setTemp);
+        tuner.setTargetInputValue((float)iDryer.data.setTemp);
+        tuner.setLoopInterval(long(iDryer.data.sampleTime) * 1000);
         tuner.setTuningCycles(AUTOPID_ATTEMPT);
         tuner.setOutputRange(HEATER_MIN, HEATER_MAX);
         // ZNModeNoOvershoot - Defaults,   ZNModeBasicPID
         tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
         tuner.startTuningLoop(micros());
 
+
         oled.clear();
+        do
+        {
+            oled.setFont(u8g2_font);
+            //oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_ERROR]))) / 2, lineHight, printMenuItem(&serviceTxt[DEF_T_ERROR]));
+            //oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_CHECK]))) / 2, lineHight * 2, printMenuItem(&serviceTxt[DEF_T_CHECK]));
+            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[DEF_PID_AVTOPID]))) / 2, lineHight * 3, printMenuItem(&menuTxt[DEF_PID_AVTOPID]));
+            //oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_OVERLOAD]))) / 2, lineHight * 4, printMenuItem(&serviceTxt[DEF_T_OVERLOAD]));
+            oled.drawButtonUTF8(0, 1 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+            oled.drawButtonUTF8(0, 2 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+            oled.drawButtonUTF8(0, 3 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+            oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
+        } while (oled.nextPage());
         unsigned long microseconds;
         WDT(WDTO_2S);
+
+        analogWrite(FAN, 255);
+        WDT_DISABLE();
         while (!tuner.isFinished())
         {
-            WDT_DISABLE();
             microseconds = micros();
             iDryer.getData();
-
 #ifdef v220V
             // dimmer = map(uint8_t(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)), 0, 255, HEATER_MIN, HEATER_MAX);
             dimmer = (uint16_t)tuner.tunePID(double(iDryer.data.ntcTemp), microseconds);
@@ -1111,29 +1117,37 @@ void loop()
 #ifdef v24V
             analogWrite(DIMMER_PIN, uint8_t(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)));
 #endif
-            analogWrite(FAN, 255);
-            screenTime = millis();
-            uint32_t new_loop = uint32_t(iDryer.data.sampleTime) * 1000;
 
-            oled.firstPage();
-            do
-            {
-                oled.setFont(u8g2_font);
-                sprintf(serviceString, "ТСТ-%d/%d  %dС", tuner.getCycle(), AUTOPID_ATTEMPT, (uint8_t)ntc.analog2temp());
-                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 1, serviceString);
+            // uint32_t new_loop = uint32_t(iDryer.data.sampleTime) * 1000;
 
-                sprintf(serviceString, "%4s %6d", printMenuItem(&menuTxt[DEF_PID_KP]), uint16_t(tuner.getKp() * 100));
-                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 2, serviceString);
+            sprintf(serviceString, "ТСТ-%d/%d %dС %6d %6d %6d", tuner.getCycle(), AUTOPID_ATTEMPT, (uint8_t)ntc.analog2temp(), uint16_t(tuner.getKp() * 100), uint16_t(tuner.getKi() * 100), uint16_t(tuner.getKd() * 100));
+            Serial.println(serviceString);
 
-                sprintf(serviceString, "%4s %6d", printMenuItem(&menuTxt[DEF_PID_KI]), uint16_t(tuner.getKi() * 100));
-                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 3, serviceString);
+            // oled.firstPage();
+            // do
+            // {
+            //     oled.setFont(u8g2_font);
+            //     sprintf(serviceString, "ТСТ-%d/%d  %dС", tuner.getCycle(), AUTOPID_ATTEMPT, (uint8_t)ntc.analog2temp());
+            //     oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 1, serviceString);
+            //     sprintf(serviceString, "%4s %6d", printMenuItem(&menuTxt[DEF_PID_KP]), uint16_t(tuner.getKp() * 100));
+            //     oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 2, serviceString);
+            //     sprintf(serviceString, "%4s %6d", printMenuItem(&menuTxt[DEF_PID_KI]), uint16_t(tuner.getKi() * 100));
+            //     oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 3, serviceString);
+            //     sprintf(serviceString, "%2s %6d", printMenuItem(&menuTxt[DEF_PID_KD]), uint16_t(tuner.getKd() * 100));
+            //     oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 4, serviceString);
+            // } while (oled.nextPage());
 
-                sprintf(serviceString, "%2s %6d", printMenuItem(&menuTxt[DEF_PID_KD]), uint16_t(tuner.getKd() * 100));
-                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 4, serviceString);
-
-            } while (oled.nextPage());
-
-            delay(iDryer.data.sampleTime - (millis() - screenTime)); // while (micros() - microseconds < new_loop)
+            // Serial.print(iDryer.data.sampleTime);
+            // Serial.print("  ");
+            // Serial.print(micros());
+            // Serial.print("  ");
+            // Serial.print(microseconds);
+            // Serial.print("  ");
+            // Serial.print(micros() - microseconds);
+            // Serial.print("  ");
+            // Serial.println((unsigned long)iDryer.data.sampleTime * 1000);
+            // delay(iDryer.data.sampleTime - (millis() - microseconds / 1000)); // 
+            while (micros() - microseconds < (unsigned long)iDryer.data.sampleTime * 1000){}
         }
         WDT(WDTO_250MS);
         dimmer = HEATER_MIN;
@@ -1141,19 +1155,19 @@ void loop()
         analogWrite(DIMMER_PIN, 0);
         WDT(WDTO_1S);
 
-        // Serial.println("======= PID 3 =========");
+        // Serial.println("======= pid 3 =========");
         // Serial.print("  getKp: ");
         // Serial.print(tuner.getKp());
         // Serial.print("  getKi: ");
         // Serial.print(tuner.getKi());
         // Serial.print("  getKd: ");
         // Serial.println(tuner.getKd());
-        // Serial.println("======= END PID 3 =========");
-        eeprom_update_word(&menuVal[DEF_PID_KP], tuner.getKp() * 100);
-        eeprom_update_word(&menuVal[DEF_PID_KI], tuner.getKi() * 100);
-        eeprom_update_word(&menuVal[DEF_PID_KD], tuner.getKd() * 100);
+        // Serial.println("======= END pid 3 =========");
+        eeprom_update_word(&menuVal[DEF_PID_KP], abs(tuner.getKp() * 100));
+        eeprom_update_word(&menuVal[DEF_PID_KI], abs(tuner.getKi() * 100));
+        eeprom_update_word(&menuVal[DEF_PID_KD], abs(tuner.getKd() * 100));
         eeprom_update_word(&menuVal[DEF_SETTINGS_DELTA], iDryer.data.ntcTemp - iDryer.data.bmeTemp);
-
+        saveAll();
         // Serial.print("  readEEP Kp: ");
         // Serial.println(eeprom_read_word(&menuVal[DEF_PID_KP]));
         // Serial.print("  readEEP Ki: ");
@@ -1484,19 +1498,19 @@ void autoPidM()
     iDryer.data.flagTimeUpdate = 0;
     iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AVTOPID_TEMPERATURE]); //!! Проверить
     analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
-    PID.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
+    pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
 }
 
 void updateIDyerData()
 {
     iDryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
-    iDryer.data.Kp = double(eeprom_read_word(&menuVal[DEF_PID_KP]) / 100);
-    iDryer.data.Ki = double(eeprom_read_word(&menuVal[DEF_PID_KI]) / 100);
-    iDryer.data.Kd = double(eeprom_read_word(&menuVal[DEF_PID_KD]) / 100);
+    iDryer.data.Kp = (double)eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.00;
+    iDryer.data.Ki = (double)eeprom_read_word(&menuVal[DEF_PID_KI]) / 100.00;
+    iDryer.data.Kd = (double)eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.00;
     iDryer.data.sampleTime = eeprom_read_word(&menuVal[DEF_AVTOPID_TIME_MS]);
     iDryer.data.deltaT = eeprom_read_word(&menuVal[DEF_SETTINGS_DELTA]);
     iDryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
-    PID.SetSampleTime(iDryer.data.sampleTime);
+    pid.SetSampleTime(iDryer.data.sampleTime);
 }
 
 void saveAll()
