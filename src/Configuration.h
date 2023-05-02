@@ -99,12 +99,13 @@
 
 /**********************
  * Manual PID setup
- * if K_PROPRTIONAL - 0, pid, after burning, will be default
+ * if OVERWRITE_PID - 0, pid, after burning, will be default
  **********************/
-#define K_PROPRTIONAL 0 //3718
-#define K_INTEGRAL 10
-#define K_DERIVATIVE 5000
-#define K_SAMPLE_TIME 200 // Чем более инертная система тем больше времени примерно от 250(не менее 200) для легких и быстрых нагреватеелей до 1000 для толстых с длительным временем нагрева
+#define OVERWRITE_PID 0
+#define K_PROPRTIONAL 10 // 49422
+#define K_INTEGRAL 39 //3953
+#define K_DERIVATIVE 23373
+#define K_SAMPLE_TIME 500 // Чем более инертная система тем больше времени примерно от 250(не менее 200) для легких и быстрых нагреватеелей до 1000 для толстых с длительным временем нагрева
 
 /*********************
  * Your revision PCB

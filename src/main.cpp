@@ -8,14 +8,14 @@
 #include <GyverBME280.h>
 #include <PID_v1.h>
 #include <pidautotuner.h> //!! https://github.com/jackw01/arduino-pid-autotuner
+// #include <PIDAutotuner.h>
 #include <thermistor.h>
 #include <Configuration.h>
 #include "font.h"
 #include "menu.h"
 #include "def.h"
 
-// uint16_t ERROR_CODE EEMEM = 0b0000000000000000;
-uint16_t ERROR_CODE EEMEM;
+uint16_t ERROR_CODE EEMEM; //EEMEM = 0b0000000000000000;
 
 #if REV == 0
 #define ERROR
@@ -30,8 +30,8 @@ uint16_t ERROR_CODE EEMEM;
  * НЕ ВЛЕЗАЙ! УЕБЬЕТ!
  * меняй это на свой страх и риск
  ********************/
-#define HEATER_MIN 10050
-#define HEATER_MAX 500
+#define HEATER_MIN 500
+#define HEATER_MAX 9500
 #endif
 
 #ifdef v24V
@@ -55,8 +55,8 @@ uint16_t ERROR_CODE EEMEM;
 
 //!* 11,6,5,3
 #define BUZZER_PIN 3
-#define FAN 11
-#define EXT_PWM 6
+#define FAN 6
+#define EXT_PWM 11
 
 #define SERVO_1_PIN 7
 #define SERVO_2_PIN 8
@@ -86,24 +86,22 @@ enum stateS
 uint8_t lineHight = 16;
 uint16_t dimmer = 0; // переменная диммера
 
-uint64_t oldTimeZero; // !!! для теста
-
 #ifdef v220V
 uint16_t lastDim;
 #endif
 
-uint8_t autoPidAttemptCounter = 0;
-
 stateS state = MENU;
 uint8_t ERROR_COUNTER = 0;
 
-#define DEBUG
+// #define DEBUG
+
 #ifdef DEBUG
 uint8_t testPWM = 0;
 uint32_t testTIMER_COUNT = 0;
 uint16_t testTIMER_STATE = 0;
 unsigned long oldTime1 = 0;
 unsigned long oldTime2 = 0;
+unsigned long oldTime3 = 0;
 unsigned long printOldTime = 0;
 uint8_t isrFlag = 0;
 #endif
@@ -127,6 +125,8 @@ unsigned long oldTime = 0;
 unsigned long oldTimer = 0;
 unsigned long servoOldTime1 = 0;
 unsigned long servoOldTime2 = 0;
+uint32_t timerOn = 0;
+uint32_t timerOff = 0;
 uint8_t servoState1 = CLOSED;
 uint8_t servoState2 = CLOSED;
 unsigned long screenTime = 0;
@@ -183,7 +183,11 @@ Encoder enc(CLK, DT, encBut, MY_ENCODER_TYPE);
 
 double mainSetpoint, Setpoint, Input, Output;
 
+#ifdef v24v
 PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
+#else
+PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
+#endif
 
 struct Data
 {
@@ -241,6 +245,9 @@ void encoderSate(struct control *control);
 void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct control *encoder, struct subMenu *subMenu);
 void screen(struct subMenu *subMenu);
 void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu);
+void heaterOFF();
+void heaterON(uint16_t Output, uint16_t& dimmer);
+
 
 class iDryer
 {
@@ -249,17 +256,9 @@ public:
     Data oldData;
     bool getData()
     {
-        data.ntcTemp = (ntc.analog2temp() + data.ntcTemp) / 2;
-        data.bmeTemp = (bme.readTemperature() + data.bmeTemp) / 2;
-        data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2;
-        // Serial.println("=====Temp===== ");
-        // Serial.print("bmeTemp: ");
-        // Serial.print(data.bmeTemp);
-        // Serial.print("  bmeHumidity: ");
-        // Serial.print(data.bmeHumidity);
-        // Serial.print("  ntcTemp: ");
-        // Serial.println(data.ntcTemp);
-        // Serial.println("=====Temp===== ");
+        data.ntcTemp = (ntc.analog2temp() + data.ntcTemp) / 2.0;
+        data.bmeTemp = (bme.readTemperature() + data.bmeTemp) / 2.0;
+        data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2.0;
         if (data != oldData && millis() - screenTime > SCREEN_UPADATE_TIME)
         {
             screenTime = millis();
@@ -281,10 +280,10 @@ public:
             data.bmeTemp < TMP_MIN ||
             data.bmeTemp > TMP_MAX + 10)
         {
-//!! setError(1(13);
+//!! setError(13);
 #ifdef DEBUG
 #else
-            return false;
+        return false;
 #endif
         }
         return true;
@@ -397,35 +396,28 @@ public:
 void isr()
 {
 #ifdef DEBUG
-    oldTime2 = oldTime1;
-    oldTime1 = millis();
+testTIMER_COUNT ++;
 #endif
-    digitalWrite(DIMMER_PIN, 0);
-    if (lastDim != dimmer)
+    if (state == DRY || state == STORAGE || state == AUTOPID)
     {
-        Timer1.setPeriod(lastDim = dimmer);
-    }
-    else
-    {
-        Timer1.restart();
+        if (lastDim != dimmer)
+        {
+            Timer2.setPeriod(lastDim = dimmer);
+        }
+        else
+        {
+            Timer2.restart();
+        }    
+
+        Timer2.setPeriod(dimmer);
     }
 }
 
-ISR(TIMER1_A)
+ISR(TIMER2_A)
 {
-    if (state == DRY || state == STORAGE || state == AUTOPID)
-    {
-        digitalWrite(DIMMER_PIN, 1);
-    }
-    else
-    {
-        digitalWrite(DIMMER_PIN, 0);
-    }
-    // digitalWrite(DIMMER_PIN, 1);
-    Timer1.stop();
-#ifdef DEBUG
-
-#endif
+    digitalWrite(DIMMER_PIN, 1);
+    digitalWrite(DIMMER_PIN, 0);
+    Timer2.stop();
 }
 #endif
 
@@ -478,20 +470,18 @@ void displayPrint(struct subMenu *subMenu)
     {
         oled.setFont(u8g2_font);
         uint8_t maxPos = SCREEN_LINES - MENU_HEADER < subMenu->membersQuantity ? SCREEN_LINES - MENU_HEADER : subMenu->membersQuantity;
-        // Serial.println("maxPos: " + String(maxPos));
-        // oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuPGM[subMenuM.parentID].text))) / 2, 16, printMenuItem(&menuPGM[subMenuM.parentID].text));
         oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[subMenuM.parentID]))) / 2 - 10, 16, printMenuItem(&menuTxt[subMenuM.parentID]));
         if (subMenuM.parentID == 0)
         {
             char val[6];
-            sprintf(val, "%2d/%2d", (uint16_t)iDryer.data.bmeHumidity, (uint16_t)iDryer.data.bmeTemp);
+            sprintf(val, "%2hu/%2hu", (uint16_t)iDryer.data.bmeHumidity, (uint16_t)iDryer.data.bmeTemp);
 #ifdef DEBUG
             sprintf(val, "%4d", oldTime1 - oldTime2);
 #endif
             oled.drawUTF8(88, 16, val);
-            sprintf(val, "%2d", (uint16_t)iDryer.data.ntcTemp);
+            sprintf(val, "%2hu", (uint16_t)iDryer.data.ntcTemp);
 #ifdef DEBUG
-            sprintf(val, "%3d", dimmer);
+            sprintf(val, "%3hu", dimmer);
 #endif
             oled.drawUTF8(0, 16, val);
         }
@@ -505,7 +495,7 @@ void displayPrint(struct subMenu *subMenu)
                 eeprom_read_word(&menuVal[subMenuM.membersID[subMenuM.linesToScreen[i]]]))
             {
                 char val[5];
-                sprintf(val, "%4d", eeprom_read_word(&menuVal[subMenuM.membersID[subMenuM.linesToScreen[i]]]));
+                sprintf(val, "%4hu", eeprom_read_word(&menuVal[subMenuM.membersID[subMenuM.linesToScreen[i]]]));
                 oled.drawUTF8(95, (i + 2) * lineHight, val);
             }
 
@@ -544,17 +534,13 @@ void displayPrintMode()
         }
 
         char val[4];
-
-        // oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[text]))) / 2, lineHight, printMenuItem(&serviceTxt[text]));
         oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[text]))) / 2, lineHight, printMenuItem(&menuTxt[text]));
-        text == DEF_MENU_DRYING ? sprintf(val, "%3d", iDryer.data.setTime) : sprintf(val, "%3d", iDryer.data.setHumidity);
+        text == DEF_MENU_DRYING ? sprintf(val, "%3hu", iDryer.data.setTime) : sprintf(val, "%3hu", iDryer.data.setHumidity);
         oled.drawUTF8(100, lineHight, val);
         oled.drawButtonUTF8(0, lineHight - 1, U8G2_BTN_INV, 128, 1, 1, "");
-        // oled.drawLine(0, lineHight + 2, 128, lineHight + 2);
 
         for (uint8_t i = 0; i < 3; i++)
         {
-            // oled.drawUTF8(0, (i)*lineHight + 2, printMenuItem(&serviceTxt[i]));
             oled.drawUTF8(0, (i + 2) * lineHight, printMenuItem(&serviceTxt[i + 6]));
             text = i;
             uint8_t data = 0;
@@ -572,27 +558,35 @@ void displayPrintMode()
             default:
                 break;
             }
-            // Serial.print(val);
-            sprintf(val, "%3d", data);
+            sprintf(val, "%3hu", data);
             oled.drawUTF8(100, (i + 2) * lineHight, val);
         }
-        // Serial.print(">- ");
     } while (oled.nextPage());
-    // Serial.println("->");
     iDryer.data.flagScreenUpdate = 0;
 }
 
 void setup()
 {
-    Serial.begin(9600);
+// Serial.begin(9600);
+#ifdef v220V
+    dimmer = HEATER_MAX;
+    
+    pinMode(ZERO_PIN, INPUT_PULLUP);
+    pinMode(DIMMER_PIN, OUTPUT);
+    
+    // attachInterrupt(INT_NUM, isr, RISING);
+    // Timer2.enableISR();
+#endif
+
     menuSize = sizeof(menuTxt) / sizeof(menuTxt[0]);
     uint8_t errorCode = readError();
-    // Serial.println("error:" + String(errorCode));
-    // if (errorCode)
-    // {
-    //     Serial.println("eeprom_write_word:");
-    //     eeprom_write_word((uint16_t*)&ERROR_CODE, 0b0000000000000000);
-    // }
+
+    //Serial.println("error:" + String(errorCode));
+    if (errorCode)
+    {
+        // Serial.println("eeprom_write_word:");
+        eeprom_write_word((uint16_t*)&ERROR_CODE, 0b0000000000000000);
+    }
 
     uint16_t test;
 
@@ -615,13 +609,13 @@ void setup()
         }
 #endif
     }
-    else
-    {
-        Serial.println("EEPROM READY");
-    }
+    // else
+    // {
+    //     Serial.println("EEPROM READY");
+    // }
 
 #ifdef WITH_BLACKJACK_AND_HOOKERS
-#if K_PROPRTIONAL != 0
+#if OVERWRITE_PID == 1
     eeprom_update_word(&menuVal[DEF_PID_KP], K_PROPRTIONAL);
     eeprom_update_word(&menuVal[DEF_PID_KI], K_INTEGRAL);
     eeprom_update_word(&menuVal[DEF_PID_KD], K_DERIVATIVE);
@@ -629,7 +623,7 @@ void setup()
 #endif
 
 #else
-#if K_PROPRTIONAL != 0
+#if OVERWRITE_PID == 1
     menuValDefault[DEF_PID_KP] = K_PROPRTIONAL;
     menuValDefault[DEF_PID_KI] = K_INTEGRAL;
     menuValDefault[DEF_PID_KD] = K_DERIVATIVE;
@@ -647,32 +641,16 @@ void setup()
     updateIDyerData();
 
     pid.SetMode(AUTOMATIC); //
-    pid.SetControllerDirection(DIRECT); // REVERSE
     #ifdef v24V
+    pid.SetControllerDirection(DIRECT); // REVERSE
     pid.SetOutputLimits(HEATER_MIN, HEATER_MAX);
     #endif
     #ifdef v220V
-    pid.SetOutputLimits(HEATER_MAX, HEATER_MIN);
+    pid.SetControllerDirection(DIRECT); // REVERSE
+    pid.SetOutputLimits(HEATER_MIN, HEATER_MAX);
     #endif
     pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
     pid.SetSampleTime(iDryer.data.sampleTime);
-
-// Диммер
-#ifdef v220V
-    pinMode(ZERO_PIN, INPUT_PULLUP);
-#endif
-
-    pinMode(DT, INPUT_PULLUP);
-    pinMode(CLK, INPUT_PULLUP);
-    pinMode(encBut, INPUT_PULLUP);
-    pinMode(DIMMER_PIN, OUTPUT);
-
-#ifdef v24v
-    analogWrite(DIMMER_PIN, 0);
-#endif
-
-    pinMode(SERVO_1_PIN, OUTPUT);
-    pinMode(SERVO_2_PIN, OUTPUT);
 
     // oldPorta = PINC;
     PCMSK1 |= (1 << PCINT9);
@@ -688,17 +666,11 @@ void setup()
     pinMode(BUZZER_PIN, OUTPUT);
     pinMode(FAN, OUTPUT);
 
-#ifdef v220V
-    dimmer = HEATER_MIN;
-    attachInterrupt(INT_NUM, isr, FALLING); // для самодельной схемы ставь FALLING
-    Timer1.enableISR();                     // Timer2.enableISR();
-#endif
-
     oled.begin();
     oled.setFlipMode(SCREEN_FLIP);
     // oled.setContrast(1);
     oled.enableUTF8Print();
-    oled.setFont(u8g2_font); // u8g2_font   u8g2_font
+    oled.setFont(u8g2_font); // u8g2_font
 
     oled.firstPage();
     do
@@ -709,7 +681,7 @@ void setup()
         if (errorCode)
         {
             {
-                sprintf(serviceString, "%8s %d", printMenuItem(&serviceTxt[DEF_T_ERROR]), errorCode);
+                sprintf(serviceString, "%8s %hu", printMenuItem(&serviceTxt[DEF_T_ERROR]), errorCode);
                 oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 4, serviceString);
                 oled.drawButtonUTF8(0, lineHight * 4, U8G2_BTN_INV, 128, 1, 1, "");
             }
@@ -765,12 +737,13 @@ void setup()
 
 void loop()
 {
+// dimmer >= 9500 ? dimmer = 6000 : dimmer+=10;
+
     enc.tick();
     uint16_t tmpTemp = analogRead(NTC_PIN);
     if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
     {
-        // setError(15);
-        Serial.println("737");
+        setError(15);
         state = NTC_ERROR;
     }
 
@@ -779,8 +752,10 @@ void loop()
         WDT_DISABLE();
 
         state = MENU;
-        digitalWrite(DIMMER_PIN, 0);
-        dimmer = 0;
+        // digitalWrite(DIMMER_PIN, 0);
+        // Timer2.stop();
+        // dimmer = HEATER_MIN;
+        heaterOFF();
         piii(500);
         subMenuM.levelUpdate = UP;
         subMenuM.parentID = 0;
@@ -797,11 +772,9 @@ void loop()
     {
     case NTC_ERROR:
         WDT_DISABLE();
-        dimmer = 0;
-        digitalWrite(DIMMER_PIN, 0);
+        heaterOFF();
 #ifdef v220V
         detachInterrupt(INT_NUM);
-        dimmer = 0;
 #endif
         analogWrite(FAN, 255);
         analogWrite(BUZZER_PIN, BUZZER_PWM);
@@ -820,16 +793,11 @@ void loop()
             oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
         } while (oled.nextPage());
 
+        analogWrite(FAN, 255);
+        analogWrite(BUZZER_PIN, BUZZER_PWM);
         while (1)
         {
-            dimmer = 0;
-            digitalWrite(DIMMER_PIN, 0);
-#ifdef v220V
-            detachInterrupt(INT_NUM);
-#endif
-            analogWrite(FAN, 255);
-            // analogWrite(BUZZER_PIN, BUZZER_PWM);
-            // Serial.println("NTC ERROR CASE");
+            heaterOFF();
         }
         break;
     case OFF:
@@ -842,7 +810,7 @@ void loop()
         WDT(WDTO_2S);
         if (iDryer.getData())
         {
-            if (iDryer.data.ntcTemp > 30)
+            if (iDryer.data.ntcTemp > 40)
             {
                 analogWrite(FAN, 255);
             }
@@ -852,7 +820,7 @@ void loop()
             }
         }
 
-        analogWrite(DIMMER_PIN, 0); //!! Что-то придумать!!!
+        // analogWrite(DIMMER_PIN, 0); //!! Что-то придумать!!!
         if (flagISR)
         {
             flagISR = 0;
@@ -885,13 +853,14 @@ void loop()
             {
                 setError(14);
                 state = NTC_ERROR;
-                Serial.println("851");
+                // Serial.println("851");
             }
         }
 
-        pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
-        analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
+        iDryer.data.flagTimeUpdate ? analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)) : analogWrite(FAN, 255);
 
+        // pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
+        
         if (iDryer.data.bmeTemp < iDryer.data.setTemp)
         {
             Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
@@ -906,35 +875,21 @@ void loop()
         if (Setpoint > TMP_MAX)
             Setpoint = TMP_MAX;
 
-        pid.Compute();
         Input = double(iDryer.data.ntcTemp);
+        pid.Compute();
 
-#ifdef v220V
-        // dimmer = map(Output, 0, 255, HEATER_MIN, HEATER_MIN);
-        dimmer = (uint16_t)(HEATER_MIN - Output + HEATER_MAX);
-        #ifdef DEBUG
-        if(millis() - printOldTime > 500)
-        {
-            Serial.print("Setpoint: ");
-            Serial.print(Setpoint);
-            Serial.print("\tKp: ");
-            Serial.print(pid.GetKp());
-            Serial.print("\tKi: ");
-            Serial.print(pid.GetKi());
-            Serial.print("\tKd: ");
-            Serial.print(pid.GetKd());
-            Serial.print("\tdimmer: ");
-            Serial.println(dimmer);
-        }
-        #endif
-#endif
+// #ifdef v220V
+//         // dimmer = (uint16_t)Output;
+//         dimmer = HEATER_MAX + HEATER_MIN - Output;
+// #endif
+// #ifdef v24V
+// #ifdef DEBUG
+// #endif
+//         analogWrite(DIMMER_PIN, Output);
+// #endif
 
-#ifdef v24V
-#ifdef DEBUG
-#endif
-        // Serial.println("setpoint: " + String(regulator.setpoint) + "\tntcTemp: " + String(iDryer.data.ntcTemp) +  "PWM: " + String(regulator.getResult()));
-        analogWrite(DIMMER_PIN, Output);
-#endif
+        heaterON(Output, dimmer);
+
         // TODO подобрать условие включения часов
         if (millis() - oldTimer >= 60000 && iDryer.data.flagTimeUpdate)
         {
@@ -943,9 +898,9 @@ void loop()
         }
         if (iDryer.data.setTime == 0)
         {
-            oldTimer = 0;
             subMenuM.parentID = 5; // ID пункта хранение
-            delay(500);
+            delay(100);
+            heaterOFF();
             storageStart();
         }
 #ifdef WITH_BLACKJACK_AND_HOOKERS
@@ -995,8 +950,9 @@ void loop()
             }
         }
 
-        pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
-        analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
+        iDryer.data.flagTimeUpdate ? analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)) : analogWrite(FAN, 255);
+        
+        // pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
 
         if (iDryer.data.bmeTemp < iDryer.data.setTemp)
         {
@@ -1019,28 +975,28 @@ void loop()
             Input = double(iDryer.data.ntcTemp);
             pid.Compute();
 
-#ifdef v220V
-            // dimmer = map(Output, 0, 255, HEATER_MIN, HEATER_MAX);
-            dimmer = Output;
-#endif
-
-#ifdef v24V
-            analogWrite(DIMMER_PIN, Output);
-#endif
+// #ifdef v220V
+//             // dimmer = map(Output, 0, 255, HEATER_MIN, HEATER_MAX);
+//             dimmer = Output;
+// #endif
+// #ifdef v24V
+//             analogWrite(DIMMER_PIN, Output);
+// #endif
+        heaterON(Output, dimmer);
         }
         else
         {
             iDryer.data.flag = 0;
             Input = double(iDryer.data.ntcTemp);
-            Setpoint = 0;
-            pid.Compute();
-#ifdef v220V
-            dimmer = HEATER_MIN;
-#endif
-
-#ifdef v24V
-            analogWrite(DIMMER_PIN, 0);
-#endif
+            // Setpoint = 0;
+            // pid.Compute();
+            heaterON(Output = 0, dimmer);
+// #ifdef v220V
+//             dimmer = HEATER_MIN;
+// #endif
+// #ifdef v24V
+//             analogWrite(DIMMER_PIN, 0);
+// #endif
             // Serial.print("\tHEATER NAH!: ");
         }
 
@@ -1078,29 +1034,24 @@ void loop()
     case AUTOPID:
         WDT(WDTO_4S);
         PIDAutotuner tuner = PIDAutotuner();
-        Serial.println(iDryer.data.setTemp);
         tuner.setTargetInputValue((float)iDryer.data.setTemp);
         tuner.setLoopInterval(long(iDryer.data.sampleTime) * 1000);
         tuner.setTuningCycles(AUTOPID_ATTEMPT);
         tuner.setOutputRange(HEATER_MIN, HEATER_MAX);
-        // ZNModeNoOvershoot - Defaults,   ZNModeBasicPID
-        tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
+        tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);         // ZNModeNoOvershoot - Defaults,   ZNModeBasicPID
         tuner.startTuningLoop(micros());
-
 
         oled.clear();
         do
         {
             oled.setFont(u8g2_font);
-            //oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_ERROR]))) / 2, lineHight, printMenuItem(&serviceTxt[DEF_T_ERROR]));
-            //oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_CHECK]))) / 2, lineHight * 2, printMenuItem(&serviceTxt[DEF_T_CHECK]));
             oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[DEF_PID_AVTOPID]))) / 2, lineHight * 3, printMenuItem(&menuTxt[DEF_PID_AVTOPID]));
-            //oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_OVERLOAD]))) / 2, lineHight * 4, printMenuItem(&serviceTxt[DEF_T_OVERLOAD]));
             oled.drawButtonUTF8(0, 1 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
             oled.drawButtonUTF8(0, 2 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
             oled.drawButtonUTF8(0, 3 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
             oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
         } while (oled.nextPage());
+        
         unsigned long microseconds;
         WDT(WDTO_2S);
 
@@ -1110,70 +1061,46 @@ void loop()
         {
             microseconds = micros();
             iDryer.getData();
-#ifdef v220V
-            // dimmer = map(uint8_t(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)), 0, 255, HEATER_MIN, HEATER_MAX);
-            dimmer = (uint16_t)tuner.tunePID(double(iDryer.data.ntcTemp), microseconds);
-#endif
-#ifdef v24V
-            analogWrite(DIMMER_PIN, uint8_t(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)));
-#endif
+// #ifdef v220V
+//             // dimmer = (uint16_t)(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds));
+//             dimmer = HEATER_MAX + HEATER_MIN - (uint16_t)(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds));
+// #endif
+// #ifdef v24V
+//             analogWrite(DIMMER_PIN, uint8_t(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)));
+// #endif
+            
+            heaterON((uint16_t)(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)), dimmer);
+            oled.firstPage();
+            do
+            {
+                oled.setFont(u8g2_font);
+                sprintf(serviceString, "ТСТ-%d/%d  %dС", tuner.getCycle(), AUTOPID_ATTEMPT, (uint8_t)ntc.analog2temp());
+                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 1, serviceString);
+                sprintf(serviceString, "%4s %6hu", printMenuItem(&menuTxt[DEF_PID_KP]), (uint16_t)(abs(tuner.getKp()) * 100));
+                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 2, serviceString);
+                sprintf(serviceString, "%4s %6hu", printMenuItem(&menuTxt[DEF_PID_KI]), (uint16_t)(abs(tuner.getKi()) * 100));
+                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 3, serviceString);
+                sprintf(serviceString, "%2s %6hu", printMenuItem(&menuTxt[DEF_PID_KD]), (uint16_t)(abs(tuner.getKd()) * 100));
+                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 4, serviceString);
+            } while (oled.nextPage());
 
-            // uint32_t new_loop = uint32_t(iDryer.data.sampleTime) * 1000;
-
-            sprintf(serviceString, "ТСТ-%d/%d %dС %6d %6d %6d", tuner.getCycle(), AUTOPID_ATTEMPT, (uint8_t)ntc.analog2temp(), uint16_t(tuner.getKp() * 100), uint16_t(tuner.getKi() * 100), uint16_t(tuner.getKd() * 100));
-            Serial.println(serviceString);
-
-            // oled.firstPage();
-            // do
-            // {
-            //     oled.setFont(u8g2_font);
-            //     sprintf(serviceString, "ТСТ-%d/%d  %dС", tuner.getCycle(), AUTOPID_ATTEMPT, (uint8_t)ntc.analog2temp());
-            //     oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 1, serviceString);
-            //     sprintf(serviceString, "%4s %6d", printMenuItem(&menuTxt[DEF_PID_KP]), uint16_t(tuner.getKp() * 100));
-            //     oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 2, serviceString);
-            //     sprintf(serviceString, "%4s %6d", printMenuItem(&menuTxt[DEF_PID_KI]), uint16_t(tuner.getKi() * 100));
-            //     oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 3, serviceString);
-            //     sprintf(serviceString, "%2s %6d", printMenuItem(&menuTxt[DEF_PID_KD]), uint16_t(tuner.getKd() * 100));
-            //     oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 4, serviceString);
-            // } while (oled.nextPage());
-
-            // Serial.print(iDryer.data.sampleTime);
-            // Serial.print("  ");
-            // Serial.print(micros());
-            // Serial.print("  ");
-            // Serial.print(microseconds);
-            // Serial.print("  ");
-            // Serial.print(micros() - microseconds);
-            // Serial.print("  ");
-            // Serial.println((unsigned long)iDryer.data.sampleTime * 1000);
-            // delay(iDryer.data.sampleTime - (millis() - microseconds / 1000)); // 
             while (micros() - microseconds < (unsigned long)iDryer.data.sampleTime * 1000){}
         }
-        WDT(WDTO_250MS);
-        dimmer = HEATER_MIN;
-        delay(20);
-        analogWrite(DIMMER_PIN, 0);
-        WDT(WDTO_1S);
-
-        // Serial.println("======= pid 3 =========");
-        // Serial.print("  getKp: ");
-        // Serial.print(tuner.getKp());
-        // Serial.print("  getKi: ");
-        // Serial.print(tuner.getKi());
-        // Serial.print("  getKd: ");
-        // Serial.println(tuner.getKd());
-        // Serial.println("======= END pid 3 =========");
-        eeprom_update_word(&menuVal[DEF_PID_KP], abs(tuner.getKp() * 100));
-        eeprom_update_word(&menuVal[DEF_PID_KI], abs(tuner.getKi() * 100));
-        eeprom_update_word(&menuVal[DEF_PID_KD], abs(tuner.getKd() * 100));
+        WDT(WDTO_2S);
+        // #ifdef v220V
+        // dimmer = HEATER_MAX;
+        // #else
+        // dimmer = HEATER_MIN;
+        // #endif
+        // analogWrite(DIMMER_PIN, 0);
+        heaterOFF();
+        analogWrite(FAN, 250);
+        
+        eeprom_update_word(&menuVal[DEF_PID_KP], (uint16_t)(abs(tuner.getKp()) * 100));
+        eeprom_update_word(&menuVal[DEF_PID_KI], (uint16_t)(abs(tuner.getKi()) * 100));
+        eeprom_update_word(&menuVal[DEF_PID_KD], (uint16_t)(abs(tuner.getKd()) * 100));
         eeprom_update_word(&menuVal[DEF_SETTINGS_DELTA], iDryer.data.ntcTemp - iDryer.data.bmeTemp);
         saveAll();
-        // Serial.print("  readEEP Kp: ");
-        // Serial.println(eeprom_read_word(&menuVal[DEF_PID_KP]));
-        // Serial.print("  readEEP Ki: ");
-        // Serial.println(eeprom_read_word(&menuVal[DEF_PID_KI]));
-        // Serial.print("  readEEP Kd: ");
-        // Serial.println(eeprom_read_word(&menuVal[DEF_PID_KD]));
 
         oled.clear();
         do
@@ -1182,10 +1109,9 @@ void loop()
             oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[DEF_SETTINGS_PID]))) / 2, lineHight * 2, printMenuItem(&menuTxt[DEF_SETTINGS_PID]));
             oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[5]))) / 2, lineHight * 3, printMenuItem(&serviceTxt[5]));
         } while (oled.nextPage());
-        analogWrite(FAN, 250);
         WDT_DISABLE();
 
-        uint8_t time_delay = 30;
+        uint8_t time_delay = 40;
         while (time_delay)
         {
             char val[4];
@@ -1226,31 +1152,25 @@ void loop()
 void encoderSate(struct control *control)
 {
     // enc.tick();
-
     if (enc.isClick())
     {
         control->ok = 1;
-        // Serial.println("\t\t  enc.isClick()");
     }
     if (enc.isHolded())
     {
         control->hold = 1;
-        // Serial.print("\t\t  enc.isHolded()");
     }
     if (enc.isRelease())
     {
         enc.resetStates();
-        // Serial.print(" enc.isRelease() control->hold = 1;");
     }
     if (enc.isLeft())
     {
         control->left = 1;
-        // Serial.print("enc.isLeft()");
     }
     if (enc.isRight())
     {
         control->right = 1;
-        // Serial.print("enc.isRight()");
     }
 }
 
@@ -1260,7 +1180,6 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
     {
         encoder->ok = false;
         subMenuM.pointerUpdate = 1;
-        // Serial.print("encoder->ok");
 
         if (!pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].min) &&
             !pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].max) &&
@@ -1273,7 +1192,6 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
         {
             if (functionMenu[subMenu->membersID[subMenu->position]]) // подменю с функцией
             {
-                // funcNum = subMenu->membersID[subMenu->linesToScreen[subMenu->pointerPos]];
                 functionMenu[subMenu->membersID[subMenu->position]]();
             }
             else // подменю с изменяемыми параметрами
@@ -1351,7 +1269,6 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
         }
         subMenu->pointerUpdate = true;
     }
-    // Serial.println("--> 4");
 }
 
 void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu)
@@ -1361,11 +1278,6 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
     if (subMenu->levelUpdate == DOWN)
     {
         subMenu->parentID = subMenu->membersID[subMenu->position];
-        // Serial.print("posTmp ");
-        // Serial.print(posTmp);
-        // Serial.print(" : ");
-        // Serial.println(subMenu->parentID);
-
         subMenu->position = 0;
         subMenu->pointerPos = 0;
     }
@@ -1381,26 +1293,16 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
 
     for (uint8_t i = 0; i < menuSize; i++)
     {
-        // Serial.println("i: " + String(i));
-        // Serial.println("&constMenu[i].parentID: " + String(pgm_read_byte(&constMenu[i].parentID)));
         if (pgm_read_byte(&constMenu[i].parentID) == subMenu->parentID && pgm_read_byte(&constMenu[i].id) != 0)
         {
             subMenu->membersID[iCounter] = i;
-            // Serial.print(" i: " + String(i));
-            // Serial.print(" ID: " + String(pgm_read_byte(&constMenu[i].parentID)));
-            // Serial.print(" id): " + String(pgm_read_byte(&constMenu[i].id)));
-            // Serial.print(" mbrs: " + String(printMenuItem(&menuTxt[subMenu->membersID[iCounter]])));
-            // Serial.println(" Val: " + String(eeprom_read_word(&menuVal[subMenu->membersID[iCounter]])));
-            // delay(20);
             if (i == posTmp)
             {
-                // Serial.println(String(i) + " : " + String(printMenuItem(&constMenu[i].text)) + "\tsubmenuHandler subMenu->position" + String(subMenu->position));
                 subMenu->position = iCounter;
                 subMenu->pointerUpdate = 1;
             }
             iCounter++;
         }
-        // Serial.println("");
     }
     subMenu->membersQuantity = iCounter;
     subMenu->min = 0;
@@ -1430,18 +1332,19 @@ void screen(struct subMenu *subMenu)
 
 void dryStart()
 {
+    oldTimer = 0;
+    attachInterrupt(INT_NUM, isr, RISING);
+    Timer2.enableISR();
     piii(100);
-    // saveAll();
     state = DRY;
 
     iDryer.data.flag = 1;
     iDryer.data.flagTimeUpdate = 0;
     iDryer.data.flagScreenUpdate = 1;
-    // iDryer.data.setTemp = menuVal[subMenuM.parentID + 1];
-    // iDryer.data.setTime = menuVal[subMenuM.parentID + 2];
+
     iDryer.data.setTemp = eeprom_read_word(&menuVal[subMenuM.parentID + 1]);
     iDryer.data.setTime = eeprom_read_word(&menuVal[subMenuM.parentID + 2]);
-    analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
+
     iDryer.data.startTime = millis();
 #ifdef WITH_BLACKJACK_AND_HOOKERS
     servoPulse(SERVO_1_PIN, 180);
@@ -1459,17 +1362,18 @@ void dryStart()
 
 void storageStart()
 {
+    oldTimer = 0;
+    attachInterrupt(INT_NUM, isr, RISING);
+    Timer2.enableISR();
     piii(100);
-    // saveAll();
     state = STORAGE;
 
     iDryer.data.flag = 1;
     iDryer.data.flagTimeUpdate = 0;
     iDryer.data.flagScreenUpdate = 1;
     iDryer.data.setTemp = eeprom_read_word(&menuVal[subMenuM.parentID + 1]); // TODO
-    // iDryer.data.setHumidity = menuVal[subMenuM.parentID + 2];
     iDryer.data.setHumidity = eeprom_read_word(&menuVal[subMenuM.parentID + 2]);
-    analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
+
 #ifdef WITH_BLACKJACK_AND_HOOKERS
     servoPulse(SERVO_1_PIN, 180);
     servoPulse(SERVO_1_PIN, 90);
@@ -1486,17 +1390,19 @@ void storageStart()
 
 void autoPidM()
 {
+    attachInterrupt(INT_NUM, isr, RISING);
+    Timer2.enableISR();
     WDT(WDTO_250MS);
 #ifdef DEBUG
     wdt_reset();
     wdt_disable();
 #endif
     piii(100);
-    // // saveAll();
+    
     state = AUTOPID;
     iDryer.data.flag = 1;
     iDryer.data.flagTimeUpdate = 0;
-    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AVTOPID_TEMPERATURE]); //!! Проверить
+    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AVTOPID_TEMPERATURE]);
     analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
     pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
 }
@@ -1510,6 +1416,7 @@ void updateIDyerData()
     iDryer.data.sampleTime = eeprom_read_word(&menuVal[DEF_AVTOPID_TIME_MS]);
     iDryer.data.deltaT = eeprom_read_word(&menuVal[DEF_SETTINGS_DELTA]);
     iDryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
+    pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
     pid.SetSampleTime(iDryer.data.sampleTime);
 }
 
@@ -1575,14 +1482,16 @@ uint8_t printError(uint16_t error)
         }
     }
 
-    for (uint8_t i = 0; i < 16; i++)
-    {
-        Serial.print(i);
-        Serial.print(":");
-        Serial.print(((error) >> (i)) & 0x01);
-        Serial.print("  | ");
-    }
-    Serial.println(" <|||> ");
+//!!! 
+// TODO 
+    // for (uint8_t i = 0; i < 16; i++)
+    // {
+    //     Serial.print(i);
+    //     Serial.print(":");
+    //     Serial.print(((error) >> (i)) & 0x01);
+    //     Serial.print("  | ");
+    // }
+    // Serial.println("");
 
     return 0;
 }
@@ -1618,3 +1527,24 @@ void servoPulse(int pin, int angle)
     }
 }
 #endif
+
+void heaterON(uint16_t Output, uint16_t& dimmer)
+{
+    #ifdef v220V
+    dimmer = uint16_t(HEATER_MAX + HEATER_MIN - Output);
+    #else
+    analogWrite(DIMMER_PIN, Output);    
+    #endif
+}
+
+void heaterOFF()
+{
+    #ifdef v220V
+    detachInterrupt(INT_NUM);
+    Timer2.stop();
+    dimmer = HEATER_MAX;
+    digitalWrite(DIMMER_PIN, 0);
+    #else
+    digitalWrite(DIMMER_PIN, 0);  
+    #endif
+}
