@@ -576,7 +576,6 @@ void setup()
     
     pinMode(ZERO_PIN, INPUT_PULLUP);
     pinMode(DIMMER_PIN, OUTPUT);
-    
     // attachInterrupt(INT_NUM, isr, RISING);
     // Timer2.enableISR();
 #endif
