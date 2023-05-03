@@ -291,106 +291,109 @@ public:
 
 } iDryer;
 
-// class servo
-// {
-//     public:
-//     #define OPEN 1
-//     #define CLOSED 0
-//     uint8_t pin = 0;
-//     unsigned long oldTime = 0;
-//     uint16_t openTime = 0;
-//     uint16_t closedTome = 0;
-//     uint16_t angle = 0;
-//     uint8_t state = CLOSED;
-//     servo(uint8_t _srvPin, uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
-//     {
-//         pin = _srvPin;
-//         closedTome = _closedTime;
-//         openTime = _openTime;
-//         angle = _angle;
-//         servoPulse(pin, 90);
-//     }
-//     void set(uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
-//     {
-//         closedTome = _closedTime;
-//         openTime = _openTime;
-//         angle = _angle;
-//     }
-//     void test(uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
-//     {
-//         closedTome = _closedTime;
-//         openTime = _openTime;
-//         angle = _angle;
-//         if (state == OPEN)
-//         {
-//             servoPulse(pin, 90);
-//             state = CLOSED;
-//             oldTime = millis();
-//         }
-//         if (state == CLOSED)
-//         {
-//             servoPulse(pin, 90 + angle);
-//             state = OPEN;
-//             oldTime = millis();
-//         }
-//     }
-//     void test()
-//     {
-//         if (state == OPEN)
-//         {
-//             servoPulse(pin, 90);
-//             state = CLOSED;
-//             oldTime = millis();
-//         }
-//         if (state == CLOSED)
-//         {
-//             servoPulse(pin, 90 + angle);
-//             state = OPEN;
-//             oldTime = millis();
-//         }
-//     }
-//     void check()
-//     {
-//         if(state == OPEN)
-//         {
-//             if (millis() - oldTime > openTime * 1000 * 60)
-//             {
-//                 servoPulse(pin, 90);
-//                 state = CLOSED;
-//                 oldTime = millis();
-//             }
-//         }
-//         if(state == CLOSED)
-//         {
-//             if (millis() - oldTime > closedTome * 1000 * 60)
-//             {
-//                 servoPulse(pin, 90 + angle);
-//                 state = OPEN;
-//                 oldTime = millis();
-//             }
-//         }
-//     }
+#ifdef WITH_BLACKJACK_AND_HOOKERS
+class servo
+{
+    public:
+    #define OPEN 1
+    #define CLOSED 0
+    uint8_t pin = 0;
+    unsigned long oldTime = 0;
+    uint16_t openTime = 0;
+    uint16_t closedTime = 0;
+    uint8_t angle = 0;
+    uint8_t state = CLOSED;
+    servo(uint8_t _srvPin, uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
+    {
+        pin = _srvPin;
+        closedTime = _closedTime;
+        openTime = _openTime;
+        angle = _angle;
+    }
+    void set(uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
+    {
+        closedTime = _closedTime;
+        openTime = _openTime;
+        angle = _angle;
+    }
+    void test(uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
+    {
+        // closedTime = _closedTime;
+        // openTime = _openTime;
+        // angle = _angle;
+        // if (state == OPEN)
+        // {
+        //     servoPulse(pin, 90);
+        //     state = CLOSED;
+        //     oldTime = millis();
+        // }
+        // if (state == CLOSED)
+        // {
+        //     servoPulse(pin, 90 + angle);
+        //     state = OPEN;
+        //     oldTime = millis();
+        // }
+    }
+    void test()
+    {
+        servoPulse(pin, 90);
+        state = CLOSED;
+        if (state == CLOSED)
+        {
+            servoPulse(pin, 90 + angle);
+            state = OPEN;
+        }
+        if (state == OPEN)
+        {
+            servoPulse(pin, 90);
+            state = CLOSED;
+        }
+        oldTime = millis();
+    }
+    void check()
+    {
+        if(state == CLOSED)
+        {
+            if ( oldTime < millis())
+            {
+                servoPulse(pin, 90 + angle);
+                state = OPEN;
+                oldTime = millis() + openTime * 1000 * 60;
+            }
+        }
+        if(state == OPEN)
+        {
+            if ( oldTime < millis())
+            {
+                servoPulse(pin, 90);
+                state = CLOSED;
+                oldTime = millis() + closedTime * 1000 * 60;
+            }
+        }
+    }
 
-//     void servoPulse(int pin, int angle)
-//     {
-//         piii(SERVO_CUCKOO);
-//         int pulsewidth = map(angle, 0, 180, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
-//         for (int pulseCounter = 0; pulseCounter <= 50; pulseCounter++)
-//         {
-//             unsigned long startTime = micros();
-//             digitalWrite(pin, HIGH);
-//             while (micros() - startTime < pulsewidth)
-//             {
-//             }
-//             digitalWrite(pin, LOW);
-//             while (micros() - startTime < SERVO_REIOD_MS * 1000)
-//             {
-//             }
-//         }
-//     }
-// };
-// servo Servo1(SERVO_1_PIN, menuVal[DEF_SERVO1 + 1], menuVal[DEF_SERVO1 + 2], menuVal[DEF_SERVO1 + 3]);
-// servo Servo2(SERVO_2_PIN, menuVal[DEF_SERVO2 + 1], menuVal[DEF_SERVO2 + 2], menuVal[DEF_SERVO2 + 3]);
+    void servoPulse(int pin, int angle)
+    {
+        WDT(WDTO_4S);
+        // piii(SERVO_CUCKOO);
+        int pulsewidth = map(angle, 0, 180, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
+        for (int pulseCounter = 0; pulseCounter <= 50; pulseCounter++)
+        {
+            unsigned long startTime = micros();
+            digitalWrite(pin, HIGH);
+            while (micros() - startTime < pulsewidth)
+            {
+            }
+            digitalWrite(pin, LOW);
+            while (micros() - startTime < SERVO_PERIOD_MS * 1000)
+            {
+            }
+        }
+    }
+};
+servo Servo1(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO_SERVO1 + 1]), eeprom_read_word(&menuVal[DEF_SERVO_SERVO1 + 2]), eeprom_read_word(&menuVal[DEF_SERVO_SERVO1 + 3]));
+servo Servo2(SERVO_2_PIN, eeprom_read_word(&menuVal[DEF_SERVO_SERVO1 + 1]), eeprom_read_word(&menuVal[DEF_SERVO_SERVO1 + 2]), eeprom_read_word(&menuVal[DEF_SERVO_SERVO1 + 3]));
+#endif
 
 #ifdef v220V
 void isr()
@@ -665,6 +668,8 @@ void setup()
 
     pinMode(BUZZER_PIN, OUTPUT);
     pinMode(FAN, OUTPUT);
+    pinMode(SERVO_1_PIN, OUTPUT);
+    pinMode(SERVO_2_PIN, OUTPUT);
 
     oled.begin();
     oled.setFlipMode(SCREEN_FLIP);
@@ -726,12 +731,15 @@ void setup()
     }
 
 #ifdef WITH_BLACKJACK_AND_HOOKERS
-    servoPulse(SERVO_1_PIN, 180);
-    servoPulse(SERVO_1_PIN, 90);
-    servoPulse(SERVO_2_PIN, 180);
-    servoPulse(SERVO_2_PIN, 90);
-    servoState1 == CLOSED;
-    servoState2 == CLOSED;
+    // servoPulse(SERVO_1_PIN, 180);
+    // servoPulse(SERVO_1_PIN, 90);
+    // servoPulse(SERVO_2_PIN, 180);
+    // servoPulse(SERVO_2_PIN, 90);
+    // servoState1 == CLOSED;
+    // servoState2 == CLOSED;
+
+Servo1.test();
+Servo2.test();
 #endif
 }
 
@@ -904,33 +912,8 @@ void loop()
             storageStart();
         }
 #ifdef WITH_BLACKJACK_AND_HOOKERS
-        if (servoState1 == CLOSED && millis() - servoOldTime1 > menuVal[DEF_SERVO_SERVO1 + 1] * 1000 * 60)
-        {
-            servoPulse(SERVO_1_PIN, 90 + menuVal[DEF_SERVO_SERVO1 + 3]);
-            servoState1 = OPEN;
-            servoOldTime1 = millis();
-        }
-        if (servoState1 == OPEN && millis() - servoOldTime1 > menuVal[DEF_SERVO_SERVO1 + 2] * 1000 * 60)
-        {
-            servoPulse(SERVO_1_PIN, 90);
-            servoState1 = CLOSED;
-            servoOldTime1 = millis();
-        }
-
-        if (servoState2 == CLOSED && millis() - servoOldTime2 > menuVal[DEF_SERVO_SERVO2 + 1] * 1000 * 60)
-        {
-            servoPulse(SERVO_2_PIN, 90 + menuVal[DEF_SERVO_SERVO2 + 3]);
-            servoState2 = OPEN;
-            servoOldTime2 = millis();
-        }
-        if (servoState2 == OPEN && millis() - servoOldTime2 > menuVal[DEF_SERVO_SERVO2 + 2] * 1000 * 60)
-        {
-            servoPulse(SERVO_2_PIN, 90);
-            servoState2 = CLOSED;
-            servoOldTime2 = millis();
-        }
-        // Servo1.check();
-        // Servo2.check();
+        Servo1.check();
+        Servo2.check();
 #endif
         break;
     case STORAGE:
@@ -1001,33 +984,8 @@ void loop()
         }
 
 #ifdef WITH_BLACKJACK_AND_HOOKERS
-        if (servoState1 == CLOSED && millis() - servoOldTime1 > menuVal[DEF_SERVO_SERVO1 + 1] * 1000 * 60)
-        {
-            servoPulse(SERVO_1_PIN, 90 + menuVal[DEF_SERVO_SERVO1 + 3]);
-            servoState1 = OPEN;
-            servoOldTime1 = millis();
-        }
-        if (servoState1 == OPEN && millis() - servoOldTime1 > menuVal[DEF_SERVO_SERVO1 + 2] * 1000 * 60)
-        {
-            servoPulse(SERVO_1_PIN, 90);
-            servoState1 = CLOSED;
-            servoOldTime1 = millis();
-        }
-
-        if (servoState2 == CLOSED && millis() - servoOldTime2 > menuVal[DEF_SERVO_SERVO2 + 1] * 1000 * 60)
-        {
-            servoPulse(SERVO_2_PIN, 90 + menuVal[DEF_SERVO_SERVO2 + 3]);
-            servoState2 = OPEN;
-            servoOldTime2 = millis();
-        }
-        if (servoState2 == OPEN && millis() - servoOldTime2 > menuVal[DEF_SERVO_SERVO2 + 2] * 1000 * 60)
-        {
-            servoPulse(SERVO_2_PIN, 90);
-            servoState2 = CLOSED;
-            servoOldTime2 = millis();
-        }
-        // Servo1.check();
-        // Servo2.check();
+        Servo1.check();
+        Servo2.check();
 #endif
 
         break;
@@ -1347,16 +1305,8 @@ void dryStart()
 
     iDryer.data.startTime = millis();
 #ifdef WITH_BLACKJACK_AND_HOOKERS
-    servoPulse(SERVO_1_PIN, 180);
-    servoPulse(SERVO_1_PIN, 90);
-    servoPulse(SERVO_2_PIN, 180);
-    servoPulse(SERVO_2_PIN, 90);
-    servoState1 == CLOSED;
-    servoState2 == CLOSED;
-    // servoOldTime1 = millis() + menuVal[DEF_SERVO1 + 1] * 1000 * 60;
-    // servoOldTime2 = millis() + menuVal[DEF_SERVO2 + 1] * 1000 * 60;
-    servoOldTime1 = millis() + eeprom_read_word(&menuVal[DEF_SERVO_SERVO1 + 1]) * 1000 * 60;
-    servoOldTime2 = millis() + eeprom_read_word(&menuVal[DEF_SERVO_SERVO2 + 1]) * 1000 * 60;
+Servo1.test();
+Servo2.test();
 #endif
 }
 
@@ -1375,16 +1325,8 @@ void storageStart()
     iDryer.data.setHumidity = eeprom_read_word(&menuVal[subMenuM.parentID + 2]);
 
 #ifdef WITH_BLACKJACK_AND_HOOKERS
-    servoPulse(SERVO_1_PIN, 180);
-    servoPulse(SERVO_1_PIN, 90);
-    servoPulse(SERVO_2_PIN, 180);
-    servoPulse(SERVO_2_PIN, 90);
-    servoState1 == CLOSED;
-    servoState2 == CLOSED;
-    // servoOldTime1 = millis() + menuVal[DEF_SERVO1 + 1] * 1000 * 60;
-    // servoOldTime2 = millis() + menuVal[DEF_SERVO2 + 1] * 1000 * 60;
-    servoOldTime1 = millis() + eeprom_read_word(&menuVal[DEF_SERVO_SERVO1 + 1]) * 1000 * 60;
-    servoOldTime2 = millis() + eeprom_read_word(&menuVal[DEF_SERVO_SERVO2 + 1]) * 1000 * 60;
+    Servo1.test();
+    Servo2.test();
 #endif
 }
 
@@ -1502,31 +1444,6 @@ void piii(uint16_t time_ms)
     delay(time_ms);
     analogWrite(BUZZER_PIN, 0);
 }
-
-#ifdef WITH_BLACKJACK_AND_HOOKERS
-void servoPulse(int pin, int angle)
-{
-    WDT(WDTO_4S);
-#ifdef DEBUG
-    wdt_reset();
-    wdt_disable();
-#endif
-    piii(SERVO_CUCKOO);
-    int pulsewidth = map(angle, 0, 180, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
-    for (int pulseCounter = 0; pulseCounter <= 50; pulseCounter++)
-    {
-        unsigned long startTime = micros();
-        digitalWrite(pin, HIGH);
-        while (micros() - startTime < pulsewidth)
-        {
-        }
-        digitalWrite(pin, LOW);
-        while (micros() - startTime < SERVO_PERIOD_MS * 1000)
-        {
-        }
-    }
-}
-#endif
 
 void heaterON(uint16_t Output, uint16_t& dimmer)
 {
