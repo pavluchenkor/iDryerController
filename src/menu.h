@@ -17,11 +17,11 @@
 
 struct menuS
 {
-  uint8_t id;
-  uint8_t parentID;
-  // const char *text;
-  uint16_t min;
-  uint16_t max;
+    uint8_t id;
+    uint8_t parentID;
+    // const char *text;
+    uint16_t min;
+    uint16_t max;
 };
 
 void dryStart();
@@ -131,7 +131,7 @@ PGM_P const menuTxt[] PROGMEM = {
 #endif
 
 const menuS menuPGM[] PROGMEM = {
-    {0, 0, 0, 0},
+    {0, NULL, 0, 0},
     {1, 0, 0, 0},
     {2, 1, 0, 100},
     {3, 1, 0, 600},
@@ -159,7 +159,7 @@ const menuS menuPGM[] PROGMEM = {
     {25, 23, 0, 10000},
     {26, 23, 0, 10000},
     {27, 23, 0, 0},
-    {28, 27, 200, 1000},
+    {28, 27, 50, 1000},
     {29, 27, 30, 100},
     {30, 27, 0, 0},
     {31, 22, 20, 100},
@@ -175,7 +175,6 @@ const menuS menuPGM[] PROGMEM = {
     {41, 38, 0, 80},
     {42, 22, 0, 0},
 };
-
 
 #ifdef WITH_BLACKJACK_AND_HOOKERS
 
@@ -230,8 +229,8 @@ uint16_t menuValDefault[] = {
 uint16_t menuVal[] EEMEM = {
     123, // id: 0
     0,   // id: 1
-    65,  // id: 2
-    240, // id: 3
+    60,  // id: 2
+    45,  // id: 3
     0,   // id: 4
     0,   // id: 5
     35,  // id: 6
@@ -253,21 +252,21 @@ uint16_t menuVal[] EEMEM = {
     0,   // id: 22
     0,   // id: 23
     500, // id: 24
-    10, // id: 25
-    100, // id: 26
+    1,  // id: 25
+    200, // id: 26
     0,   // id: 27
-    250,  // id: 28
+    300, // id: 28
     60,  // id: 29
     0,   // id: 30
     50,  // id: 31
-    8,   // id: 32
+    20,   // id: 32
     0,   // id: 33
     0,   // id: 34
-    3,   // id: 35
+    30,  // id: 35
     1,   // id: 36
     60,  // id: 37
     0,   // id: 38
-    3,   // id: 39
+    30,  // id: 39
     1,   // id: 40
     60,  // id: 41
     0,   // id: 42

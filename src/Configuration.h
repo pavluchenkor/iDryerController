@@ -1,6 +1,42 @@
 ﻿#ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
+/* !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+// /* 01 */ void heaterOFF();
+// /* 02 */ void heaterON(uint16_t Output, uint16_t &dimmer);
+// /* 03 */ void servoPulse(int pin, int angle);
+// /* 04 */ void updateIDyerData();
+// /* 05 */ void encoderSate(struct control *control);
+// /* 06 */ void screen(struct subMenu *subMenu);
+// /* 07 */ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct control *encoder, struct subMenu *subMenu);
+// /* 08 */ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu);
+// /* 09 */ void piii(uint16_t time_ms);
+// /* 10 */ void dryStart();
+// /* 11 */ void storageStart();
+// /* 12 */ void autoPidM();
+// /* 13 */ uint32_t printError(uint32_t error);
+// /* 14 */ uint32_t readError();
+// /* 15 */ bool setError(uint8_t errorCode);
+// /* 16 */ void displayPrint(struct subMenu *subMenu);
+// /* 17 */ void displayPrintMode();
+// /* 18 */ // PID TUNING;
+// /* 20 */ // CASE OFF
+// /* 21 */ // CASE ON
+// /* 22 */ // CASE MENU
+// /* 23 */ // CASE DRY
+// /* 24 */ // CASE STORAGE
+// /* 25 */ // CASE AUTOPID
+// /* 26 */ // NTC MIN
+// /* 27 */ // NTC MAX
+// /* 28 */ // BME MIN
+// /* 29 */ // BME MAX
+// /* 30 */ // ADC ERROR
+// /* 0 */  // ADC ACCUMULATED ERROR
+// /* 31 */ // iDryer.getData
+/* !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+
+
+
 /******************************************************************************
  * Если используется версия без замены бутлоатера ардуино то:
  * - нет ватчдога(это такая фигня которая в случае зависания ардуины перезагрузит ее и, как вариант, нагреватель не рподпалит дом)
@@ -89,7 +125,7 @@
 #define TEMP_SENSOR_0 6 // This is thermistor 0  /реборн сток EPCOS 100K B57560G104F - 6
 
 #define TMP_MIN 1
-#define TMP_MAX 100
+#define TMP_MAX 120
 
 /**********************
  * Autopid attemption 
@@ -102,10 +138,10 @@
  * if OVERWRITE_PID - 0, pid, after burning, will be default
  **********************/
 #define OVERWRITE_PID 0
-#define K_PROPRTIONAL 10 // 49422
-#define K_INTEGRAL 39 //3953
-#define K_DERIVATIVE 23373
-#define K_SAMPLE_TIME 500 // Чем более инертная система тем больше времени примерно от 250(не менее 200) для легких и быстрых нагреватеелей до 1000 для толстых с длительным временем нагрева
+#define K_PROPRTIONAL 20 // 19287
+#define K_INTEGRAL 1 //1972
+#define K_DERIVATIVE 40 // 
+#define K_SAMPLE_TIME 300 // Чем более инертная система тем больше времени примерно от 250(не менее 200) для легких и быстрых нагреватеелей до 1000 для толстых с длительным временем нагрева
 
 /*********************
  * Your revision PCB
