@@ -41,9 +41,9 @@
 В целом прошивку для ядра ардуино использовать можно, но лучше потратить пол часа времени, перешить бутлоадер и пользоваться нормальной прошивкой.
 
 Коммутация:
-(https://github.com/pavluchenkor/iDryerController/blob/assets/pins.png)
+![A test image](https://github.com/pavluchenkor/iDryerController/blob/assets/pins.png)
 
-(https://github.com/pavluchenkor/iDryerController/blob/pins.png)
+![A test image](https://github.com/pavluchenkor/iDryerController/blob/pins.png)
 
 Компиляция и прошивка:
 в файле platformio.ini указать USB порт к которому подключена ардуина
