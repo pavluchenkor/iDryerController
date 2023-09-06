@@ -40,6 +40,10 @@
   - безопасность прошивки
 В целом прошивку для ядра ардуино использовать можно, но лучше потратить пол часа времени, перешить бутлоадер и пользоваться нормальной прошивкой.
 
+Коммутация:
+https://github.com/pavluchenkor/iDryerController/blob/assets/pins.png
+
+
 Компиляция и прошивка:
 в файле platformio.ini указать USB порт к которому подключена ардуина
 
@@ -50,12 +54,13 @@ pio run -e nanoatmega328new -t upload -t monitor
 2. Прошивка ядра MiniCore
 Потребуется программатор USBasp(можно купить в магазине) или  usbisp(можно сделать из другой ардуино, тоже работает, но программатор лучше).
 
-2.1 смена бутлоадера
-pio run -e fuses_bootloader -t bootloader
+2.1 смена фьюзов и бутлоадера
+2.1.1 pio run -e fuses_bootloader -t fuses
+2.1.2 pio run -e fuses_bootloader -t bootloader
 
 2.2 прошивка МК
     pio run -e eep -t upload -t monitor
-    
+
 2.3 прошивка EEPROM
     pio run -e eep -t uploadeep -t monitor
 
