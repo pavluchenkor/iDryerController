@@ -45,6 +45,8 @@
 
 ![A test image](https://github.com/pavluchenkor/iDryerController/blob/pins.png)
 
+![Optional Text](../master/src_isp/pins.png)
+
 Компиляция и прошивка:
 в файле platformio.ini указать USB порт к которому подключена ардуина
 
