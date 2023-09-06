@@ -43,6 +43,7 @@
 Коммутация:
 https://github.com/pavluchenkor/iDryerController/blob/assets/pins.png
 
+https://github.com/pavluchenkor/iDryerController/blob/pins.png
 
 Компиляция и прошивка:
 в файле platformio.ini указать USB порт к которому подключена ардуина
