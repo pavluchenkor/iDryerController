@@ -41,11 +41,11 @@
 В целом прошивку для ядра ардуино использовать можно, но лучше потратить пол часа времени, перешить бутлоадер и пользоваться нормальной прошивкой.
 
 Коммутация:
-![A test image](https://github.com/pavluchenkor/iDryerController/blob/assets/pins.png)
-
-![A test image](https://github.com/pavluchenkor/iDryerController/blob/pins.png)
-
-![Optional Text](../master/src_isp/pins.png)
+Соедините ардуино Нано с программатором или ArduinoISP 
+![img](../master/src_isp/pins.png)<br>
+![img](../master/src_isp/usbasp10.jpg)
+Обратите внимание, что цоколевка разъемов может отличаться
+![img](../master/src_isp/img001.png)
 
 Компиляция и прошивка:
 в файле platformio.ini указать USB порт к которому подключена ардуина
@@ -54,7 +54,7 @@
 1. Прошивка ардуино
 pio run -e nanoatmega328new -t upload -t monitor
 
-2. Прошивка ядра MiniCore
+1. Прошивка ядра MiniCore
 Потребуется программатор USBasp(можно купить в магазине) или  usbisp(можно сделать из другой ардуино, тоже работает, но программатор лучше).
 
 2.1 смена фьюзов и бутлоадера
