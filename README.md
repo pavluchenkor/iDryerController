@@ -70,9 +70,9 @@ pio run -e nanoatmega328new -t upload -t monitor
 2.1.2 pio run -e fuses_bootloader -t bootloader
 
 2.2 прошивка МК<br>
-    pio run -e eep -t upload -t monitor
+    pio run -e ISP -t upload -t monitor
 
 2.3 прошивка EEPROM<br>
-    pio run -e eep -t uploadeep -t monitor
+    pio run -e EEP -t uploadeep -t monitor
 
 https://github.com/yzhang-gh/vscode-markdown#table-of-contents
