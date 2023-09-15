@@ -54,8 +54,8 @@
 
 Компиляция и прошивка:
 
-в файле platformio.ini указать USB порт к которому подключена ардуина
-
+> В файле configuration.h сконфигурируйте прошивку.
+> в файле platformio.ini указать USB порт к которому подключена ардуина
 
 1. Прошивка ардуино
 pio run -e nanoatmega328new -t upload -t monitor
@@ -74,5 +74,7 @@ pio run -e nanoatmega328new -t upload -t monitor
 
 2.3 прошивка EEPROM<br>
     pio run -e EEP -t uploadeep -t monitor
+
+> Если после прошивки и в процессе экслплуатации на экране появятся ошибки, обратитесь к файлу configuration.h
 
 https://github.com/yzhang-gh/vscode-markdown#table-of-contents
