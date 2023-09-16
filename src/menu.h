@@ -5,7 +5,7 @@
 #if LANG == 0
 #include "menu_rus_ext.h"
 #elif LANG == 1
-#include "menu_no_rus_ext.h"
+#include "menu_en_ext.h"
 #endif
 #else
 #if LANG == 0
