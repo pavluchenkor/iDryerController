@@ -1041,7 +1041,7 @@ void loop()
         if (iDryer.data.bmeHumidity > iDryer.data.setHumidity + 2 && !iDryer.data.flag)
         {
             iDryer.data.flag = 1;
-#ifdef 220
+#ifdef v220V
             attachInterrupt(INT_NUM, isr, RISING);
             Timer2.enableISR();
 #else
