@@ -1041,8 +1041,11 @@ void loop()
         if (iDryer.data.bmeHumidity > iDryer.data.setHumidity + 2 && !iDryer.data.flag)
         {
             iDryer.data.flag = 1;
+#ifdef 220
             attachInterrupt(INT_NUM, isr, RISING);
             Timer2.enableISR();
+#else
+#endif
         }
 
         break;
@@ -1368,7 +1371,7 @@ void dryStart()
     attachInterrupt(INT_NUM, isr, RISING);
     Timer2.enableISR();
 #else
-
+    analogWrite(DIMMER_PIN, HEATER_MIN); // TODO: проверить
 #endif
     piii(100);
     state = DRY;
@@ -1397,11 +1400,11 @@ void storageStart()
     oldTimer = 0;
 #ifdef v220V
     dimmer = HEATER_MAX;
-#else
-
-#endif
     attachInterrupt(INT_NUM, isr, RISING);
     Timer2.enableISR();
+#else
+    analogWrite(DIMMER_PIN, HEATER_MIN); // TODO: проверить
+#endif
     piii(100);
     state = STORAGE;
 
@@ -1424,8 +1427,13 @@ void storageStart()
 void autoPidM()
 {
     WDT(WDTO_250MS, 12);
+#ifdef v220V
     attachInterrupt(INT_NUM, isr, RISING);
     Timer2.enableISR();
+#else
+    // digitalWrite(DIMMER_PIN, 0);
+#endif
+
 #ifdef DEBUG
     wdt_reset();
     wdt_disable();
