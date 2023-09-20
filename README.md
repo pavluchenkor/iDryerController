@@ -31,7 +31,7 @@
   - нет поддержки серво
   - нет поддержки дополнительного ШИМ канала
   - не будет весов для катушек в сушилке
-  - нет поддержки версии
+  - нет поддержки разработчика
 - прошивка под ядро MiniCore
   - работает watch dog timer / в случае cбоя перезагрузит прошивку
   - [поддержка двух серв](https://t.me/iDryer/361)(используются для регулярного проветривания камеры)
@@ -43,8 +43,7 @@
 Коммутация:
 
 Соедините ардуино Нано с программатором или ArduinoISP 
-
-https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/pins.png
+<!-- https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/pins.png -->
 ![img](https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/pins.png)
 
 ![img](https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/usbasp10.jpg)
@@ -55,8 +54,11 @@ https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/p
 
 Компиляция и прошивка:
 
-> В файле configuration.h сконфигурируйте прошивку.
-> в файле platformio.ini указать USB порт к которому подключена ардуина
+!!! warning annotate "Внимание"
+
+    :arrow_forward:</i> В файле configuration.h сконфигурируйте прошивку.
+    
+    :arrow_forward:</i> в файле platformio.ini указать USB порт к которому подключена ардуина
 
 1. Прошивка ардуино
 pio run -e nanoatmega328new -t upload -t monitor
