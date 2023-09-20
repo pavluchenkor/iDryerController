@@ -1,6 +1,4 @@
-**iDryer**
-
-**[группа в телеграмм](https://t.me/iDryer)**
+# Прошивка
 
 Универсальное решение для сушки филамента. Можно собрать из чего-то доступного и дешевого, например старого нагревателя от хитблока, ненужного кулера и радиатора, а в качестве корпуса использовать коробку из хоз.мага и любой утеплитель. Список используемых деталей ограничен только фантазией.
 
@@ -45,12 +43,14 @@
 
 Соедините ардуино Нано с программатором или ArduinoISP 
 
-![img](../master/src_isp/pins.png)<br>
-![img](../master/src_isp/usbasp10.jpg)
+https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/pins.png
+![img](https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/pins.png)
+
+![img](https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/usbasp10.jpg)
 
 Обратите внимание, что цоколевка разъемов может отличаться
 
-![img](../master/src_isp/img001.png)
+![img](https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/img001.png)
 
 Компиляция и прошивка:
 
@@ -77,4 +77,6 @@ pio run -e nanoatmega328new -t upload -t monitor
 
 > Если после прошивки и в процессе эксплуатации на экране появятся ошибки, обратитесь к файлу configuration.h
 
-https://github.com/yzhang-gh/vscode-markdown#table-of-contents
+или за помощью в группу
+
+[группа в телеграмм :fontawesome-solid-paper-plane:](https://t.me/iDryer){ .md-button }
