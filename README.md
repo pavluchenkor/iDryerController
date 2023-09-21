@@ -83,3 +83,5 @@ pio run -e nanoatmega328new -t upload -t monitor
 или за помощью в группу
 
 [группа в телеграмм :fontawesome-solid-paper-plane:](https://t.me/iDryer){ .md-button }
+
+[Contributing :material-file-edit:](https://github.com/pavluchenkor/iDryerController)
