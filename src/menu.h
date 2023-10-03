@@ -226,7 +226,7 @@ uint16_t menuValDefault[] = {
 };
 #endif
 
-uint16_t menuVal[] EEMEM = {
+uint16_t menuVal[] EEMEM     = {
     123, // id: 0
     0,   // id: 1
     60,  // id: 2

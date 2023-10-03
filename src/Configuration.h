@@ -147,7 +147,7 @@
  * 1 - 220v revision
  * 2 - 24v revision
  ********************/
-#define REV 2
+#define REV 1
 
 /**********************
  * 1 - SH1106
@@ -186,6 +186,13 @@
  * 250 active buzzer 
  ********************/
 #define BUZZER_PWM 180
+
+/**********************
+ * FAN
+ * 11 FAN connector on PCB
+ * 6  EXT connector on PCB
+ ********************/
+#define FAN_PIN 6
 
 /**********************
  * SERVO

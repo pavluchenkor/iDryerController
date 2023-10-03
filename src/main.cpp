@@ -57,7 +57,7 @@ uint32_t WDT_ERROR = 0;          // EEMEM = 0b0000000000000000;
 
 //!* 11,6,5,3
 #define BUZZER_PIN 3
-#define FAN 6
+#define FAN FAN_PIN // TODO EXT обновить инструкцию
 #define EXT_PWM 11
 
 #define SERVO_1_PIN 7
