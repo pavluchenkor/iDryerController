@@ -1,6 +1,4 @@
-**iDryer**
-
-**[группа в телеграмм](https://t.me/iDryer)**
+# Прошивка
 
 Универсальное решение для сушки филамента. Можно собрать из чего-то доступного и дешевого, например старого нагревателя от хитблока, ненужного кулера и радиатора, а в качестве корпуса использовать коробку из хоз.мага и любой утеплитель. Список используемых деталей ограничен только фантазией.
 
@@ -33,6 +31,7 @@
   - нет поддержки серво
   - нет поддержки дополнительного ШИМ канала
   - не будет весов для катушек в сушилке
+  - нет поддержки разработчика
 - прошивка под ядро MiniCore
   - работает watch dog timer / в случае cбоя перезагрузит прошивку
   - [поддержка двух серв](https://t.me/iDryer/361)(используются для регулярного проветривания камеры)
@@ -44,18 +43,22 @@
 Коммутация:
 
 Соедините ардуино Нано с программатором или ArduinoISP 
+<!-- https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/pins.png -->
+![img](https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/pins.png)
 
-![img](../master/src_isp/pins.png)<br>
-![img](../master/src_isp/usbasp10.jpg)
+![img](https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/usbasp10.jpg)
 
 Обратите внимание, что цоколевка разъемов может отличаться
 
-![img](../master/src_isp/img001.png)
+![img](https://raw.githubusercontent.com/pavluchenkor/iDryerController/master/src_isp/img001.png)
 
 Компиляция и прошивка:
 
-> В файле configuration.h сконфигурируйте прошивку.
-> в файле platformio.ini указать USB порт к которому подключена ардуина
+!!! warning annotate "Внимание"
+
+    :arrow_forward:</i> В файле configuration.h сконфигурируйте прошивку.
+    
+    :arrow_forward:</i> в файле platformio.ini указать USB порт к которому подключена ардуина
 
 1. Прошивка ардуино
 pio run -e nanoatmega328new -t upload -t monitor
@@ -77,4 +80,8 @@ pio run -e nanoatmega328new -t upload -t monitor
 
 > Если после прошивки и в процессе эксплуатации на экране появятся ошибки, обратитесь к файлу configuration.h
 
-https://github.com/yzhang-gh/vscode-markdown#table-of-contents
+или за помощью в группу
+
+[группа в телеграмм :fontawesome-solid-paper-plane:](https://t.me/iDryer){ .md-button }
+
+[Contributing :material-file-edit:](https://github.com/pavluchenkor/iDryerController)
