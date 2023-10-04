@@ -28,6 +28,7 @@ void dryStart();
 void storageStart();
 void autoPidM();
 void saveAll();
+void servoTest();
 
 PGM_P const serviceTxt[] PROGMEM = {
     s0,
@@ -86,10 +87,6 @@ PGM_P const menuTxt[] PROGMEM = {
     i36,
     i37,
     i38,
-    i35,
-    i36,
-    i37,
-    i42,
 };
 #else
 PGM_P const menuTxt[] PROGMEM = {
@@ -165,15 +162,11 @@ const menuS menuPGM[] PROGMEM = {
     {31, 22, 20, 100},
     {32, 22, 0, 50},
     {33, 22, 0, 0},
-    {34, 33, 0, 0},
-    {35, 34, 0, 60},
-    {36, 34, 0, 10},
-    {37, 34, 0, 90},
-    {38, 33, 0, 0},
-    {39, 38, 0, 60},
-    {40, 38, 0, 10},
-    {41, 38, 0, 80},
-    {42, 22, 0, 0},
+    {34, 33, 0, 60},
+    {35, 33, 0, 10},
+    {36, 33, 0, 90},
+    {37, 33, 0, 0},
+    {38, 22, 0, 0},
 };
 
 #ifdef WITH_BLACKJACK_AND_HOOKERS
@@ -226,11 +219,11 @@ uint16_t menuValDefault[] = {
 };
 #endif
 
-uint16_t menuVal[] EEMEM     = {
+uint16_t menuVal[] EEMEM = {
     123, // id: 0
     0,   // id: 1
     60,  // id: 2
-    45,  // id: 3
+    240, // id: 3
     0,   // id: 4
     0,   // id: 5
     35,  // id: 6
@@ -252,24 +245,20 @@ uint16_t menuVal[] EEMEM     = {
     0,   // id: 22
     0,   // id: 23
     500, // id: 24
-    1,  // id: 25
+    1,   // id: 25
     200, // id: 26
     0,   // id: 27
     300, // id: 28
     60,  // id: 29
     0,   // id: 30
     50,  // id: 31
-    20,   // id: 32
+    8,   // id: 32
     0,   // id: 33
-    0,   // id: 34
-    30,  // id: 35
-    1,   // id: 36
-    60,  // id: 37
+    30,  // id: 34
+    1,   // id: 35
+    55,  // id: 36
+    0,   // id: 37
     0,   // id: 38
-    30,  // id: 39
-    1,   // id: 40
-    60,  // id: 41
-    0,   // id: 42
 };
 
 typedef void (*ptrFunc)();
@@ -312,10 +301,6 @@ const ptrFunc menuFunc[]{
     NULL,
     NULL,
     NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    &servoTest,
     &saveAll,
 };

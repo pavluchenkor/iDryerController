@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "version.h"
 const char PROGMEM s0[]  = "FIRMWARE";
-const char PROGMEM s1[]  = "AYRA";
+const char PROGMEM s1[]  = "IDRYER";
 const char PROGMEM s2[]  = "VERSION";
 // const char PROGMEM s3[]  = "0.1.0";
 const char PROGMEM s4[]  = "COOLING";
@@ -48,12 +48,7 @@ const char i28[] PROGMEM = "TIME/MS";
 const char i31[] PROGMEM = "BLOWING";
 const char i32[] PROGMEM = "DELTA";
 const char i33[] PROGMEM = "SERVO";
-const char i34[] PROGMEM = "SERVO1";
-const char i35[] PROGMEM = "CLOSED";
-const char i36[] PROGMEM = "OPEN";
-const char i37[] PROGMEM = "CORNER";
-const char i38[] PROGMEM = "SERVO2";
-// const char i39[] PROGMEM = "CLOSED";
-// const char i40[] PROGMEM = "OPEN";
-// const char i41[] PROGMEM = "CORNER";
-const char i42[] PROGMEM = "SAVE";
+const char i34[] PROGMEM = "CLOSED";
+const char i35[] PROGMEM = "OPEN";
+const char i36[] PROGMEM = "CORNER";
+const char i37[] PROGMEM = "SAVE";

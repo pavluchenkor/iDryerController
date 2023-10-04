@@ -93,7 +93,7 @@ uint32_t WDT_ERROR = 0;          // EEMEM = 0b0000000000000000;
 #define EXT_PWM 11
 
 #define SERVO_1_PIN 7
-#define SERVO_2_PIN 8
+// #define SERVO_2_PIN 8
 
 // ВЕСЫ
 #define SCK_PIN A6
@@ -490,9 +490,13 @@ public:
         }
     }
 };
-servo Servo1(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO1_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO1_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO1_CORNER]));
-servo Servo2(SERVO_2_PIN, eeprom_read_word(&menuVal[DEF_SERVO2_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO2_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO2_CORNER]));
 
+servo Servo1(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO1_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO1_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO1_CORNER]));
+// servo Servo2(SERVO_2_PIN, eeprom_read_word(&menuVal[DEF_SERVO2_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO2_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO2_CORNER]));
+void servoTest()
+{
+    Servo1.test();
+}
 
 
 #endif
@@ -712,8 +716,8 @@ void setup()
     digitalWrite(FAN, 0);
     pinMode(SERVO_1_PIN, OUTPUT);
     digitalWrite(SERVO_1_PIN, 0);
-    pinMode(SERVO_2_PIN, OUTPUT);
-    digitalWrite(SERVO_2_PIN, 0);
+    // pinMode(SERVO_2_PIN, OUTPUT);
+    // digitalWrite(SERVO_2_PIN, 0);
 
     oled.begin();
     oled.setFlipMode(SCREEN_FLIP);
@@ -848,7 +852,7 @@ void setup()
 #ifdef WITH_BLACKJACK_AND_HOOKERS
 
     Servo1.test();
-    Servo2.test();
+    // Servo2.test();
 #endif
 }
 
@@ -858,8 +862,11 @@ void loop()
     uint16_t tmpTemp = analogRead(NTC_PIN);
     if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
     {
-        setError(30);
-        state = NTC_ERROR;
+        if(state == DRY || state == STORAGE)
+        {
+            setError(30);
+            state = NTC_ERROR;
+        }
     }
 
     if (enc.isHold() && (state == DRY || state == STORAGE))
@@ -1012,7 +1019,7 @@ void loop()
         }
 #ifdef WITH_BLACKJACK_AND_HOOKERS
         Servo1.check();
-        Servo2.check();
+        // Servo2.check();
 #endif
         break;
 #ifndef KASYAK_FINDER
@@ -1059,7 +1066,7 @@ void loop()
             heaterON(Output, dimmer);
 #ifdef WITH_BLACKJACK_AND_HOOKERS
             Servo1.check();
-            Servo2.check();
+            // Servo2.check();
 #endif
         }
         else
@@ -1075,7 +1082,7 @@ void loop()
             }
             heaterOFF();
             if (Servo1.state) Servo1.close();
-            if (Servo2.state) Servo2.close();
+            // if (Servo2.state) Servo2.close();
         }
 
         if (iDryer.data.bmeHumidity > iDryer.data.setHumidity + 2 && !iDryer.data.flag)
@@ -1429,7 +1436,7 @@ void dryStart()
     iDryer.data.startTime = millis();
 #ifdef WITH_BLACKJACK_AND_HOOKERS
     Servo1.test();
-    Servo2.test();
+    // Servo2.test();
 #endif
     WDT_DISABLE();
 }
@@ -1459,7 +1466,7 @@ void storageStart()
 
 #ifdef WITH_BLACKJACK_AND_HOOKERS
     Servo1.test();
-    Servo2.test();
+    // Servo2.test();
 #endif
     WDT_DISABLE();
 }
@@ -1504,7 +1511,7 @@ void updateIDyerData()
     pid.SetSampleTime(iDryer.data.sampleTime);
 #ifdef WITH_BLACKJACK_AND_HOOKERS
     Servo1.set(eeprom_read_word(&menuVal[DEF_SERVO1_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO1_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO1_CORNER]));
-    Servo2.set(eeprom_read_word(&menuVal[DEF_SERVO2_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO2_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO2_CORNER]));
+    // Servo2.set(eeprom_read_word(&menuVal[DEF_SERVO2_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO2_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO2_CORNER]));
 #endif
     WDT_DISABLE();
 }
