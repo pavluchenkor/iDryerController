@@ -13,11 +13,43 @@
 #include "font.h"
 #include "menu.h"
 #include "def.h"
-
+#include "HX711.h"
 // #define KASYAK_FINDER
 
 uint32_t ERROR_CODE EEMEM = 0x0; // EEMEM = 0b0000000000000000;
 uint32_t WDT_ERROR = 0;          // EEMEM = 0b0000000000000000;
+
+#if REV == 0
+#define ERROR
+#elif REV == 1
+#define v220V
+#elif REV == 2
+#define v24V
+#endif
+
+#if PWM_11_FREQUENCY == 62500
+#define TCCR2B_PRESCALER 0b00000001
+#define TCCR2A_MODE 0b00000011
+#elif PWM_11_FREQUENCY == 31400
+#define TCCR2B_PRESCALER 0b00000001
+#define TCCR2A_MODE 0b00000001
+#elif PWM_11_FREQUENCY == 8000
+#define TCCR2B_PRESCALER 0b00000010
+#define TCCR2A_MODE 0b00000011
+#elif PWM_11_FREQUENCY == 4000
+#define TCCR2B_PRESCALER 0b00000010
+#define TCCR2A_MODE 0b00000001
+#elif PWM_11_FREQUENCY == 2000
+#define TCCR2B_PRESCALER 0b00000011
+#define TCCR2A_MODE 0b00000011
+#elif PWM_11_FREQUENCY == 980
+#define TCCR2B_PRESCALER 0b00000011
+#define TCCR2A_MODE 0b00000001
+#else 
+#define TCCR2B_PRESCALER 0b00000100
+#define TCCR2A_MODE 0b00000001
+#endif
+
 
 #if REV == 0
 #define ERROR
@@ -85,7 +117,7 @@ enum stateS
 #define MAX_ERROR 10
 
 #define ADC_MIN 50
-#define ADC_MAX 1024
+#define ADC_MAX 1020
 
 #define OPEN 1
 #define CLOSED 0
@@ -121,24 +153,25 @@ const byte DT = A2;
 const byte encBut = A3;
 volatile static byte oldPorta;
 volatile static byte PCMask;
-volatile byte flagISR = 0, intsFound = 0;
+volatile byte flagISR = 0;
+// volatile byte intsFound = 0;
 byte isr_1 = 0;
 byte isr_2 = 0;
 byte isr_3 = 0;
 
-uint8_t funcNum = 0;
+// uint8_t funcNum = 0;
 
 uint8_t menuSize = 0;
-uint8_t settingsSize = 0;
-uint8_t buzzerAlarm = 0;
+// uint8_t settingsSize = 0;
+// uint8_t buzzerAlarm = 0;
 unsigned long oldTime = 0;
 unsigned long oldTimer = 0;
-unsigned long servoOldTime1 = 0;
-unsigned long servoOldTime2 = 0;
-uint32_t timerOn = 0;
-uint32_t timerOff = 0;
-uint8_t servoState1 = CLOSED;
-uint8_t servoState2 = CLOSED;
+// unsigned long servoOldTime1 = 0;
+// unsigned long servoOldTime2 = 0;
+// uint32_t timerOn = 0;
+// uint32_t timerOff = 0;
+// uint8_t servoState1 = CLOSED;
+// uint8_t servoState2 = CLOSED;
 unsigned long screenTime = 0;
 char serviceString[30];
 
@@ -191,7 +224,8 @@ U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 
 Encoder enc(CLK, DT, encBut, MY_ENCODER_TYPE);
 
-double mainSetpoint, Setpoint, Input, Output;
+// double mainSetpoint;
+double Setpoint, Input, Output;
 
 #ifdef v24v
 PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
@@ -205,10 +239,10 @@ struct Data
     float bmeTemp = 0;
     float bmeHumidity = 0;
     unsigned long startTime = 0;
-    unsigned long errorTime26 = 0;
-    unsigned long errorTime27 = 0;
+    // unsigned long errorTime26 = 0;
+    // unsigned long errorTime27 = 0;
     unsigned long errorTime28 = 0;
-    unsigned long errorTime29 = 0;
+    // unsigned long errorTime29 = 0;
     uint8_t setTemp = 0;
     uint8_t setHumidity = 0;
     uint16_t setTime = 0;
@@ -459,6 +493,8 @@ public:
 servo Servo1(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO1_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO1_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO1_CORNER]));
 servo Servo2(SERVO_2_PIN, eeprom_read_word(&menuVal[DEF_SERVO2_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO2_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO2_CORNER]));
 
+
+
 #endif
 
 #ifdef v220V
@@ -608,6 +644,7 @@ void displayPrintMode()
         oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[text]))) / 2, lineHight, printMenuItem(&menuTxt[text]));
         // sprintf(val, "%2hu", Setpoint);
         sprintf(val, "%2hu", iDryer.data.setTemp);
+        // sprintf(val, "%4hu", analogRead(NTC_PIN));
         oled.drawUTF8(0, lineHight, val);
         text == DEF_MENU_DRYING ? sprintf(val, "%3hu", iDryer.data.setTime) : sprintf(val, "%3hu", iDryer.data.setHumidity);
         oled.drawUTF8(100, lineHight, val);
@@ -665,6 +702,9 @@ void setup()
     pinMode(DIMMER_PIN, OUTPUT);
     digitalWrite(DIMMER_PIN, 0);
 #endif
+
+    TCCR2B = TCCR2B_PRESCALER;
+    TCCR2A = TCCR2A_MODE;
 
     pinMode(BUZZER_PIN, OUTPUT);
     digitalWrite(BUZZER_PIN, 0);
@@ -1556,9 +1596,11 @@ void piii(uint16_t time_ms)
 {
     WDT(WDTO_8S, 11);
     time_ms > 4 ? 4 : time_ms;
-    analogWrite(BUZZER_PIN, BUZZER_PWM);
+    // analogWrite(BUZZER_PIN, BUZZER_PWM);
+    digitalWrite(BUZZER_PIN, HIGH);
     delay(time_ms);
-    analogWrite(BUZZER_PIN, 0);
+    // analogWrite(BUZZER_PIN, 0);
+    digitalWrite(BUZZER_PIN, LOW);
     WDT_DISABLE();
 }
 
