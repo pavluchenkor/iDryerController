@@ -2,9 +2,9 @@
 #include "version.h"
 const char PROGMEM s0[] = "ПРОШИВКА";
 const char PROGMEM s1[] = "АЙДРАЙ";
-const char PROGMEM s2[] = "ВРЕСИЯ";
-// const char PROGMEM s3[] = "0.1.0";
-const char PROGMEM s4[] = "ОХЛАЖДЕНИЕ";
+const char PROGMEM s2[] = "ВЕРСИЯ";
+    // const char PROGMEM s3[] = "0.1.0";
+    const char PROGMEM s4[] = "ОХЛАЖДЕНИЕ";
 const char PROGMEM s5[] = "СОХРАНЕНО";
 const char PROGMEM s6[] = "ВОЗДУХ";
 const char PROGMEM s7[] = "НАГРЕВАТЕЛЬ";
