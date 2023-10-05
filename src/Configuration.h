@@ -190,7 +190,7 @@
 /**********************
  * FAN
  * 11 FAN connector on PCB 488Hz
- * 6  EXT connector on PCB 976Hz
+ * 6  EXT connector on PCB 976Hz Not tested!
  ********************/
 #define FAN_PIN 11
 
