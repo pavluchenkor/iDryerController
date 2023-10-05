@@ -27,40 +27,40 @@ uint32_t WDT_ERROR = 0;          // EEMEM = 0b0000000000000000;
 #define v24V
 #endif
 
-#if PWM_11_FREQUENCY == 62500
-#define TCCR2B_PRESCALER 0b00000001
-#define TCCR2A_MODE 0b00000011
-#elif PWM_11_FREQUENCY == 31400
-#define TCCR2B_PRESCALER 0b00000001
-#define TCCR2A_MODE 0b00000001
-#elif PWM_11_FREQUENCY == 8000
-#define TCCR2B_PRESCALER 0b00000010
-#define TCCR2A_MODE 0b00000011
-#elif PWM_11_FREQUENCY == 4000
-#define TCCR2B_PRESCALER 0b00000010
-#define TCCR2A_MODE 0b00000001
-#elif PWM_11_FREQUENCY == 2000
-#define TCCR2B_PRESCALER 0b00000011
-#define TCCR2A_MODE 0b00000011
-#elif PWM_11_FREQUENCY == 980
-#define TCCR2B_PRESCALER 0b00000011
-#define TCCR2A_MODE 0b00000001
-#elif PWM_11_FREQUENCY == 245
-#define TCCR2B_PRESCALER 0b00000101
-#define TCCR2A_MODE 0b00000001
-#elif PWM_11_FREQUENCY == 122
-#define TCCR2B_PRESCALER 0b00000110
-#define TCCR2A_MODE 0b00000001
-#elif PWM_11_FREQUENCY == 60
-#define TCCR2B_PRESCALER 0b00000111
-#define TCCR2A_MODE 0b00000011
-#elif PWM_11_FREQUENCY == 30
-#define TCCR2B_PRESCALER 0b00000111
-#define TCCR2A_MODE 0b00000001
-#else 
-#define TCCR2B_PRESCALER 0b00000100
-#define TCCR2A_MODE 0b00000001
-#endif
+// #if PWM_11_FREQUENCY == 62500
+// #define TCCR2B_PRESCALER 0b00000001
+// #define TCCR2A_MODE 0b00000011
+// #elif PWM_11_FREQUENCY == 31400
+// #define TCCR2B_PRESCALER 0b00000001
+// #define TCCR2A_MODE 0b00000001
+// #elif PWM_11_FREQUENCY == 8000
+// #define TCCR2B_PRESCALER 0b00000010
+// #define TCCR2A_MODE 0b00000011
+// #elif PWM_11_FREQUENCY == 4000
+// #define TCCR2B_PRESCALER 0b00000010
+// #define TCCR2A_MODE 0b00000001
+// #elif PWM_11_FREQUENCY == 2000
+// #define TCCR2B_PRESCALER 0b00000011
+// #define TCCR2A_MODE 0b00000011
+// #elif PWM_11_FREQUENCY == 980
+// #define TCCR2B_PRESCALER 0b00000011
+// #define TCCR2A_MODE 0b00000001
+// #elif PWM_11_FREQUENCY == 245
+// #define TCCR2B_PRESCALER 0b00000101
+// #define TCCR2A_MODE 0b00000001
+// #elif PWM_11_FREQUENCY == 122
+// #define TCCR2B_PRESCALER 0b00000110
+// #define TCCR2A_MODE 0b00000001
+// #elif PWM_11_FREQUENCY == 60
+// #define TCCR2B_PRESCALER 0b00000111
+// #define TCCR2A_MODE 0b00000011
+// #elif PWM_11_FREQUENCY == 30
+// #define TCCR2B_PRESCALER 0b00000111
+// #define TCCR2A_MODE 0b00000001
+// #else 
+// #define TCCR2B_PRESCALER 0b00000100
+// #define TCCR2A_MODE 0b00000001
+// #endif
 
 
 #if REV == 0
@@ -525,30 +525,30 @@ void isr()
     {
         if (lastDim != dimmer)
         {
-            Timer2.setPeriod(lastDim = dimmer);
+            Timer1.setPeriod(lastDim = dimmer);
         }
         else
         {
-            Timer2.restart();
+            Timer1.restart();
         }
 
-        Timer2.setPeriod(dimmer);
+        Timer1.setPeriod(dimmer);
     }
-}
-
-ISR(TIMER2_A)
-{
-    digitalWrite(DIMMER_PIN, 1);
-    digitalWrite(DIMMER_PIN, 0);
-    Timer2.stop();
 }
 
 ISR(TIMER1_A)
 {
-    // digitalWrite(SERVO_1_PIN, !digitalRead(SERVO_1_PIN));
-    // digitalWrite(DIMMER_PIN, 0);
-    // Timer2.stop();
+    digitalWrite(DIMMER_PIN, 1);
+    digitalWrite(DIMMER_PIN, 0);
+    Timer1.stop();
 }
+
+// ISR(TIMER1_A)
+// {
+//     // digitalWrite(SERVO_1_PIN, !digitalRead(SERVO_1_PIN));
+//     // digitalWrite(DIMMER_PIN, 0);
+//     // Timer1.stop();
+// }
 #endif
 
 ISR(PCINT1_vect)
@@ -667,9 +667,10 @@ void displayPrintMode()
 
         char val[4];
         oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[text]))) / 2, lineHight, printMenuItem(&menuTxt[text]));
-        // sprintf(val, "%2hu", Setpoint);
+        // // sprintf(val, "%2hu", Setpoint);
+        
         sprintf(val, "%2hu", iDryer.data.setTemp);
-        // sprintf(val, "%4hu", analogRead(NTC_PIN));
+        // sprintf(val, "%4hu", iDryer.data.setFan);
         oled.drawUTF8(0, lineHight, val);
         text == DEF_MENU_DRYING ? sprintf(val, "%3hu", iDryer.data.setTime) : sprintf(val, "%3hu", iDryer.data.setHumidity);
         oled.drawUTF8(100, lineHight, val);
@@ -722,14 +723,14 @@ void setup()
     pinMode(ZERO_PIN, INPUT_PULLUP);
     pinMode(DIMMER_PIN, OUTPUT);
     // attachInterrupt(INT_NUM, isr, RISING);
-    // Timer2.enableISR();
+    // Timer1.enableISR();
 #else
     pinMode(DIMMER_PIN, OUTPUT);
     digitalWrite(DIMMER_PIN, 0);
 #endif
 
-    TCCR2B = TCCR2B_PRESCALER;
-    TCCR2A = TCCR2A_MODE;
+    // TCCR2B = TCCR2B_PRESCALER;
+    // TCCR2A = TCCR2A_MODE;
 
     pinMode(BUZZER_PIN, OUTPUT);
     digitalWrite(BUZZER_PIN, 0);
@@ -1007,6 +1008,7 @@ void loop()
             }
         }
 
+        // iDryer.data.flagTimeCounter ? analogWrite(FAN, 255) : analogWrite(FAN, 255);
         iDryer.data.flagTimeCounter ? analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)) : analogWrite(FAN, 255);
 
         if (iDryer.data.bmeTemp < iDryer.data.setTemp)
@@ -1114,7 +1116,7 @@ void loop()
             iDryer.data.flag = 1;
 #ifdef v220V
             attachInterrupt(INT_NUM, isr, RISING);
-            Timer2.enableISR(CHANNEL_A);
+            Timer1.enableISR(CHANNEL_A);
             // Timer1.enableISR(); //TODO Timer
 #else
 #endif
@@ -1322,7 +1324,7 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
     {
         encoder->left = false;
 #else
-    if (encoder->right) // Timer2.enableISR();
+    if (encoder->right) // Timer1.enableISR();
     {
         encoder->right = false;
 #endif
@@ -1348,7 +1350,7 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
     {
         encoder->right = false;
 #else
-    if (encoder->left) // Timer2.enableISR();
+    if (encoder->left) // Timer1.enableISR();
     {
         encoder->left = false;
 #endif
@@ -1441,7 +1443,7 @@ void dryStart()
 #ifdef v220V
     dimmer = HEATER_MAX;
     attachInterrupt(INT_NUM, isr, RISING);
-    Timer2.enableISR();
+    Timer1.enableISR();
 #else
     analogWrite(DIMMER_PIN, HEATER_MIN); // TODO: проверить
 #endif
@@ -1473,7 +1475,7 @@ void storageStart()
 #ifdef v220V
     dimmer = HEATER_MAX;
     attachInterrupt(INT_NUM, isr, RISING);
-    Timer2.enableISR();
+    Timer1.enableISR();
 #else
     analogWrite(DIMMER_PIN, HEATER_MIN); // TODO: проверить
 #endif
@@ -1501,7 +1503,7 @@ void autoPidM()
     WDT(WDTO_250MS, 12);
 #ifdef v220V
     attachInterrupt(INT_NUM, isr, RISING);
-    Timer2.enableISR();
+    Timer1.enableISR();
 #else
     // digitalWrite(DIMMER_PIN, 0);
 #endif
@@ -1532,6 +1534,7 @@ void updateIDyerData()
     iDryer.data.sampleTime = eeprom_read_word(&menuVal[DEF_AVTOPID_TIME_MS]);
     iDryer.data.deltaT = eeprom_read_word(&menuVal[DEF_SETTINGS_DELTA]);
     iDryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
+    iDryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
     pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
     pid.SetSampleTime(iDryer.data.sampleTime);
 #ifdef WITH_BLACKJACK_AND_HOOKERS
@@ -1652,7 +1655,7 @@ void heaterOFF()
     WDT(WDTO_500MS, 1);
 #ifdef v220V
     detachInterrupt(INT_NUM);
-    Timer2.stop();
+    Timer1.stop();
     dimmer = HEATER_MAX;
     digitalWrite(DIMMER_PIN, 0);
 #else

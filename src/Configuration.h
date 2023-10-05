@@ -208,7 +208,7 @@
  * 60
  * 30
  ********************/
-#define PWM_11_FREQUENCY 122
+#define PWM_11_FREQUENCY 245
 
 /**********************
  * SERVO
