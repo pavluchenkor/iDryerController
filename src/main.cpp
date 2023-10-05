@@ -1128,6 +1128,7 @@ void loop()
         tuner.startTuningLoop(micros());
 
         oled.clear();
+        oled.firstPage();
         do
         {
             oled.setFont(u8g2_font);
