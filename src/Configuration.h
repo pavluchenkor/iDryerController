@@ -189,26 +189,26 @@
 
 /**********************
  * FAN
- * 11 FAN connector on PCB
- * 6  EXT connector on PCB
+ * 11 FAN connector on PCB 488Hz
+ * 6  EXT connector on PCB 976Hz
  ********************/
 #define FAN_PIN 11
 
-/**********************
- * FAN PWM frequency
- * only on 11 FAN
- * 62500
- * 31400
- * 8000
- * 4000
- * 2000
- * 980
- * 245
- * 122
- * 60
- * 30
- ********************/
-#define PWM_11_FREQUENCY 245
+// /**********************
+//  * FAN PWM frequency
+//  * only on 11 FAN
+//  * 62500
+//  * 31400
+//  * 8000
+//  * 4000
+//  * 2000
+//  * 980
+//  * 245
+//  * 122
+//  * 60
+//  * 30
+//  ********************/
+// #define PWM_11_FREQUENCY 31400
 
 /**********************
  * SERVO

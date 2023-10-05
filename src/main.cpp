@@ -543,12 +543,6 @@ ISR(TIMER1_A)
     Timer1.stop();
 }
 
-// ISR(TIMER1_A)
-// {
-//     // digitalWrite(SERVO_1_PIN, !digitalRead(SERVO_1_PIN));
-//     // digitalWrite(DIMMER_PIN, 0);
-//     // Timer1.stop();
-// }
 #endif
 
 ISR(PCINT1_vect)
