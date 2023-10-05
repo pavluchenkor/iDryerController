@@ -962,7 +962,7 @@ void loop()
             }
             else
             {
-                // analogWrite(FAN, 0);
+                analogWrite(FAN, 0);
             }
         }
 
