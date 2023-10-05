@@ -45,6 +45,18 @@ uint32_t WDT_ERROR = 0;          // EEMEM = 0b0000000000000000;
 #elif PWM_11_FREQUENCY == 980
 #define TCCR2B_PRESCALER 0b00000011
 #define TCCR2A_MODE 0b00000001
+#elif PWM_11_FREQUENCY == 245
+#define TCCR2B_PRESCALER 0b00000101
+#define TCCR2A_MODE 0b00000001
+#elif PWM_11_FREQUENCY == 122
+#define TCCR2B_PRESCALER 0b00000110
+#define TCCR2A_MODE 0b00000001
+#elif PWM_11_FREQUENCY == 60
+#define TCCR2B_PRESCALER 0b00000111
+#define TCCR2A_MODE 0b00000011
+#elif PWM_11_FREQUENCY == 30
+#define TCCR2B_PRESCALER 0b00000111
+#define TCCR2A_MODE 0b00000001
 #else 
 #define TCCR2B_PRESCALER 0b00000100
 #define TCCR2A_MODE 0b00000001
@@ -90,7 +102,7 @@ uint32_t WDT_ERROR = 0;          // EEMEM = 0b0000000000000000;
 //!* 11,6,5,3
 #define BUZZER_PIN 3
 #define FAN FAN_PIN // TODO EXT обновить инструкцию
-#define EXT_PWM 11
+// #define EXT_PWM 11
 
 #define SERVO_1_PIN 7
 // #define SERVO_2_PIN 8
@@ -117,7 +129,7 @@ enum stateS
 #define MAX_ERROR 10
 
 #define ADC_MIN 50
-#define ADC_MAX 1020
+#define ADC_MAX 1024
 
 #define OPEN 1
 #define CLOSED 0
@@ -473,7 +485,7 @@ public:
 
     void servoPulse(int pin, int angle)
     {
-        WDT(WDTO_4S, 3);
+        WDT(WDTO_8S, 3);
         // piii(SERVO_CUCKOO);
         int pulsewidth = map(angle, 0, 180, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
         for (int pulseCounter = 0; pulseCounter <= 50; pulseCounter++)
@@ -488,13 +500,15 @@ public:
             {
             }
         }
+        WDT_DISABLE();
     }
 };
 
 servo Servo1(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO1_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO1_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO1_CORNER]));
 // servo Servo2(SERVO_2_PIN, eeprom_read_word(&menuVal[DEF_SERVO2_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO2_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO2_CORNER]));
 void servoTest()
-{
+{   
+    updateIDyerData();
     Servo1.test();
 }
 
@@ -527,6 +541,13 @@ ISR(TIMER2_A)
     digitalWrite(DIMMER_PIN, 1);
     digitalWrite(DIMMER_PIN, 0);
     Timer2.stop();
+}
+
+ISR(TIMER1_A)
+{
+    // digitalWrite(SERVO_1_PIN, !digitalRead(SERVO_1_PIN));
+    // digitalWrite(DIMMER_PIN, 0);
+    // Timer2.stop();
 }
 #endif
 
@@ -854,10 +875,13 @@ void setup()
     Servo1.test();
     // Servo2.test();
 #endif
+// analogWrite(FAN, 255);
+// delay(500);
 }
 
 void loop()
 {
+    // analogWrite(FAN, 100);
     enc.tick();
     uint16_t tmpTemp = analogRead(NTC_PIN);
     if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
@@ -938,7 +962,7 @@ void loop()
             }
             else
             {
-                analogWrite(FAN, 0);
+                // analogWrite(FAN, 0);
             }
         }
 
@@ -1090,7 +1114,8 @@ void loop()
             iDryer.data.flag = 1;
 #ifdef v220V
             attachInterrupt(INT_NUM, isr, RISING);
-            Timer2.enableISR();
+            Timer2.enableISR(CHANNEL_A);
+            // Timer1.enableISR(); //TODO Timer
 #else
 #endif
         }
