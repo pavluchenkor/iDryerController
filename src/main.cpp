@@ -1662,55 +1662,63 @@ void heaterOFF()
 
 void pwm_test()
 {
+    uint16_t frequency = 0;
     for(uint8_t i = 0; i < 8; i++)
     {
         switch (i)
         {
         case 0: //30
+            frequency = 30;
             TCCR2B = 0b00000111;
             TCCR2A = 0b00000001;
             break;
         case 1: // 60
+            frequency = 60;
             TCCR2B = 0b00000111;
             TCCR2A = 0b00000011;
             break;
         case 2: // 122
+            frequency = 122;
             TCCR2B = 0b00000110;
             TCCR2A = 0b00000001;
             break;
         case 3: // 245
+            frequency = 245;
             TCCR2B = 0b00000101;
             TCCR2A = 0b00000001;
             break;
-        case 4: // 245
-            TCCR2B = 0b00000101;
-            TCCR2A = 0b00000001;
-            break;
-        case 5: // 488
+        case 4: // 488
+            frequency = 488;
             TCCR2B = 0b00000100;
             TCCR2A = 0b00000001;
             break;
-        case 6: // 980
+        case 5: // 980
+            frequency = 980;
             TCCR2B = 0b00000011;
             TCCR2A = 0b00000001;
             break;
-        case 7: // 2000
+        case 6: // 2000
+            frequency = 2000;
             TCCR2B = 0b00000011;
             TCCR2A = 0b00000011;
             break;
-        case 8: // 4000
+        case 7: // 4000
+            frequency = 4000;
             TCCR2B = 0b00000010;
             TCCR2A = 0b00000001;
             break;
-        case 9: // 8000
+        case 8: // 8000
+            frequency = 8000;
             TCCR2B = 0b00000010;
             TCCR2A = 0b00000011;
             break;
-        case 10: // 31400
+        case 9: // 31400
+            frequency = 31400;
             TCCR2B = 0b00000001;
             TCCR2A = 0b00000001;
             break;
-        case 11: // 65200
+        case 10: // 65200
+            frequency = 65200;
             TCCR2B = 0b00000001;
             TCCR2A = 0b00000011;
             break;
@@ -1730,6 +1738,8 @@ void pwm_test()
             do
             {
                 oled.setFont(u8g2_font);
+                sprintf(serviceString, "ЧАСТОТА:  %6hu", frequency);
+                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 2, serviceString);
                 sprintf(serviceString, "%4s %6hu", printMenuItem(&menuTxt[DEF_SETTINGS_BLOWING]), k);
                 oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 3, serviceString);
             } while (oled.nextPage());
