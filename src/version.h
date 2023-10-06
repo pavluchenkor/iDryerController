@@ -1,2 +1,2 @@
 #include <Arduino.h>
-const char PROGMEM s3[] = "0.4.2";
+const char PROGMEM s3[] = "0.4.3";

@@ -27,40 +27,40 @@ uint32_t WDT_ERROR = 0;          // EEMEM = 0b0000000000000000;
 #define v24V
 #endif
 
-// #if PWM_11_FREQUENCY == 62500
-// #define TCCR2B_PRESCALER 0b00000001
-// #define TCCR2A_MODE 0b00000011
-// #elif PWM_11_FREQUENCY == 31400
-// #define TCCR2B_PRESCALER 0b00000001
-// #define TCCR2A_MODE 0b00000001
-// #elif PWM_11_FREQUENCY == 8000
-// #define TCCR2B_PRESCALER 0b00000010
-// #define TCCR2A_MODE 0b00000011
-// #elif PWM_11_FREQUENCY == 4000
-// #define TCCR2B_PRESCALER 0b00000010
-// #define TCCR2A_MODE 0b00000001
-// #elif PWM_11_FREQUENCY == 2000
-// #define TCCR2B_PRESCALER 0b00000011
-// #define TCCR2A_MODE 0b00000011
-// #elif PWM_11_FREQUENCY == 980
-// #define TCCR2B_PRESCALER 0b00000011
-// #define TCCR2A_MODE 0b00000001
-// #elif PWM_11_FREQUENCY == 245
-// #define TCCR2B_PRESCALER 0b00000101
-// #define TCCR2A_MODE 0b00000001
-// #elif PWM_11_FREQUENCY == 122
-// #define TCCR2B_PRESCALER 0b00000110
-// #define TCCR2A_MODE 0b00000001
-// #elif PWM_11_FREQUENCY == 60
-// #define TCCR2B_PRESCALER 0b00000111
-// #define TCCR2A_MODE 0b00000011
-// #elif PWM_11_FREQUENCY == 30
-// #define TCCR2B_PRESCALER 0b00000111
-// #define TCCR2A_MODE 0b00000001
-// #else 
-// #define TCCR2B_PRESCALER 0b00000100
-// #define TCCR2A_MODE 0b00000001
-// #endif
+#if PWM_11_FREQUENCY == 62500
+#define TCCR2B_PRESCALER 0b00000001
+#define TCCR2A_MODE 0b00000011
+#elif PWM_11_FREQUENCY == 31400
+#define TCCR2B_PRESCALER 0b00000001
+#define TCCR2A_MODE 0b00000001
+#elif PWM_11_FREQUENCY == 8000
+#define TCCR2B_PRESCALER 0b00000010
+#define TCCR2A_MODE 0b00000011
+#elif PWM_11_FREQUENCY == 4000
+#define TCCR2B_PRESCALER 0b00000010
+#define TCCR2A_MODE 0b00000001
+#elif PWM_11_FREQUENCY == 2000
+#define TCCR2B_PRESCALER 0b00000011
+#define TCCR2A_MODE 0b00000011
+#elif PWM_11_FREQUENCY == 980
+#define TCCR2B_PRESCALER 0b00000011
+#define TCCR2A_MODE 0b00000001
+#elif PWM_11_FREQUENCY == 245
+#define TCCR2B_PRESCALER 0b00000101
+#define TCCR2A_MODE 0b00000001
+#elif PWM_11_FREQUENCY == 122
+#define TCCR2B_PRESCALER 0b00000110
+#define TCCR2A_MODE 0b00000001
+#elif PWM_11_FREQUENCY == 60
+#define TCCR2B_PRESCALER 0b00000111
+#define TCCR2A_MODE 0b00000011
+#elif PWM_11_FREQUENCY == 30
+#define TCCR2B_PRESCALER 0b00000111
+#define TCCR2A_MODE 0b00000001
+#else 
+#define TCCR2B_PRESCALER 0b00000100
+#define TCCR2A_MODE 0b00000001
+#endif
 
 
 #if REV == 0
@@ -310,7 +310,7 @@ struct Data
 /* 15 */ bool setError(uint8_t errorCode);
 /* 16 */ void displayPrint(struct subMenu *subMenu);
 /* 17 */ void displayPrintMode();
-
+         void pwm_test();
 /* 18 */ // PID TUNING;
 /* 20 */ // CASE OFF
 /* 21 */ // CASE ON
@@ -485,18 +485,18 @@ public:
 
     void servoPulse(int pin, int angle)
     {
-        WDT(WDTO_8S, 3);
+        WDT(WDTO_4S, 3);
         // piii(SERVO_CUCKOO);
-        int pulsewidth = map(angle, 0, 180, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
-        for (int pulseCounter = 0; pulseCounter <= 50; pulseCounter++)
+        int pulseWidth = map(angle, 0, 180, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
+        for (int pulseCounter = 0; pulseCounter <= 20; pulseCounter++)
         {
             unsigned long startTime = micros();
             digitalWrite(pin, HIGH);
-            while (micros() - startTime < pulsewidth)
+            while (micros() - startTime < pulseWidth)
             {
             }
             digitalWrite(pin, LOW);
-            while (micros() - startTime < SERVO_PERIOD_MS * 1000)
+            while (micros() - startTime < SERVO_PERIOD_MS * 1000 - pulseWidth)
             {
             }
         }
@@ -531,16 +531,16 @@ void isr()
         {
             Timer1.restart();
         }
-
         Timer1.setPeriod(dimmer);
     }
 }
 
 ISR(TIMER1_A)
 {
-    digitalWrite(DIMMER_PIN, 1);
+    if (dimmer) digitalWrite(DIMMER_PIN, 1);
     digitalWrite(DIMMER_PIN, 0);
-    Timer1.stop();
+    Timer1.setPeriod(20000);
+    // Timer1.stop();
 }
 
 #endif
@@ -660,11 +660,9 @@ void displayPrintMode()
         }
 
         char val[4];
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[text]))) / 2, lineHight, printMenuItem(&menuTxt[text]));
-        // // sprintf(val, "%2hu", Setpoint);
-        
+      oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[text]))) / 2, lineHight, printMenuItem(&menuTxt[text]));
+        // sprintf(val, "%2hu", Setpoint);
         sprintf(val, "%2hu", iDryer.data.setTemp);
-        // sprintf(val, "%4hu", iDryer.data.setFan);
         oled.drawUTF8(0, lineHight, val);
         text == DEF_MENU_DRYING ? sprintf(val, "%3hu", iDryer.data.setTime) : sprintf(val, "%3hu", iDryer.data.setHumidity);
         oled.drawUTF8(100, lineHight, val);
@@ -723,8 +721,8 @@ void setup()
     digitalWrite(DIMMER_PIN, 0);
 #endif
 
-    // TCCR2B = TCCR2B_PRESCALER;
-    // TCCR2A = TCCR2A_MODE;
+    TCCR2B = TCCR2B_PRESCALER;
+    TCCR2A = TCCR2A_MODE;
 
     pinMode(BUZZER_PIN, OUTPUT);
     digitalWrite(BUZZER_PIN, 0);
@@ -870,8 +868,10 @@ void setup()
     Servo1.test();
     // Servo2.test();
 #endif
-// analogWrite(FAN, 255);
-// delay(500);
+
+#ifdef PWM_TEST
+    pwm_test();
+#endif
 }
 
 void loop()
@@ -1002,7 +1002,6 @@ void loop()
             }
         }
 
-        // iDryer.data.flagTimeCounter ? analogWrite(FAN, 255) : analogWrite(FAN, 255);
         iDryer.data.flagTimeCounter ? analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)) : analogWrite(FAN, 255);
 
         if (iDryer.data.bmeTemp < iDryer.data.setTemp)
@@ -1024,7 +1023,6 @@ void loop()
 
         heaterON(Output, dimmer);
 
-        // TODO подобрать условие включения часов
         if (millis() - oldTimer >= 60000 && iDryer.data.flagTimeCounter)
         {
             oldTimer = millis();
@@ -1650,6 +1648,8 @@ void heaterOFF()
     WDT(WDTO_500MS, 1);
 #ifdef v220V
     detachInterrupt(INT_NUM);
+    // Timer1.disableISR();
+    dimmer = 0;
     Timer1.stop();
     dimmer = HEATER_MAX;
     digitalWrite(DIMMER_PIN, 0);
@@ -1657,4 +1657,84 @@ void heaterOFF()
     digitalWrite(DIMMER_PIN, 0);
 #endif
     WDT_DISABLE();
+}
+
+
+void pwm_test()
+{
+    for(uint8_t i = 0; i < 8; i++)
+    {
+        switch (i)
+        {
+        case 0: //30
+            TCCR2B = 0b00000111;
+            TCCR2A = 0b00000001;
+            break;
+        case 1: // 60
+            TCCR2B = 0b00000111;
+            TCCR2A = 0b00000011;
+            break;
+        case 2: // 122
+            TCCR2B = 0b00000110;
+            TCCR2A = 0b00000001;
+            break;
+        case 3: // 245
+            TCCR2B = 0b00000101;
+            TCCR2A = 0b00000001;
+            break;
+        case 4: // 245
+            TCCR2B = 0b00000101;
+            TCCR2A = 0b00000001;
+            break;
+        case 5: // 488
+            TCCR2B = 0b00000100;
+            TCCR2A = 0b00000001;
+            break;
+        case 6: // 980
+            TCCR2B = 0b00000011;
+            TCCR2A = 0b00000001;
+            break;
+        case 7: // 2000
+            TCCR2B = 0b00000011;
+            TCCR2A = 0b00000011;
+            break;
+        case 8: // 4000
+            TCCR2B = 0b00000010;
+            TCCR2A = 0b00000001;
+            break;
+        case 9: // 8000
+            TCCR2B = 0b00000010;
+            TCCR2A = 0b00000011;
+            break;
+        case 10: // 31400
+            TCCR2B = 0b00000001;
+            TCCR2A = 0b00000001;
+            break;
+        case 11: // 65200
+            TCCR2B = 0b00000001;
+            TCCR2A = 0b00000011;
+            break;
+        
+        default:
+            break;
+        }
+        uint8_t pwm = 255;
+        uint8_t k = 100;
+        while (k > 0)
+        {
+            analogWrite(FAN, 0);
+            delay(2000);
+            analogWrite(FAN, 255 / 100 * k);
+            oled.clear();
+            oled.firstPage();
+            do
+            {
+                oled.setFont(u8g2_font);
+                sprintf(serviceString, "%4s %6hu", printMenuItem(&menuTxt[DEF_SETTINGS_BLOWING]), k);
+                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 3, serviceString);
+            } while (oled.nextPage());
+            delay(3000);
+            k -= 5;
+        }
+    }
 }

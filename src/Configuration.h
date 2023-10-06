@@ -208,7 +208,12 @@
 //  * 60
 //  * 30
 //  ********************/
-// #define PWM_11_FREQUENCY 31400
+#define PWM_11_FREQUENCY 122
+/*************************
+* Temporarily uncomment to perform a
+ * test at the specified PWM frequency
+*************************/
+// #define PWM_TEST
 
 /**********************
  * SERVO
