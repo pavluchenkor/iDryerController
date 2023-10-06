@@ -1663,7 +1663,7 @@ void heaterOFF()
 void pwm_test()
 {
     uint16_t frequency = 0;
-    for(uint8_t i = 0; i < 8; i++)
+    for(uint8_t i = 0; i < 11; i++)
     {
         switch (i)
         {
@@ -1744,7 +1744,7 @@ void pwm_test()
                 oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 3, serviceString);
             } while (oled.nextPage());
             delay(3000);
-            k -= 5;
+            k -= 10;
         }
     }
 }

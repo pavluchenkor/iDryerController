@@ -213,7 +213,7 @@
 * Temporarily uncomment to perform a
  * test at the specified PWM frequency
 *************************/
-#define PWM_TEST
+// #define PWM_TEST
 
 /**********************
  * SERVO
