@@ -25,6 +25,10 @@ struct menuS
 };
 
 void dryStart();
+void mainDryStart();
+void plaDryStart();
+void petgDryStart();
+void absDryStart();
 void storageStart();
 void autoPidM();
 void saveAll();
@@ -268,7 +272,7 @@ const ptrFunc menuFunc[]{
     NULL,
     NULL,
     NULL,
-    &dryStart,
+    &mainDryStart,
     NULL,
     NULL,
     NULL,
@@ -277,15 +281,15 @@ const ptrFunc menuFunc[]{
     NULL,
     NULL,
     NULL,
-    &dryStart,
+    &plaDryStart,
     NULL,
     NULL,
     NULL,
-    &dryStart,
+    &petgDryStart,
     NULL,
     NULL,
     NULL,
-    &dryStart,
+    &absDryStart,
     NULL,
     NULL,
     NULL,

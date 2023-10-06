@@ -1429,6 +1429,34 @@ void screen(struct subMenu *subMenu)
     WDT_DISABLE();
 }
 
+void mainDryStart()
+{
+    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_DRYING_TEMPERATURE]);
+    iDryer.data.setTime = eeprom_read_word(&menuVal[DEF_DRYING_TIME]); 
+    dryStart();
+}
+
+void plaDryStart()
+{
+    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_PLA_TEMPERATURE]);
+    iDryer.data.setTime = eeprom_read_word(&menuVal[DEF_PLA_TIME]); 
+    dryStart();
+}
+
+void petgDryStart()
+{
+    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_PETG_TEMPERATURE]);
+    iDryer.data.setTime = eeprom_read_word(&menuVal[DEF_PETG_TIME]); 
+    dryStart();
+}
+
+void absDryStart()
+{
+    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_ABS_TEMPERATURE]);
+    iDryer.data.setTime = eeprom_read_word(&menuVal[DEF_ABS_TIME]); 
+    dryStart();
+}
+
 void dryStart()
 {
     WDT(WDTO_8S, 10);
@@ -1447,8 +1475,8 @@ void dryStart()
     iDryer.data.flagTimeCounter = 0;
     iDryer.data.flagScreenUpdate = 1;
 
-    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_DRYING_TEMPERATURE]);
-    iDryer.data.setTime = eeprom_read_word(&menuVal[DEF_DRYING_TIME]);
+    // iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_DRYING_TEMPERATURE]);
+    // iDryer.data.setTime = eeprom_read_word(&menuVal[DEF_DRYING_TIME]);
 
     pid.SetTunings(double(iDryer.data.Kp), double(iDryer.data.Ki), double(iDryer.data.Kd), P_ON_E);
     pid.SetSampleTime(iDryer.data.sampleTime);
