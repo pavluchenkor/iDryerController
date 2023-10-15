@@ -33,6 +33,18 @@ void storageStart();
 void autoPidM();
 void saveAll();
 void servoTest();
+#if SCALES_MODULE_NUM > 0
+void setSpool1();
+#endif
+#if SCALES_MODULE_NUM > 1
+void setSpool2();
+#endif
+#if SCALES_MODULE_NUM > 2
+void setSpool3();
+#endif
+#if SCALES_MODULE_NUM > 3
+void setSpool4();
+#endif
 
 PGM_P const serviceTxt[] PROGMEM = {
     s0,
@@ -48,6 +60,12 @@ PGM_P const serviceTxt[] PROGMEM = {
     s10,
     s11,
     s12,
+    s13,
+    s14,
+    s15,
+    s16,
+    s17,
+    s18,
 };
 
 #ifdef WITH_BLACKJACK_AND_HOOKERS
@@ -91,6 +109,27 @@ PGM_P const menuTxt[] PROGMEM = {
     i36,
     i37,
     i38,
+#if SCALES_MODULE_NUM > 0
+    i39,
+    i40,
+    i41,
+    i42,
+#endif
+#if SCALES_MODULE_NUM > 1
+    i43,
+    i44,
+    i45,
+#endif
+#if SCALES_MODULE_NUM > 2
+    i46,
+    i47,
+    i48,
+#endif
+#if SCALES_MODULE_NUM > 3
+    i49,
+    i50,
+    i51,
+#endif
 };
 #else
 PGM_P const menuTxt[] PROGMEM = {
@@ -131,6 +170,7 @@ PGM_P const menuTxt[] PROGMEM = {
 };
 #endif
 
+// uint16_t menuVal[] EEMEM =
 const menuS menuPGM[] PROGMEM = {
     {0, NULL, 0, 0},
     {1, 0, 0, 0},
@@ -171,6 +211,27 @@ const menuS menuPGM[] PROGMEM = {
     {36, 33, 0, 90},
     {37, 33, 0, 0},
     {38, 22, 0, 0},
+#if SCALES_MODULE_NUM > 0
+    {39, 0, 0, 0},
+    {40, 39, 0, 0},
+    {41, 40, 0, 500},
+    {42, 40, 0, 0},
+#endif
+#if SCALES_MODULE_NUM > 1
+    {43, 39, 0, 0},
+    {44, 43, 0, 500},
+    {45, 43, 0, 0},
+#endif
+#if SCALES_MODULE_NUM > 2
+    {46, 39, 0, 0},
+    {47, 46, 0, 500},
+    {48, 46, 0, 0},
+#endif
+#if SCALES_MODULE_NUM > 3
+    {49, 39, 0, 0},
+    {50, 49, 0, 500},
+    {51, 49, 0, 0},
+#endif
 };
 
 #ifdef WITH_BLACKJACK_AND_HOOKERS
@@ -263,48 +324,91 @@ uint16_t menuVal[] EEMEM = {
     55,  // id: 36
     0,   // id: 37
     0,   // id: 38
+#if SCALES_MODULE_NUM > 0
+    0,   // id: 39
+    0,   // id: 40
+    110, // id: 41
+    0,   // id: 42
+#endif
+#if SCALES_MODULE_NUM > 1
+    0,   // id: 43
+    200, // id: 44
+    0,   // id: 45
+#endif
+#if SCALES_MODULE_NUM > 2
+    0,   // id: 46
+    300, // id: 47
+    0,   // id: 48
+#endif
+#if SCALES_MODULE_NUM > 3
+    0, // id: 49
+    0, // id: 50
+    0, // id: 51
+#endif
 };
 
 typedef void (*ptrFunc)();
 
-const ptrFunc menuFunc[]{
+const ptrFunc menuFunc[]
+{
     NULL,
-    NULL,
-    NULL,
-    NULL,
-    &mainDryStart,
-    NULL,
-    NULL,
-    NULL,
-    &storageStart,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    &plaDryStart,
-    NULL,
-    NULL,
-    NULL,
-    &petgDryStart,
-    NULL,
-    NULL,
-    NULL,
-    &absDryStart,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    &autoPidM,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    &servoTest,
-    &saveAll,
+        NULL,
+        NULL,
+        NULL,
+        &mainDryStart,
+        NULL,
+        NULL,
+        NULL,
+        &storageStart,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        &plaDryStart,
+        NULL,
+        NULL,
+        NULL,
+        &petgDryStart,
+        NULL,
+        NULL,
+        NULL,
+        &absDryStart,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        &autoPidM,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        &servoTest,
+        &saveAll,
+#if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
+        NULL,
+        NULL,
+        NULL,
+        setSpool1,
+#endif
+#if SCALES_MODULE_NUM > 1 && AUTOPID_RUN == 0
+        NULL,
+        NULL,
+        &setSpool2,
+#endif
+#if SCALES_MODULE_NUM > 2 && AUTOPID_RUN == 0
+        NULL,
+        NULL,
+        &setSpool3,
+#endif
+#if SCALES_MODULE_NUM > 3 && AUTOPID_RUN == 0
+        NULL,
+        NULL,
+        &setSpool4,
+#endif
 };

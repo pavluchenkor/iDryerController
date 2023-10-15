@@ -2,7 +2,7 @@
 #include "HX711.h"
 #include <EEPROM.h>
 
-float calibration_mass = 444;
+float calibration_mass = 1000;
 
 uint32_t zero_weight_eep[] EEMEM
 {
@@ -18,6 +18,7 @@ uint32_t offset_eep[] EEMEM
     0,
     0,
 };
+
 
 HX711Multi::HX711Multi(uint8_t numSensors, uint8_t *dtPins, uint8_t sckPins)
 {
@@ -169,19 +170,20 @@ void HX711::offsetFirstSet(uint8_t avg_size)
     // //Serial.print(read());
     // //Serial.print("\tzero_weight + 10000: ");
     // //Serial.println(zero_weight + 10000);
-    if (read() < zero_weight + 10000)
-    {
-    }
-    else
-    {
-      delay(2000);
+
+    // if (read() < zero_weight + 10000)
+    // {
+    // }
+    // else
+    // {
+      // delay(2000);
       for (int i = 0; i < int(avg_size); i++)
       {
         offset += read();
       }
       offset /= int32_t(avg_size);
       break;
-    }
+    // }
   }
   // ratio = ((float)(reading - zero_weight) / (float)(offset - zero_weight));
   // //Serial.println("Calibration Complete");
@@ -220,9 +222,46 @@ int32_t HX711::read()
   return ((uint32_t)data[2] << 16) | ((uint32_t)data[1] << 8) | (uint32_t)data[0];
 }
 
+// float HX711::median(float newValue)
+// {
+//   // Добавьте новое измерение в массив
+//   for (int i = 4; i > 0; i--)
+//   {
+//     mass_fliter[i] = mass_fliter[i - 1];
+//   }
+//   mass_fliter[0] = newValue;
+
+//   // Сортируйте массив
+//   for (int i = 0; i < 5; i++)
+//   {
+//     for (int j = i + 1; j < 5; j++)
+//     {
+//       if (mass_fliter[i] > mass_fliter[j])
+//       {
+//         float temp = mass_fliter[i];
+//         mass_fliter[i] = mass_fliter[j];
+//         mass_fliter[j] = temp;
+//       }
+//     }
+//   }
+
+//   // Возвращайте медианное значение
+//   return mass_fliter[2];  // Средний элемент после сортировки
+// }
+
+
 float HX711::read_mass()
 {
+  // mass_fliter[1] = 10;
   mass += calibration_mass * ((float)(read() - zero_weight) / (float)(offset - zero_weight));  
   mass /= 2.0;
-  return abs(mass) < 1 ? 0 : (mass * 2 + 0.5) / 2.0 - tare;
+  mass = abs(mass) < 1 ? 0 : (mass * 2 + 0.5) / 2.0 - tare;
+  return mass;
+
+  // float newValue = calibration_mass * ((float)(read() - zero_weight) / (float)(offset - zero_weight));
+  // float medianValue = median(newValue);
+
+  // // Оставьте остальной код обработки результата, включая медианное значение
+  // medianValue = abs(medianValue) < 1 ? 0 : (medianValue * 2 + 0.5) / 2.0 - tare;
+  // return medianValue;
 }
