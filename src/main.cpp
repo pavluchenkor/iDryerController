@@ -178,6 +178,7 @@ volatile byte flagISR = 0;
 // uint8_t funcNum = 0;
 
 uint8_t menuSize = 0;
+menuS menu;
 // uint8_t settingsSize = 0;
 // uint8_t buzzerAlarm = 0;
 unsigned long oldTime = 0;
@@ -331,8 +332,8 @@ struct Data
 /* 04 */ void updateIDyerData();
 
 /* 06 */ void screen(struct subMenu *subMenu);
-/* 07 */ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu);
-/* 08 */ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu);
+/* 07 */ void controlsHandler(menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu);
+/* 08 */ void submenuHandler(menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu);
 /* 09 */ void piii(uint16_t time_ms);
 /* 10 */ void dryStart();
 /* 11 */ void storageStart();
@@ -352,6 +353,7 @@ void setSpool2();
 void setSpool3();
 void setSpool4();
 void scaleShow();
+// void eeprom_read_menu(menuS* dest, const menuS EEMEM* src);
 //  void zero_set_all();
 // void zero_set_by_num(uint8_t numSensor);
 // void offset_set_all();
@@ -611,6 +613,19 @@ ISR(PCINT1_vect)
     }
 }
 
+void eeprom_read_menu(menuS* dest, menuS* constMenu)
+{
+    eeprom_read_block(dest, constMenu, sizeof(menuS));
+    // Serial.print("\t");
+    // Serial.print(dest->id);
+    // Serial.print("\t");
+    // Serial.print(dest->parentID);
+    // Serial.print("\t");
+    // Serial.print(dest->min);
+    // Serial.print("\t");
+    // Serial.println(dest->max);
+}
+
 char *printMenuItem(PGM_P const *text) // печать строки из prm
 {
     static char buffer[22]; // TODO Проверить 11 символов на экране 20/22
@@ -656,8 +671,11 @@ void displayPrint(struct subMenu *subMenu)
         {
             oled.drawUTF8(0, (i + 2) * lineHight, printMenuItem(&menuTxt[subMenuM.membersID[subMenuM.linesToScreen[i]]]));
 
-            if (pgm_read_word(&menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]].min) ||
-                pgm_read_word(&menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]].max) ||
+            // menuS menu;
+            eeprom_read_menu(&menu, &menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]]);
+
+            if (menu.min ||
+               menu.max ||
                 eeprom_read_word(&menuVal[subMenuM.membersID[subMenuM.linesToScreen[i]]]))
             {
                 char val[5];
@@ -929,6 +947,8 @@ void setup()
     autoPid();
     delay(3000);
 #endif
+
+// DEBUG_PRINT("START");
 }
 
 void loop()
@@ -1178,16 +1198,18 @@ void loop()
     }
 }
 
-void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu)
+void controlsHandler(menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu)
 {
     WDT(WDTO_250MS, 7);
     if (enc.click())
     {
         // encoder->ok = false;
         subMenuM.pointerUpdate = 1;
+        // menuS menu;
+        eeprom_read_menu(&menu, &constMenu[subMenu->membersID[subMenu->position]]);
 
-        if (!pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].min) &&
-            !pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].max) &&
+        if (!menu.min &&
+            !menu.max &&
             !functionMenu[subMenu->membersID[subMenu->position]]) // меню
         {
             subMenu->level + 1 > subMenu->levelMax ? subMenu->level : subMenu->level++;
@@ -1238,8 +1260,11 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
         }
         else
         {
+            // menuS menu;
+            eeprom_read_menu(&menu, &constMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]]);
+            
             if (eeprom_read_word(&editableMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]]) + inc <=
-                pgm_read_word(&constMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]].max))
+                menu.max)
             {
                 uint16_t val = eeprom_read_word(&editableMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]]);
                 val += inc;
@@ -1263,8 +1288,12 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
         }
         else
         {
+
+            // menuS menu;
+            eeprom_read_menu(&menu, &constMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]]);
+
             if ((int16_t)eeprom_read_word(&editableMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]]) - inc >=
-                (int16_t)pgm_read_word(&constMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]].min))
+                (int16_t)menu.min)
             {
                 uint16_t val = eeprom_read_word(&editableMenu[subMenuM.membersID[subMenuM.linesToScreen[subMenuM.pointerPos]]]);
                 val -= inc;
@@ -1276,9 +1305,9 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
     WDT_DISABLE();
 }
 
-void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu)
+void submenuHandler(menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu)
 {
-    WDT(WDTO_250MS, 8);
+    WDT(WDTO_2S, 8);
     uint8_t posTmp = subMenu->parentID;
 
     if (subMenu->levelUpdate == DOWN)
@@ -1289,7 +1318,9 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
     }
     if (subMenu->levelUpdate == UP)
     {
-        subMenu->parentID = pgm_read_byte(&constMenu[subMenu->parentID].parentID);
+        // menuS menu;
+        eeprom_read_menu(&menu, &constMenu[subMenu->parentID]);
+        subMenu->parentID = menu.parentID;
     }
 
     subMenu->levelUpdate = NOTHING;
@@ -1297,9 +1328,13 @@ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *s
     memset(subMenuM.membersID, 0, sizeof(subMenuM.membersID) / sizeof(subMenuM.membersID[0]));
     int8_t iCounter = 0;
 
+    Serial.println(menuSize);
+
     for (uint8_t i = 0; i < menuSize; i++)
     {
-        if (pgm_read_byte(&constMenu[i].parentID) == subMenu->parentID && pgm_read_byte(&constMenu[i].id) != 0)
+        // menuS menu;
+        eeprom_read_menu(&menu, &constMenu[i]);
+        if (menu.parentID == subMenu->parentID && menu.id != 0)
         {
             subMenu->membersID[iCounter] = i;
             if (i == posTmp)

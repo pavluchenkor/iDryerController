@@ -171,7 +171,7 @@ PGM_P const menuTxt[] PROGMEM = {
 #endif
 
 // uint16_t menuVal[] EEMEM =
-const menuS menuPGM[] PROGMEM = {
+menuS menuPGM[] EEMEM = {
     {0, NULL, 0, 0},
     {1, 0, 0, 0},
     {2, 1, 0, 100},
