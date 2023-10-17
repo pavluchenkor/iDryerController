@@ -1,7 +1,5 @@
 #include <Arduino.h>
 #include "version.h"
-
-
 const char PROGMEM s0[]  = "FIRMWARE";
 const char PROGMEM s1[]  = "IDRYER";
 const char PROGMEM s2[]  = "VERSION";
@@ -14,16 +12,7 @@ const char PROGMEM s8[]  = "HUMIDITY";
 const char PROGMEM s9[]  = "ERROR";
 const char PROGMEM s10[]  = "CHECK";
 const char PROGMEM s11[]  = "THERMISTOR";
-const char PROGMEM s12[]  = "REBOOT";
-const char PROGMEM s13[]  = "REMOVE";
-const char PROGMEM s14[]  = "COIL";
-const char PROGMEM s15[]  = "INSTALLATION";
-const char PROGMEM s16[]  = "INSTALL";
-const char PROGMEM s17[]  = "WEIGHT";
-const char PROGMEM s18[]  = "G";
-const char PROGMEM s19[]  = "C";
-
-
+const char PROGMEM s12[]  = "OVERLOAD";
 
 const char i0[] PROGMEM = "MENU";
 const char i1[] PROGMEM = "DRYING";

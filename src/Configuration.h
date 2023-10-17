@@ -35,20 +35,21 @@
 // /* 31 */ // iDryer.getData
 /* !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 
+
 /******************************************************************************
  * Если используется версия без замены бутлоатера ардуино то:
  * - нет ватчдога(это такая фигня которая в случае зависания ардуины перезагрузит ее и, как вариант, нагреватель не спалит дом)
  * - нет поддержки серв и как следствие...
  * - нет функции проветривания
  * - нет весов
- *
- * Перед прошивкой микроконтроллера сконфигурируй прошивку, все дефайны подписаны,
+ * 
+ * Перед прошивкой микроконтроллера сконфигурируй прошивку, все дефайны подписаны, 
  * а если не подписаны, то лучше оставь как есть
- *
+ * 
  * Для прошивки кастрата запускаем в терминале платформио команду
  * pio run -e nanoatmega328new -t upload
  * все, ардуина готова к использованию с платой https://oshwlab.com/svet_team/idryer
- *
+ * 
  * Для прошивки ардуины в нормальный контроллер потребуется программатор USBasp,
  * можно воспльзоваться и usbisp или ардуиной прешитой в usbisp но это не тестировалось
  * подключаем по схеме //TODO
@@ -58,22 +59,24 @@
  *    ардуина станет нормальным контроллером
  * 2) pio run -e EEP -t upload
  * все, ардуина готова к использованию с платой https://oshwlab.com/svet_team/idryer
- ******************************************************************************/
+******************************************************************************/
+
 
 /**********************
- * if you have USBasp programmer,
- * make several easy steps
- * end uncomment WITH_BLACKJACK_AND_HOOKERS
+* if you have USBasp programmer,
+* make several easy steps
+* end uncomment WITH_BLACKJACK_AND_HOOKERS
  ********************/
 #define WITH_BLACKJACK_AND_HOOKERS
 
 /**********************
- * 0 - русский
- * 1 - english
+* 0 - русский
+* 1 - english
  ********************/
 #define LANG 0
 
 /* eeprom */
+
 
 /**
  * --NORMAL IS 4.7kohm PULLUP!-- 1kohm pullup can be used on hotend sensor, using correct resistor and table
@@ -124,7 +127,7 @@
 #define TMP_MAX 120
 
 /**********************
- * Autopid attemption
+ * Autopid attemption 
  * aprox 1min per attempt
  ********************/
 #define AUTOPID_ATTEMPT 20
@@ -134,9 +137,9 @@
  * if OVERWRITE_PID - 0, pid, after burning, will be default
  **********************/
 #define OVERWRITE_PID 0
-#define K_PROPRTIONAL 20  // 19287
-#define K_INTEGRAL 1      // 1972
-#define K_DERIVATIVE 40   //
+#define K_PROPRTIONAL 20 // 19287
+#define K_INTEGRAL 1 //1972
+#define K_DERIVATIVE 40 // 
 #define K_SAMPLE_TIME 300 // Чем более инертная система тем больше времени примерно от 250(не менее 200) для легких и быстрых нагреватеелей до 1000 для толстых с длительным временем нагрева
 
 /*********************
@@ -153,38 +156,34 @@
 #define SCREEN 2
 
 /**********************
- * Screen rotation
- * 0 - norm,
- * 1 - rev
+ * Screen rotation 
+ * 0 - norm, 
+ * 1 - rev 
  * **/
 #define SCREEN_FLIP 1
 
 /**********************
- * Encoder Type
- * EB_STEP4_LOW 0
- * EB_STEP4_HIGH 1
- * EB_STEP2 2
- * EB_STEP1 3
+ * Encoder Type 
+ *  0
+ *  1
  * если энкодер невменяшка, попробуй поменять значение
  ********************/
-#define MY_ENCODER_TYPE 2 // 0
+#define MY_ENCODER_TYPE 1 //0
 
 /**********************
- * Encoder direction
- * 1
- * 0
+ * Encoder direction 
  ********************/
-#define ENCODER_REVERSE 1
+// #define ENCODER_REVERSE
 
 /**********************
- * screen update time, change if you know what you're doing.
+ * screen update time, change if you know what you're doing. 
  ********************/
 #define SCREEN_UPADATE_TIME 5000
 
 /**********************
  * BUZZER
- * 180 pwm busser
- * 250 active buzzer
+ * 180 pwm busser 
+ * 250 active buzzer 
  ********************/
 #define BUZZER_PWM 180
 
@@ -211,9 +210,9 @@
 //  ********************/
 #define PWM_11_FREQUENCY 122
 /*************************
- * Temporarily uncomment to perform a
+* Temporarily uncomment to perform a
  * test at the specified PWM frequency
- *************************/
+*************************/
 // #define PWM_TEST
 
 /**********************
@@ -225,26 +224,5 @@
 #define SERVO_MIN_PULSE 500
 #define SERVO_MAX_PULSE 2000
 #define SERVO_PERIOD_MS 20
-#define SERVO_CUCKOO 50 // 0
-
-/**********************
- * 0
- * 1
- * 2
- * 3
- * 4
- *
- * if you change here, do an upload isp and upload eep anyway
- * if your SCALES_MODULE_NUM not 0 do this:
- *    1 pio run -e EEP -t fullclean -t uploadeep
- *    2 set #define AUTOPID_RUN 1
- *    3 pio run -e EEP -t fullclean -t upload
- *    4 wait for autopid to finish setting up
- *    5 set #define AUTOPID_RUN 0
- *    6 pio run -e EEP -t fullclean -t upload
- ********************/
-#define AUTOPID_RUN 0
-#define SCALES_MODULE_NUM 4
-#define ALERT_MASS 100
-#define FILAMENT_SENSOR_MASS 20
+#define SERVO_CUCKOO 50 //0
 #endif

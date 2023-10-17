@@ -3,10 +3,6 @@
 #include "Arduino.h"
 #define MAX_SENSORS 4
 
-extern uint32_t zero_weight_eep[] EEMEM;
-extern uint32_t offset_eep[] EEMEM;
-
-
 class HX711
 {
 private:
@@ -15,13 +11,12 @@ private:
   byte GAIN;
   bool pinsConfigured;
   // float ratio;
+  float mass;
 
 public:
   int32_t zero_weight;
   int32_t offset;
   uint16_t tare;
-  float mass;
-  // float mass_fliter[5];
 
   HX711(){};
   HX711(byte output_pin, byte clock_pin);
@@ -37,7 +32,6 @@ public:
   void offsetFirstSet(uint8_t avg_size);
   void offsetSet(int32_t offset_settings);
   int32_t offsetGet();
-  float median(float newValue);
 };
 
 class HX711Multi
