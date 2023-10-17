@@ -4,7 +4,7 @@
 #include <Configuration.h>
 #include <tables/Conditionals.h>
 #include <tables/Thermistortables.h>
-#include <thermistor.h>
+#include <thermistor/thermistor.h>
 
 #define HOTENDS  1
 #define ARRAY_6(v1, v2, v3, v4, v5, v6, ...) { v1, v2, v3, v4, v5, v6 }
