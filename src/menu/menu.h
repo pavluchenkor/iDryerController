@@ -328,17 +328,17 @@ uint16_t menuVal[] EEMEM = {
 #if SCALES_MODULE_NUM > 0
     0,   // id: 39
     0,   // id: 40
-    110, // id: 41
+    0, // id: 41
     0,   // id: 42
 #endif
 #if SCALES_MODULE_NUM > 1
     0,   // id: 43
-    200, // id: 44
+    0, // id: 44
     0,   // id: 45
 #endif
 #if SCALES_MODULE_NUM > 2
     0,   // id: 46
-    300, // id: 47
+    0, // id: 47
     0,   // id: 48
 #endif
 #if SCALES_MODULE_NUM > 3

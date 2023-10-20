@@ -62,22 +62,22 @@ const char i37[] PROGMEM = "ТЕСТ";
 const char i38[] PROGMEM = "СОХРАНИТЬ";
 #if SCALES_MODULE_NUM > 0
 const char i39[] PROGMEM = "ВЕСЫ";
-const char i40[] PROGMEM = "КАТУШКА 1";
+const char i40[] PROGMEM = "КАТУШКА1";
 const char i41[] PROGMEM = "ТАРА";
 const char i42[] PROGMEM = "УСТАНОВКА";
 #endif
 #if SCALES_MODULE_NUM > 1
-const char i43[] PROGMEM = "КАТУШКА 2";
+const char i43[] PROGMEM = "КАТУШКА2";
 // const char i44[] PROGMEM = "ТАРА";
 // const char i45[] PROGMEM = "УСТАНОВКА";
 #endif
 #if SCALES_MODULE_NUM > 2
-const char i46[] PROGMEM = "КАТУШКА 3";
+const char i46[] PROGMEM = "КАТУШКА3";
 // const char i47[] PROGMEM = "ТАРА";
 // const char i48[] PROGMEM = "УСТАНОВКА";
 #endif
 #if SCALES_MODULE_NUM > 3
-const char i49[] PROGMEM = "КАТУШКА 4";
+const char i49[] PROGMEM = "КАТУШКА4";
 // const char i50[] PROGMEM = "ТАРА";
 // const char i51[] PROGMEM = "УСТАНОВКА";
 #endif

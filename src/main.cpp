@@ -20,9 +20,9 @@
 // #define KASYAK_FINDER
 
 #ifdef KASYAK_FINDER
-    #define DEBUG_PRINT(x) Serial.println(x)
+#define DEBUG_PRINT(x) Serial.println(x)
 #else
-    #define DEBUG_PRINT(x)
+#define DEBUG_PRINT(x)
 #endif
 
 uint32_t ERROR_CODE EEMEM = 0x0; // EEMEM = 0b0000000000000000;
@@ -70,8 +70,6 @@ uint32_t WDT_ERROR = 0;          // EEMEM = 0b0000000000000000;
 #define TCCR2B_PRESCALER 0b00000100
 #define TCCR2A_MODE 0b00000001
 #endif
-
-
 
 #if REV == 0
 #define ERROR
@@ -185,7 +183,7 @@ uint8_t menuSize = 0;
 unsigned long oldTime = 0;
 unsigned long oldTimer = 0;
 unsigned long scaleTimer = 0;
-boolean isScaleShow = true; 
+boolean isScaleShow = true;
 
 // unsigned long servoOldTime1 = 0;
 // unsigned long servoOldTime2 = 0;
@@ -248,21 +246,22 @@ EncButton enc(A1, A2, A3, INPUT, INPUT_PULLUP, LOW);
 
 // Весы
 #if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
-uint8_t dtPins[] = {4, 9, 10, 12};
-uint8_t sckPin = 8;
+// uint8_t dtPins[] = {4, 9, 10, 12};
+#define DT_PIN 4
+#define SCK_PIN 9
+#define A_PIN 10
+#define B_PIN 12
 uint8_t sensorNum = 0;
-HX711Multi hx711Multi(SCALES_MODULE_NUM, dtPins, sckPin);
+HX711Multi hx711Multi(SCALES_MODULE_NUM, DT_PIN, SCK_PIN, A_PIN, B_PIN);
 // Весы
 #elif SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 1
-uint32_t zero_weight_eep[] EEMEM
-{
+uint32_t zero_weight_eep[] EEMEM{
     0,
     0,
     0,
     0,
 };
-uint32_t offset_eep[] EEMEM
-{
+uint32_t offset_eep[] EEMEM{
     0,
     0,
     0,
@@ -572,7 +571,8 @@ void isr()
 
 ISR(TIMER1_A)
 {
-    if (dimmer) digitalWrite(DIMMER_PIN, 1);
+    if (dimmer)
+        digitalWrite(DIMMER_PIN, 1);
     digitalWrite(DIMMER_PIN, 0);
     Timer1.setPeriod(20000);
     // Timer1.stop();
@@ -581,7 +581,8 @@ ISR(TIMER1_A)
 
 ISR(PCINT1_vect)
 {
-    if(state == MENU) scaleTimer = millis();
+    if (state == MENU)
+        scaleTimer = millis();
     if (PINC & (1 << PC1))
     {
         enc.tickISR();
@@ -779,7 +780,7 @@ void setup()
     digitalWrite(FAN, 0);
     pinMode(SERVO_1_PIN, OUTPUT);
     digitalWrite(SERVO_1_PIN, 0);
- #if SCALES_MODULE_NUM != 0
+#if SCALES_MODULE_NUM != 0
     pinMode(FILAMENT_SENSOR, OUTPUT);
     digitalWrite(FILAMENT_SENSOR, 0);
 #endif
@@ -921,15 +922,15 @@ void setup()
     pwm_test();
 #endif
 #if AUTOPID_RUN == 1
-  // Запись массивов в EEPROM
-  eeprom_write_dword(&zero_weight_eep[0], 1);
-  eeprom_write_dword(&zero_weight_eep[1], 1);
-  eeprom_write_dword(&offset_eep[0], 1);
-  eeprom_write_dword(&offset_eep[1], 1);
+    // Запись массивов в EEPROM
+    eeprom_write_dword(&zero_weight_eep[0], 1);
+    eeprom_write_dword(&zero_weight_eep[1], 1);
+    eeprom_write_dword(&offset_eep[0], 1);
+    eeprom_write_dword(&offset_eep[1], 1);
 
     autoPidM();
     autoPid();
-    
+
     oled.firstPage();
     do
     {
@@ -938,10 +939,14 @@ void setup()
     } while (oled.nextPage());
     delay(300000);
 #endif
+#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
+    hx711Multi.begin(128);
+#endif
 }
 
 void loop()
 {
+
     DEBUG_PRINT(110);
     enc.tick();
     uint16_t tmpTemp = analogRead(NTC_PIN);
@@ -956,12 +961,15 @@ void loop()
         }
     }
     DEBUG_PRINT(113);
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0    
-    hx711Multi._sensors[sensorNum++].read_mass();
-    if (sensorNum >= SCALES_MODULE_NUM) sensorNum = 0;        
+#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
+
+    hx711Multi.readMassMulti();
+    sensorNum++;
+    
+    if (sensorNum >= SCALES_MODULE_NUM)
+        sensorNum = 0;
 #endif
-
-
+// servoTest();
     if (enc.hold())
     {
         DEBUG_PRINT(114);
@@ -993,8 +1001,6 @@ void loop()
         // enc.resetStates();
     }
     DEBUG_PRINT(116);
-
-
 
     switch (state)
     {
@@ -1051,9 +1057,9 @@ void loop()
         }
 
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
-        if (hx711Multi._sensors[sensorNum].tare != eeprom_read_word(&menuVal[DEF_COIL_1_TARA + (sensorNum * 3)]))
+        if (hx711Multi.tare[hx711Multi.sensorNum] != (uint8_t)eeprom_read_word(&menuVal[DEF_COIL_1_TARA + (hx711Multi.sensorNum * 3)]))
         {
-            hx711Multi._sensors[sensorNum].tare = (uint8_t)eeprom_read_word(&menuVal[DEF_COIL_1_TARA + (sensorNum * 3)]);
+            hx711Multi.tare[hx711Multi.sensorNum] = (uint8_t)eeprom_read_word(&menuVal[DEF_COIL_1_TARA + (hx711Multi.sensorNum * 3)]);
         }
 #endif
 
@@ -1062,13 +1068,13 @@ void loop()
             flagISR = 0;
         }
         controlsHandler(menuPGM, menuVal, menuFunc, &subMenuM);
-        
+
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
-        if (millis() - scaleTimer > MENU_SCALE_SWITCH_TIME && subMenuM.level == 0)
+        if (millis() - scaleTimer > MENU_SCALE_SWITCH_TIME && subMenuM.parentID == 0)
         {
             scaleShow();
         }
-        else 
+        else
         {
 #endif
             if (subMenuM.levelUpdate)
@@ -1082,7 +1088,7 @@ void loop()
                 screen(&subMenuM);
                 displayPrint(&subMenuM);
             }
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0    
+#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
         }
 #endif
         break;
@@ -1721,8 +1727,7 @@ void getdataAndSetpiont()
     {
         scaleTimer = millis();
         isScaleShow = !isScaleShow;
-        
-        
+
         if (isScaleShow)
         {
             scaleShow();
@@ -1733,7 +1738,6 @@ void getdataAndSetpiont()
         }
     }
 #endif
-
 
     if (iDryer.data.bmeTemp < iDryer.data.setTemp)
     {
@@ -1792,14 +1796,14 @@ void autoPid()
         {
             // 20/20 100С 9500
             oled.setFont(u8g2_font);
-            sprintf(serviceString, "%2d/%2d  %d%s  %3d", tuner.getCycle(), AUTOPID_ATTEMPT, (uint8_t)ntc.analog2temp(), 
-                printMenuItem(&serviceTxt[DEF_T_CELSIUS]), 
+            sprintf(serviceString, "%2d/%2d  %d%s  %3d", tuner.getCycle(), AUTOPID_ATTEMPT, (uint8_t)ntc.analog2temp(),
+                    printMenuItem(&serviceTxt[DEF_T_CELSIUS]),
 #ifdef v220V
-                map(dimmer, HEATER_MAX, HEATER_MIN, 0, 100)
+                    map(dimmer, HEATER_MAX, HEATER_MIN, 0, 100)
 #elif v24V
-                map(dimmer, HEATER_MIN, HEATER_MAX, 0, 100)
+                    map(dimmer, HEATER_MIN, HEATER_MAX, 0, 100)
 #endif
-                );          
+            );
             oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 1, serviceString);
             sprintf(serviceString, "%4s %6hu", printMenuItem(&menuTxt[DEF_PID_KP]), (uint16_t)(abs(tuner.getKp()) * 100));
             oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 2, serviceString);
@@ -1866,14 +1870,14 @@ void autoPid()
 #if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
 void zero_set_by_num(uint8_t numSensor)
 {
-    hx711Multi.zero_setup(numSensor);
-    hx711Multi.setZeroWeight(hx711Multi._sensors[numSensor].zero_weight, numSensor);
+    hx711Multi.zeroSetupMulti(numSensor);
+    // hx711Multi.setZeroWeight(hx711Multi._sensors[numSensor].zero_weight, numSensor);
 }
 
 void offset_set_by_num(uint8_t numSensor)
 {
-    hx711Multi.offset_setup(numSensor);
-    hx711Multi.setOffset(hx711Multi._sensors[numSensor].offset, numSensor);
+    hx711Multi.offsetSetupMulti(numSensor);
+    // hx711Multi.setOffset(hx711Multi._sensors[numSensor].offset, numSensor);
 }
 
 // drawOLEDContent("%4s %6hu", abs(2) * 100, printMenuItem(&menuTxt[DEF_PID_KP]), (uint16_t)(abs(2) * 100));
@@ -1945,19 +1949,22 @@ void setSpool(uint8_t spool)
 
     // for (uint8_t i = 0; i < 10; i++)
     // {
-        oled.firstPage();
-        do
-        {
-            oled.setFont(u8g2_font);
-            sprintf(serviceString, "%s", printMenuItem(&serviceTxt[DEF_T_INSTALLATION]));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 2, serviceString);
-            sprintf(serviceString, "%s %1d", printMenuItem(&serviceTxt[DEF_T_COIL]), spool + 1);
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 3, serviceString);
-        } while (oled.nextPage());
-        delay(800);
+    oled.firstPage();
+    do
+    {
+        oled.setFont(u8g2_font);
+        sprintf(serviceString, "%s", printMenuItem(&serviceTxt[DEF_T_INSTALLATION]));
+        oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 2, serviceString);
+        sprintf(serviceString, "%s %1d", printMenuItem(&serviceTxt[DEF_T_COIL]), spool + 1);
+        oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * 3, serviceString);
+    } while (oled.nextPage());
+    delay(800);
     // }
 
     offset_set_by_num(spool);
+
+    // hx711Multi._sensors[spool].zero_weight = hx711Multi.getZeroWeight(spool);
+    // hx711Multi._sensors[spool].offset = hx711Multi.getOffset(spool);
 
     WDT(WDTO_8S, 22);
 }
@@ -2001,13 +2008,13 @@ void scaleShow()
         oled.setFont(u8g2_font);
         for (uint8_t i = 0; i < SCALES_MODULE_NUM; i++)
         {
-            // uint16_t mass = 123;   
+            // uint16_t mass = 123;
             // uint16_t mass = hx711Multi._sensors[i].read_mass();
             // hx711Multi._sensors[i].read_mass();
             // if (mass < ALERT_MASS) piii(50);
             // if (mass < FILAMENT_SENSOR_MASS) digitalWrite(FILAMENT_SENSOR, 1);
             // sprintf(serviceString, "%10s %5d", printMenuItem(&menuTxt[stringNum + i * 3]), mass);
-            sprintf(serviceString, "%10s %5d", printMenuItem(&menuTxt[stringNum + i * 3]), (uint16_t)hx711Multi._sensors[i].mass);
+            sprintf(serviceString, "%10s %5d", printMenuItem(&menuTxt[stringNum + i * 3]), (uint16_t)hx711Multi.getMassMulti(i));
             oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, lineHight * (i + 2) - 16, serviceString);
         }
     } while (oled.nextPage());
