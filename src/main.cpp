@@ -4,7 +4,7 @@
 #include <avr/wdt.h>
 #include <U8g2lib.h>
 #include <GyverTimers.h> // библиотека таймера
-#include <GyverEncoder.h>
+#include <EncButton.h>
 #include <GyverBME280.h>
 #include <PID_v1.h>
 #include <pidautotuner.h> //!! https://github.com/jackw01/arduino-pid-autotuner
@@ -160,17 +160,6 @@ unsigned long printOldTime = 0;
 uint8_t isrFlag = 0;
 #endif
 
-const byte CLK = A1;
-const byte DT = A2;
-const byte encBut = A3;
-volatile static byte oldPorta;
-volatile static byte PCMask;
-volatile byte flagISR = 0;
-// volatile byte intsFound = 0;
-byte isr_1 = 0;
-byte isr_2 = 0;
-byte isr_3 = 0;
-
 // uint8_t funcNum = 0;
 
 uint8_t menuSize = 0;
@@ -194,15 +183,6 @@ enum levelV
     UP,
 };
 
-struct control // это могут быть и кнопки
-{
-    bool ok = 0;
-    bool holded = 0;
-    bool hold = 0;
-    bool right = 0;
-    bool left = 0;
-};
-
 struct subMenu
 {
     bool changeVal;
@@ -220,7 +200,6 @@ struct subMenu
     int8_t max;
 };
 
-control controls;
 subMenu subMenuM;
 
 thermistor ntc(NTC_PIN, 0);
@@ -234,7 +213,15 @@ U8G2_SH1106_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/U8X8_PIN_NONE);
 #endif
 
-Encoder enc(CLK, DT, encBut, MY_ENCODER_TYPE);
+#ifdef ENCODER_REVERSE
+#define ENCODER_S1 (A2)
+#define ENCODER_S2 (A1)
+#else
+#define ENCODER_S1 (A1)
+#define ENCODER_S2 (A2)
+#endif
+#define ENCODER_KEY (A3)
+EncButtonT<ENCODER_S1, ENCODER_S2, ENCODER_KEY> enc;
 
 // double mainSetpoint;
 double Setpoint, Input, Output;
@@ -297,9 +284,8 @@ struct Data
 /* 02 */ void heaterON(uint16_t Output, uint16_t &dimmer);
 /* 03 */ void servoPulse(int pin, int angle);
 /* 04 */ void updateIDyerData();
-/* 05 */ void encoderSate(struct control *control);
 /* 06 */ void screen(struct subMenu *subMenu);
-/* 07 */ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct control *encoder, struct subMenu *subMenu);
+/* 07 */ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu);
 /* 08 */ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu);
 /* 09 */ void piii(uint16_t time_ms);
 /* 10 */ void dryStart();
@@ -545,28 +531,10 @@ ISR(TIMER1_A)
 
 #endif
 
+// Обработчик запросов прерывания от пинов A0..A5
 ISR(PCINT1_vect)
 {
-    byte change, v1, v2, v3;
-    change = oldPorta ^ PINC;
-
-    v1 = oldPorta & (1 << PCINT9);
-    v2 = oldPorta & (1 << PCINT10);
-    v3 = oldPorta & (1 << PCINT11);
-
-    if (v1 == 0 && change & (1 << PCINT9))
-        isr_1 = 1;
-    if (v2 == 0 && change & (1 << PCINT10))
-        isr_2 = 1;
-    if (v3 == 0 && change & (1 << PCINT11))
-        isr_3 = 1;
-    if (change && (v1 == 0 || v2 == 0 || v3 == 0))
-    {
-        flagISR = 1;
-        isr_1 = isr_2 = isr_3 = 0;
-        // enc.tick();
-    }
-    oldPorta = PINC;
+    enc.tickISR();
 }
 
 char *printMenuItem(PGM_P const *text) // печать строки из prm
@@ -700,13 +668,20 @@ void setup()
 #ifdef KASYAK_FINDER
     Serial.begin(9600);
 #endif
-    oldPorta = PINC;
-    PCMSK1 |= (1 << PCINT9);
-    PCMSK1 |= (1 << PCINT10);
-    PCMSK1 |= (1 << PCINT11);
-    // Serial.println(PCMSK1,HEX);
-    PCMask = PCMSK1;
-    PCICR |= (1 << PCIE1);
+    // Настройка прерываний при изменении состояния вывода энкодера
+    pinMode(ENCODER_S1, INPUT_PULLUP);
+    pinMode(ENCODER_S2, INPUT_PULLUP);
+    pinMode(ENCODER_KEY, INPUT_PULLUP);
+    *digitalPinToPCMSK(ENCODER_S1) |= bit (digitalPinToPCMSKbit(ENCODER_S1));  // Разрешаем PCINT для указанного пина
+    PCIFR  |= bit (digitalPinToPCICRbit(ENCODER_S1)); // Очищаем признак запроса прерывания для соответствующей группы пинов
+    PCICR  |= bit (digitalPinToPCICRbit(ENCODER_S1)); // Разрешаем PCINT для соответствующей группы пинов
+    *digitalPinToPCMSK(ENCODER_S2) |= bit (digitalPinToPCMSKbit(ENCODER_S2));  // Разрешаем PCINT для указанного пина
+    PCIFR  |= bit (digitalPinToPCICRbit(ENCODER_S2)); // Очищаем признак запроса прерывания для соответствующей группы пинов
+    PCICR  |= bit (digitalPinToPCICRbit(ENCODER_S2)); // Разрешаем PCINT для соответствующей группы пинов
+    *digitalPinToPCMSK(ENCODER_KEY) |= bit (digitalPinToPCMSKbit(ENCODER_KEY));  // Разрешаем PCINT для указанного пина
+    PCIFR  |= bit (digitalPinToPCICRbit(ENCODER_KEY)); // Очищаем признак запроса прерывания для соответствующей группы пинов
+    PCICR  |= bit (digitalPinToPCICRbit(ENCODER_KEY)); // Разрешаем PCINT для соответствующей группы пинов
+    enc.setEncISR(true);
 
 
 #ifdef v220V
@@ -766,11 +741,13 @@ void setup()
         } while (oled.nextPage());
         MCUSR = 0;
         analogWrite(FAN, 200);
-        while (digitalRead(encBut))
+        while (!enc.click())
         {
             piii(250);
             delay(250);
+            enc.tick();
         }
+        enc.clear();
         eeprom_write_dword(&ERROR_CODE, 0UL);
     }
 
@@ -838,10 +815,6 @@ void setup()
 
     // delay(1000);
 
-    enc.setTickMode(MANUAL);
-    enc.setPinMode(0);    // HIGH_PULL
-    enc.setBtnPinMode(0); // HIGH_PULL
-
     if (!bme.begin(0x76))
     {
         // Serial.println("Could not find a valid BME280 sensor, check wiring!");
@@ -888,7 +861,7 @@ void loop()
         }
     }
 
-    if (enc.isHold() && (state == DRY || state == STORAGE))
+    if ((state == DRY || state == STORAGE) && enc.hold())
     {
         WDT_DISABLE();
 
@@ -900,11 +873,12 @@ void loop()
         subMenuM.parentID = 0;
         subMenuM.pointerPos = 0;
         subMenuM.pointerUpdate = 1;
-        while (digitalRead(encBut))
+        while (!enc.click())
         {
-            ;
+            delay(10);
+            enc.tick();
         }
-        enc.resetStates();
+        enc.clear();
     }
 
     switch (state)
@@ -930,14 +904,16 @@ void loop()
             oled.drawButtonUTF8(0, 4 * lineHight, U8G2_BTN_INV, 128, 0, 0, "");
         } while (oled.nextPage());
 
-        while (digitalRead(encBut))
+        while (!enc.click())
         {
             piii(250);
             delay(250);
+            enc.tick();
 #ifdef KASYAK_FINDER
             Serial.println("NTC ERROR PIII");
 #endif
         }
+        enc.clear();
         break;
     case OFF:
         // WDT(WDTO_1S, 20);
@@ -961,12 +937,7 @@ void loop()
             }
         }
 
-        if (flagISR)
-        {
-            flagISR = 0;
-        }
-        encoderSate(&controls);
-        controlsHandler(menuPGM, menuVal, menuFunc, &controls, &subMenuM);
+        controlsHandler(menuPGM, menuVal, menuFunc, &subMenuM);
         if (subMenuM.levelUpdate)
         {
             submenuHandler(menuPGM, menuSize, &subMenuM);
@@ -1239,40 +1210,11 @@ void loop()
     }
 }
 
-// TODO запилить нормальный энкодер
-void encoderSate(struct control *control)
-{
-    WDT(WDTO_120MS, 5);
-    // enc.tick();
-    if (enc.isClick())
-    {
-        control->ok = 1;
-    }
-    if (enc.isHolded())
-    {
-        control->hold = 1;
-    }
-    if (enc.isRelease())
-    {
-        enc.resetStates();
-    }
-    if (enc.isLeft())
-    {
-        control->left = 1;
-    }
-    if (enc.isRight())
-    {
-        control->right = 1;
-    }
-    WDT_DISABLE();
-}
-
-void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct control *encoder, struct subMenu *subMenu)
+void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu)
 {
     WDT(WDTO_250MS, 7);
-    if (encoder->ok)
+    if (enc.click())
     {
-        encoder->ok = false;
         subMenuM.pointerUpdate = 1;
 
         if (!pgm_read_word(&constMenu[subMenu->membersID[subMenu->position]].min) &&
@@ -1295,32 +1237,20 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
         }
     }
 
-    if (encoder->hold)
+    if (enc.hold())
     {
-        encoder->hold = false;
-        switch (subMenu->changeVal)
+        if(subMenu->changeVal)
         {
-        case false:
+            subMenu->changeVal = !subMenu->changeVal;
+        }
+        else
+        {
             subMenu->level == subMenu->min ? subMenu->level : subMenu->level--;
             subMenu->levelUpdate = UP;
-            break;
-        case true:
-            subMenu->changeVal = !subMenu->changeVal;
-            break;
-
-        default:
-            break;
         }
     }
-#ifdef ENCODER_REVERSE
-    if (encoder->left)
+    if (enc.right()) // Timer1.enableISR();
     {
-        encoder->left = false;
-#else
-    if (encoder->right) // Timer1.enableISR();
-    {
-        encoder->right = false;
-#endif
         if (!subMenu->changeVal)
         {
             subMenu->position == subMenu->max ? subMenu->position = 0 : subMenu->position++;
@@ -1338,15 +1268,8 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
         subMenu->pointerUpdate = true;
     }
 
-#ifdef ENCODER_REVERSE
-    if (encoder->right)
+    if (enc.left()) // Timer1.enableISR();
     {
-        encoder->right = false;
-#else
-    if (encoder->left) // Timer1.enableISR();
-    {
-        encoder->left = false;
-#endif
         if (!subMenu->changeVal)
         {
             subMenu->position == subMenu->min ? subMenu->position = subMenu->max : subMenu->position--;
