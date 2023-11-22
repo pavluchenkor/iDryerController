@@ -36,14 +36,10 @@
 /* !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 
 /******************************************************************************
- * Если используется версия без замены бутлоатера ардуино то:
- * - нет ватчдога(это такая фигня которая в случае зависания ардуины перезагрузит ее и, как вариант, нагреватель не спалит дом)
- * - нет поддержки серв и как следствие...
- * - нет функции проветривания
- * - нет весов
- *
- * Перед прошивкой микроконтроллера сконфигурируй прошивку, все дефайны подписаны,
- * а если не подписаны, то лучше оставь как есть
+ * Перед прошивкой микроконтроллера сконфигурируй прошивку,
+ * все дефайны подписаны,
+ * а если не подписаны,
+ * то лучше оставь как есть
  *
  * Для прошивки кастрата запускаем в терминале платформио команду
  * pio run -e nanoatmega328new -t upload
@@ -71,7 +67,7 @@
  * 0 - русский
  * 1 - english
  ********************/
-#define LANG 0
+#define LANG 1
 
 /* eeprom */
 
@@ -122,7 +118,8 @@
 
 #define TMP_MIN 1
 #define TMP_MAX 120
-
+#define HUMIDITY_HYSTERESIS 5
+#define TEMP_HYSTERESIS 5
 /**********************
  * Autopid attemption
  * aprox 1min per attempt
@@ -134,11 +131,16 @@
  * if OVERWRITE_PID - 0, pid, after burning, will be default
  **********************/
 #define OVERWRITE_PID 0
-#define K_PROPRTIONAL 20  // 19287
-#define K_INTEGRAL 1      // 1972
+#define K_PROPRTIONAL 20  //
+#define K_INTEGRAL 1      //
 #define K_DERIVATIVE 40   //
 #define K_SAMPLE_TIME 300 // Чем более инертная система тем больше времени примерно от 250(не менее 200) для легких и быстрых нагреватеелей до 1000 для толстых с длительным временем нагрева
-
+/*********************
+ * Pid type
+ * P_ON_M specifies that Proportional on Measurement be used
+ * P_ON_E (Proportional on Error) is the default behavior
+ ********************/
+#define PID_TYPE P_ON_E
 /*********************
  * Your revision PCB
  * 1 - 220v revision
@@ -161,18 +163,18 @@
 
 /**********************
  * Encoder Type
- * EB_STEP4_LOW 0
- * EB_STEP4_HIGH 1
- * EB_STEP2 2
- * EB_STEP1 3
+ * EB_STEP4_LOW
+ * EB_STEP4_HIGH
+ * EB_STEP2
+ * EB_STEP1
  * если энкодер невменяшка, попробуй поменять значение
  ********************/
-#define MY_ENCODER_TYPE 2 // 0
+#define MY_ENCODER_TYPE EB_STEP2 // 0
 
 /**********************
  * Encoder direction
- * 1
- * 0
+ * 0 - normal
+ * 1 - reverse
  ********************/
 #define ENCODER_REVERSE 1
 
@@ -222,8 +224,8 @@
  * https://en.wikipedia.org/wiki/Servo_control
  * SERVO_CUCKOO - Servo sound notification time 0 - off, 50-100 - normal
  ********************/
-#define SERVO_MIN_PULSE 600
-#define SERVO_MAX_PULSE 1800
+#define SERVO_MIN_PULSE 300
+#define SERVO_MAX_PULSE 2000
 #define SERVO_PERIOD_MS 20
 #define SERVO_CUCKOO 50 // 0
 
@@ -247,7 +249,7 @@
 #define SCALES_MODULE_NUM 4
 #define ALERT_MASS 100
 #define FILAMENT_SENSOR_MASS 20
-#define MENU_SCALE_SWITCH_TIME 7000
+#define MENU_SCALE_SWITCH_TIME 5000
 
 /**********************
  * My presets name
@@ -258,8 +260,14 @@
  * language, will not be displayed
  *********************/
 
+#if LANG == 0
 #define PRESET_NAME_1 "ПЛА"
 #define PRESET_NAME_2 "ПЕТГ"
 #define PRESET_NAME_3 "РА6"
+#elif LANG == 1
+#define PRESET_NAME_1 "PLA"
+#define PRESET_NAME_2 "PETG"
+#define PRESET_NAME_3 "PA6"
+#endif
 
 #endif

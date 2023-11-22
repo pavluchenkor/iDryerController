@@ -3,13 +3,19 @@
 
 #ifdef WITH_BLACKJACK_AND_HOOKERS
 #if LANG == 0
-#include "menu_rus_ext.h"
+#include "menu_ru_ext.h"
+#include "font_ru.h"
+#define PADDING_V 0
+#define PADDING_OFFSET 0
 #elif LANG == 1
 #include "menu_en_ext.h"
+#include "font_en.h"
+#define PADDING_OFFSET 1
+#define PADDING_V 2
 #endif
 #else
 #if LANG == 0
-#include "menu_rus.h"
+#include "menu_ru.h"
 #elif LANG == 1
 #include "menu_no_rus.h"
 #endif
@@ -67,6 +73,9 @@ PGM_P const serviceTxt[] PROGMEM = {
     s17,
     s18,
     s19,
+    s20,
+    s21,
+    s22,
 };
 
 #ifdef WITH_BLACKJACK_AND_HOOKERS
@@ -297,15 +306,15 @@ uint16_t menuVal[] EEMEM = {
     0,   // id: 8
     0,   // id: 9
     0,   // id: 10
-    50,  // id: 11
-    240, // id: 12
+    55,  // id: 11
+    180, // id: 12
     0,   // id: 13
     0,   // id: 14
-    50,  // id: 15
+    65,  // id: 15
     240, // id: 16
     0,   // id: 17
     0,   // id: 18
-    50,  // id: 19
+    90,  // id: 19
     240, // id: 20
     0,   // id: 21
     0,   // id: 22
@@ -314,10 +323,10 @@ uint16_t menuVal[] EEMEM = {
     1,   // id: 25
     200, // id: 26
     0,   // id: 27
-    300, // id: 28
-    60,  // id: 29
+    400, // id: 28
+    75,  // id: 29
     0,   // id: 30
-    50,  // id: 31
+    75,  // id: 31
     8,   // id: 32
     0,   // id: 33
     30,  // id: 34
@@ -326,20 +335,20 @@ uint16_t menuVal[] EEMEM = {
     0,   // id: 37
     0,   // id: 38
 #if SCALES_MODULE_NUM > 0
-    0,   // id: 39
-    0,   // id: 40
+    0, // id: 39
+    0, // id: 40
     0, // id: 41
-    0,   // id: 42
+    0, // id: 42
 #endif
 #if SCALES_MODULE_NUM > 1
-    0,   // id: 43
+    0, // id: 43
     0, // id: 44
-    0,   // id: 45
+    0, // id: 45
 #endif
 #if SCALES_MODULE_NUM > 2
-    0,   // id: 46
+    0, // id: 46
     0, // id: 47
-    0,   // id: 48
+    0, // id: 48
 #endif
 #if SCALES_MODULE_NUM > 3
     0, // id: 49

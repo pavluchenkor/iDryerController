@@ -12,12 +12,15 @@
 #define DEF_T_THERMISTOR 11
 #define DEF_T_OVERLOAD 12
 #define DEF_T_REMOVE 13
-#define DEF_T_COIL 14
-#define DEF_T_INSTALLATION 15
-#define DEF_T_INSTALL 16
+#define DEF_T_SPOOL 14
+#define DEF_T_SETUP 15
+#define DEF_T_PUT 16
 #define DEF_T_WEIGHT 17
 #define DEF_T_GRAM 18
 #define DEF_T_CELSIUS 19
+#define DEF_T_BURN 20
+#define DEF_T_PART 21
+#define DEF_T_FREQUENCY 22
 
 #define DEF_MENU_DRYING 1
 #define DEF_DRYING_TEMPERATURE 2

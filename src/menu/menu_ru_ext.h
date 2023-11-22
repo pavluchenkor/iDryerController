@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "version.h"
+
 const char PROGMEM s0[] = "ПРОШИВКА";
 const char PROGMEM s1[] = "АЙДРАЙ";
 const char PROGMEM s2[] = "ВЕРСИЯ";
@@ -20,6 +21,9 @@ const char PROGMEM s16[] = "УСТАНОВИ";
 const char PROGMEM s17[] = "ВЕС";
 const char PROGMEM s18[] = "Г";
 const char PROGMEM s19[] = "С";
+const char PROGMEM s20[]  = "ПРОШЕЙ";
+const char PROGMEM s21[]  = "ЧАСТЬ 2";
+const char PROGMEM s22[]  = "ЧАСТОТА";
 
 const char i0[] PROGMEM = "МЕНЮ";
 const char i1[] PROGMEM = "СУШКА";

@@ -66,7 +66,7 @@ public:
   int32_t readMulti(uint8_t sensorIndex);
   // int16_t readMassMulti(uint8_t sensorNum);
   int16_t readMassMulti();
-  void HX711Multi::updateFilter(uint8_t sensorNum, uint16_t newValue);
+  // void HX711Multi::updateFilter(uint8_t sensorNum, uint16_t newValue);
   void setGain(byte gain);
   void setupGainMulti(uint8_t sensorIndex);
   bool readyToSend(uint8_t sensorIndex);

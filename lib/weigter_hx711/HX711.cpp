@@ -1,8 +1,6 @@
 #include <Arduino.h>
 #include "HX711.h"
-#include <EEPROM.h>
-
-float calibration_mass = 1000;
+// #include <EEPROM.h>
 
 uint32_t zero_weight_eep[] EEMEM{
     0,
@@ -16,6 +14,8 @@ uint32_t offset_eep[] EEMEM{
     0,
     0,
 };
+
+float calibration_mass = 1000;
 
 // HX711Multi::HX711Multi(uint8_t numSensors, uint8_t *dtPins, uint8_t sckPins)
 // {
@@ -230,6 +230,7 @@ bool HX711Multi::multiplexerPinSet(uint8_t sensorNum)
   {
     return true;
   }
+  return false; 
 }
 
 void HX711Multi::zeroSetupMulti(uint8_t sensorNum)
