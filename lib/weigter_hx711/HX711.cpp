@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "HX711.h"
 // #include <EEPROM.h>
+#define CALIBRATION_MASS 1000
 
 uint32_t zero_weight_eep[] EEMEM{
     0,
@@ -15,21 +16,7 @@ uint32_t offset_eep[] EEMEM{
     0,
 };
 
-float calibration_mass = 1000;
-
-// HX711Multi::HX711Multi(uint8_t numSensors, uint8_t *dtPins, uint8_t sckPins)
-// {
-//   //Serial.begin(57600);
-//   _numSensors = numSensors;
-//   _dtPins = dtPins;
-//   _sckPin = sckPins;
-//   for (int i = 0; i < _numSensors; i++)
-//   {
-//     _sensors[i] = HX711(_dtPins[i], _sckPin);
-//     _sensors[i].zero_weight = getZeroWeight(i);
-//     _sensors[i].offset = getOffset(i);
-//   }
-// }
+float calibration_mass = CALIBRATION_MASS;
 
 HX711Multi::HX711Multi(uint8_t numSensors, uint8_t dtPin, uint8_t sckPin, uint8_t aPin, uint8_t bPin)
 {
@@ -92,7 +79,6 @@ HX711Multi::HX711Multi(uint8_t numSensors, uint8_t dtPin, uint8_t sckPin, uint8_
 //   return 0;
 // }
 
-
 void HX711Multi::begin(byte gain)
 {
   digitalWrite(_sckPin, LOW);
@@ -121,7 +107,6 @@ void HX711Multi::setGain(byte gain)
   readMulti(0);
 }
 
-
 void HX711Multi::setupGainMulti(uint8_t sensorNum)
 {
   // for (int i = 0; i < GAIN; i++)
@@ -136,13 +121,11 @@ void HX711Multi::setupGainMulti(uint8_t sensorNum)
 int16_t HX711Multi::readMassMulti()
 {
   if (readyToSend(sensorNum))
-  {  
+  {
     for (uint8_t i = 4; i > 0; i--)
     {
       mass_filter[sensorNum][i] = mass_filter[sensorNum][i - 1];
     }
-
-
 
     for (uint8_t i = 0; i < 5; i++)
     {
@@ -157,20 +140,21 @@ int16_t HX711Multi::readMassMulti()
       }
     }
 
-  //   mass += int16_t(calibration_mass * ((float)(read() - zero_weight) / (float)(offset - zero_weight)));
+    //   mass += int16_t(calibration_mass * ((float)(read() - zero_weight) / (float)(offset - zero_weight)));
 
-  //  mass_filter[sensorNum][0] = readMulti(sensorNum)  / 100;
-        // (int16_t)(eeprom_read_dword(&zero_weight_eep[sensorNum]));
+    //  mass_filter[sensorNum][0] = readMulti(sensorNum)  / 100;
+    // (int16_t)(eeprom_read_dword(&zero_weight_eep[sensorNum]));
 
     mass_filter[sensorNum][0] =
-        uint16_t((float)calibration_mass * 
-        (float)(readMulti(sensorNum) - eeprom_read_dword(&zero_weight_eep[sensorNum])) / 
-        (float)(eeprom_read_dword(&offset_eep[sensorNum]) - eeprom_read_dword(&zero_weight_eep[sensorNum])));
-    if (mass_filter[sensorNum][0] > 2500) mass_filter[sensorNum][0] = 0;
-
+        uint16_t((float)calibration_mass *
+                 (float)(readMulti(sensorNum) - eeprom_read_dword(&zero_weight_eep[sensorNum])) /
+                 (float)(eeprom_read_dword(&offset_eep[sensorNum]) - eeprom_read_dword(&zero_weight_eep[sensorNum])));
+    if (mass_filter[sensorNum][0] > 2500)
+      mass_filter[sensorNum][0] = 0;
 
     sensorNum++;
-    if (sensorNum >= _numSensors) sensorNum = 0;
+    if (sensorNum >= _numSensors)
+      sensorNum = 0;
 
     return mass_filter[sensorNum][0];
   }
@@ -187,16 +171,16 @@ int32_t HX711Multi::readMulti(uint8_t sensorNum)
   while (!readyToSend(sensorNum))
     ;
 
-    byte data[3];
+  byte data[3];
 
-    for (byte j = 3; j--;)
-    {
-      data[j] = shiftIn(_dtPin, _sckPin, MSBFIRST);
-    }
-    setupGainMulti(sensorNum);
+  for (byte j = 3; j--;)
+  {
+    data[j] = shiftIn(_dtPin, _sckPin, MSBFIRST);
+  }
+  setupGainMulti(sensorNum);
 
-    data[2] ^= 0x80;
-    return ((uint32_t)data[2] << 16) | ((uint32_t)data[1] << 8) | (uint32_t)data[0];
+  data[2] ^= 0x80;
+  return ((uint32_t)data[2] << 16) | ((uint32_t)data[1] << 8) | (uint32_t)data[0];
   // }
   // else
   // {
@@ -230,7 +214,7 @@ bool HX711Multi::multiplexerPinSet(uint8_t sensorNum)
   {
     return true;
   }
-  return false; 
+  return false;
 }
 
 void HX711Multi::zeroSetupMulti(uint8_t sensorNum)
@@ -273,20 +257,6 @@ void HX711Multi::zeroSetMulti(uint8_t avg_size, uint8_t sensorNum)
   zero_weight /= int32_t(avg_size);
   eeprom_write_dword(&zero_weight_eep[sensorNum], static_cast<uint32_t>(zero_weight));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 HX711::HX711(byte output_pin, byte clock_pin)
 {
@@ -371,7 +341,7 @@ void HX711::offsetFirstSet(uint8_t avg_size)
 {
   // //Serial.println("Remove  Calibrated Mass");
   delay(2000);
-  //Serial.println("Add Calibrated Mass 1");
+  // Serial.println("Add Calibrated Mass 1");
   while (true)
   {
     // //Serial.print(read());
@@ -383,13 +353,13 @@ void HX711::offsetFirstSet(uint8_t avg_size)
     // }
     // else
     // {
-      // delay(2000);
-      for (int i = 0; i < int(avg_size); i++)
-      {
-        offset += read();
-      }
-      offset /= int32_t(avg_size);
-      break;
+    // delay(2000);
+    for (int i = 0; i < int(avg_size); i++)
+    {
+      offset += read();
+    }
+    offset /= int32_t(avg_size);
+    break;
     // }
   }
   // ratio = ((float)(reading - zero_weight) / (float)(offset - zero_weight));

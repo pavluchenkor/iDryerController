@@ -1,13 +1,11 @@
 Archive member included to satisfy reference by file (symbol)
 
-.pio/build/EEP/lib11b/libweigter_hx711.a(HX711.cpp.o)
-                              .pio/build/EEP/src/main.cpp.o (symbol from plugin) (_ZN10HX711MultiC1Ehhhhh)
 .pio/build/EEP/lib7a4/libEncButton.a(utils.cpp.o)
                               .pio/build/EEP/src/main.cpp.o (symbol from plugin) (_Z6EBreadh)
 .pio/build/EEP/lib8c4/libGyverBME280.a(GyverBME280.cpp.o)
                               .pio/build/EEP/src/main.cpp.o (symbol from plugin) (_ZN11GyverBME280C1Ev)
 .pio/build/EEP/libab0/libGyverTimers.a(GyverTimers.cpp.o)
-                              .pio/build/EEP/src/main.cpp.o (symbol from plugin) (_ZN7Timer_15pauseEv)
+                              .pio/build/EEP/src/main.cpp.o (symbol from plugin) (_ZN7Timer_14stopEv)
 .pio/build/EEP/lib2d0/libPID.a(PID_v1.cpp.o)
                               .pio/build/EEP/src/main.cpp.o (symbol from plugin) (_ZN3PID7ComputeEv)
 .pio/build/EEP/libc1c/libU8g2.a(U8x8lib.cpp.o)
@@ -214,16 +212,12 @@ Archive member included to satisfy reference by file (symbol)
                               U8x8lib.cpp.o (symbol from plugin) (yield)
 .pio/build/EEP/libFrameworkArduino.a(main.cpp.o)
                               /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/crtatmega328p.o (main)
-.pio/build/EEP/libFrameworkArduino.a(new.cpp.o)
-                              HX711.cpp.o (symbol from plugin) (_ZdlPvj)
 .pio/build/EEP/libFrameworkArduino.a(wiring.c.o)
                               .pio/build/EEP/src/main.cpp.o (symbol from plugin) (millis)
 .pio/build/EEP/libFrameworkArduino.a(wiring_analog.c.o)
                               .pio/build/EEP/src/main.cpp.o (symbol from plugin) (analogRead)
 .pio/build/EEP/libFrameworkArduino.a(wiring_digital.c.o)
                               .pio/build/EEP/src/main.cpp.o (symbol from plugin) (pinMode)
-.pio/build/EEP/libFrameworkArduino.a(wiring_shift.c.o)
-                              HX711.cpp.o (symbol from plugin) (shiftIn)
 .pio/build/EEP/libcc3/libWire.a(Wire.cpp.o)
                               GyverBME280.cpp.o (symbol from plugin) (_ZN7TwoWire4readEv)
 .pio/build/EEP/libcc3/libWire.a(twi.c.o)
@@ -265,33 +259,33 @@ Archive member included to satisfy reference by file (symbol)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_umulhisi3.o)
                               /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_muluhisi3.o) (__umulhisi3)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_mulsi3.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__mulsi3)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__mulsi3)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_udivmodqi4.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__udivmodqi4)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__udivmodqi4)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_udivmodhi4.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__udivmodhi4)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__udivmodhi4)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_clear_bss.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__do_clear_bss)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__do_clear_bss)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_ctors.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__do_global_ctors)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__do_global_ctors)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_tablejump2.o)
                               /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_ctors.o) (__tablejump2__)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(addsf3.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__subsf3)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__subsf3)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(addsf3x.o)
                               /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(addsf3.o) (__addsf3x)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(cmpsf2.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__ltsf2)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__ltsf2)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(divsf3.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__divsf3)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__divsf3)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(divsf3x.o)
                               /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(divsf3.o) (__divsf3x)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fixsfsi.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__fixsfsi)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__fixsfsi)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fixunssfsi.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__fixunssfsi)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__fixunssfsi)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(floatsisf.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__floatunsisf)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__floatunsisf)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_cmp.o)
                               /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(cmpsf2.o) (__fp_cmp)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_inf.o)
@@ -309,17 +303,17 @@ Archive member included to satisfy reference by file (symbol)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_zero.o)
                               /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(addsf3x.o) (__fp_zero)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(gesf2.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__gtsf2)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__gtsf2)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(mulsf3.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (__mulsf3)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (__mulsf3)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(mulsf3x.o)
                               /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(mulsf3.o) (__mulsf3x)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(memset.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (memset)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (memset)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(strcpy.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (strcpy)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (strcpy)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(sprintf.o)
-                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o (sprintf)
+                              /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o (sprintf)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
                               /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(sprintf.o) (vfprintf)
 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
@@ -422,9 +416,6 @@ Discarded input sections
                 0x0000000000000000        0x0 .pio/build/EEP/src/main.cpp.o (symbol from plugin)
  .text          0x0000000000000000        0x0 .pio/build/EEP/src/pid/pidautotuner.cpp.o (symbol from plugin)
  .text          0x0000000000000000        0x0 .pio/build/EEP/src/thermistor/thermistor.cpp.o (symbol from plugin)
- .text          0x0000000000000000        0x0 HX711.cpp.o (symbol from plugin)
- .gnu.linkonce.t._ZTV5HX711
-                0x0000000000000000        0x0 HX711.cpp.o (symbol from plugin)
  .text          0x0000000000000000        0x0 utils.cpp.o (symbol from plugin)
  .text          0x0000000000000000        0x0 GyverBME280.cpp.o (symbol from plugin)
  .gnu.linkonce.t._ZN7TwoWire5writeEi
@@ -551,11 +542,9 @@ Discarded input sections
  .text          0x0000000000000000        0x0 WMath.cpp.o (symbol from plugin)
  .text          0x0000000000000000        0x0 hooks.c.o (symbol from plugin)
  .text          0x0000000000000000        0x0 main.cpp.o (symbol from plugin)
- .text          0x0000000000000000        0x0 new.cpp.o (symbol from plugin)
  .text          0x0000000000000000        0x0 wiring.c.o (symbol from plugin)
  .text          0x0000000000000000        0x0 wiring_analog.c.o (symbol from plugin)
  .text          0x0000000000000000        0x0 wiring_digital.c.o (symbol from plugin)
- .text          0x0000000000000000        0x0 wiring_shift.c.o (symbol from plugin)
  .text          0x0000000000000000        0x0 Wire.cpp.o (symbol from plugin)
  .gnu.linkonce.t._ZN5Print17availableForWriteEv
                 0x0000000000000000        0x0 Wire.cpp.o (symbol from plugin)
@@ -594,8 +583,6 @@ Discarded input sections
  .text          0x0000000000000000        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eeupd_word.o)
  .data          0x0000000000000000        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eeupd_word.o)
  .bss           0x0000000000000000        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eeupd_word.o)
- .text.avr-libc
-                0x0000000000000000        0xc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eeupd_word.o)
  .text          0x0000000000000000        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eewr_dword.o)
  .data          0x0000000000000000        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eewr_dword.o)
  .bss           0x0000000000000000        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eewr_dword.o)
@@ -608,8 +595,6 @@ Discarded input sections
  .text          0x0000000000000000        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eeupd_byte.o)
  .data          0x0000000000000000        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eeupd_byte.o)
  .bss           0x0000000000000000        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eeupd_byte.o)
- .text.avr-libc
-                0x0000000000000000       0x24 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eeupd_byte.o)
  .text          0x0000000000000000        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eewr_byte.o)
  .data          0x0000000000000000        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eewr_byte.o)
  .bss           0x0000000000000000        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eewr_byte.o)
@@ -929,7 +914,7 @@ Linker script and memory map
 Address of section .data set to 0x800100
 LOAD /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/crtatmega328p.o
 LOAD .pio/build/EEP/src/main.cpp.o
-LOAD /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o
+LOAD /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o
 LOAD .pio/build/EEP/src/pid/pidautotuner.cpp.o
 LOAD .pio/build/EEP/src/thermistor/thermistor.cpp.o
 START GROUP
@@ -1050,7 +1035,7 @@ END GROUP
 .rela.plt
  *(.rela.plt)
 
-.text           0x0000000000000000     0x79e8
+.text           0x0000000000000000     0x728c
  *(.vectors)
  .vectors       0x0000000000000000       0x68 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/crtatmega328p.o
                 0x0000000000000000                __vectors
@@ -1066,241 +1051,249 @@ END GROUP
  *libprintf_flt.a:*(.progmem.data)
  *libc.a:*(.progmem.data)
  *(.progmem*)
- .progmem.data  0x0000000000000068      0x42b /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o
+ .progmem.data  0x0000000000000068      0x398 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o
  .progmem.u8g2_font
-                0x0000000000000493      0x361 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o
-                0x00000000000007f4                . = ALIGN (0x2)
+                0x0000000000000400      0x361 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o
+                0x0000000000000762                . = ALIGN (0x2)
+ *fill*         0x0000000000000761        0x1 
  *(.jumptables)
  *(.jumptables*)
  *(.lowtext)
  *(.lowtext*)
-                0x00000000000007f4                __ctors_start = .
+                0x0000000000000762                __ctors_start = .
  *(.ctors)
- .ctors         0x00000000000007f4        0x2 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o
-                0x00000000000007f6                __ctors_end = .
-                0x00000000000007f6                __dtors_start = .
+ .ctors         0x0000000000000762        0x2 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o
+                0x0000000000000764                __ctors_end = .
+                0x0000000000000764                __dtors_start = .
  *(.dtors)
-                0x00000000000007f6                __dtors_end = .
+                0x0000000000000764                __dtors_end = .
  SORT(*)(.ctors)
  SORT(*)(.dtors)
  *(.init0)
- .init0         0x00000000000007f6        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/crtatmega328p.o
-                0x00000000000007f6                __init
+ .init0         0x0000000000000764        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/crtatmega328p.o
+                0x0000000000000764                __init
  *(.init0)
  *(.init1)
  *(.init1)
  *(.init2)
- .init2         0x00000000000007f6        0xc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/crtatmega328p.o
+ .init2         0x0000000000000764        0xc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/crtatmega328p.o
  *(.init2)
  *(.init3)
  *(.init3)
  *(.init4)
- .init4         0x0000000000000802       0x16 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_copy_data.o)
-                0x0000000000000802                __do_copy_data
- .init4         0x0000000000000818       0x10 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_clear_bss.o)
-                0x0000000000000818                __do_clear_bss
+ .init4         0x0000000000000770       0x16 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_copy_data.o)
+                0x0000000000000770                __do_copy_data
+ .init4         0x0000000000000786       0x10 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_clear_bss.o)
+                0x0000000000000786                __do_clear_bss
  *(.init4)
  *(.init5)
  *(.init5)
  *(.init6)
- .init6         0x0000000000000828       0x16 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_ctors.o)
-                0x0000000000000828                __do_global_ctors
+ .init6         0x0000000000000796       0x16 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_ctors.o)
+                0x0000000000000796                __do_global_ctors
  *(.init6)
  *(.init7)
  *(.init7)
  *(.init8)
  *(.init8)
  *(.init9)
- .init9         0x000000000000083e        0x8 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/crtatmega328p.o
+ .init9         0x00000000000007ac        0x8 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/crtatmega328p.o
  *(.init9)
  *(.text)
- .text          0x0000000000000846        0x4 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/crtatmega328p.o
-                0x0000000000000846                __vector_20
-                0x0000000000000846                __vector_12
-                0x0000000000000846                __bad_interrupt
-                0x0000000000000846                __vector_3
-                0x0000000000000846                __vector_23
-                0x0000000000000846                __vector_25
-                0x0000000000000846                __vector_13
-                0x0000000000000846                __vector_17
-                0x0000000000000846                __vector_19
-                0x0000000000000846                __vector_7
-                0x0000000000000846                __vector_5
-                0x0000000000000846                __vector_9
-                0x0000000000000846                __vector_21
-                0x0000000000000846                __vector_15
-                0x0000000000000846                __vector_8
-                0x0000000000000846                __vector_14
-                0x0000000000000846                __vector_10
-                0x0000000000000846                __vector_18
-                0x0000000000000846                __vector_22
- .text          0x000000000000084a     0x4cb4 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o
-                0x0000000000004efa                __vector_24
-                0x0000000000005150                __vector_16
-                0x00000000000051e4                __vector_2
-                0x0000000000005232                __vector_1
-                0x0000000000005280                __vector_6
-                0x0000000000005322                __vector_4
-                0x000000000000546c                __vector_11
-                0x00000000000054fe                . = ALIGN (0x2)
+ .text          0x00000000000007b4        0x4 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/crtatmega328p.o
+                0x00000000000007b4                __vector_20
+                0x00000000000007b4                __vector_12
+                0x00000000000007b4                __bad_interrupt
+                0x00000000000007b4                __vector_3
+                0x00000000000007b4                __vector_23
+                0x00000000000007b4                __vector_25
+                0x00000000000007b4                __vector_13
+                0x00000000000007b4                __vector_17
+                0x00000000000007b4                __vector_19
+                0x00000000000007b4                __vector_7
+                0x00000000000007b4                __vector_5
+                0x00000000000007b4                __vector_9
+                0x00000000000007b4                __vector_21
+                0x00000000000007b4                __vector_15
+                0x00000000000007b4                __vector_8
+                0x00000000000007b4                __vector_14
+                0x00000000000007b4                __vector_10
+                0x00000000000007b4                __vector_18
+                0x00000000000007b4                __vector_22
+ .text          0x00000000000007b8     0x41a8 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o
+                0x00000000000043de                __vector_24
+                0x0000000000004634                __vector_16
+                0x00000000000046c8                __vector_2
+                0x0000000000004716                __vector_1
+                0x0000000000004764                __vector_6
+                0x00000000000047b0                __vector_4
+                0x00000000000048ea                __vector_11
+                0x0000000000004960                . = ALIGN (0x2)
  *(.text.*)
- .text.startup  0x00000000000054fe     0x18fe /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o
-                0x0000000000005996                main
+ .text.startup  0x0000000000004960     0x1d10 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o
+                0x0000000000004dae                main
  .text.avr-libc
-                0x0000000000006dfc        0xc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eerd_dword.o)
-                0x0000000000006dfc                eeprom_read_dword
-                0x0000000000006dfc                eeprom_read_float
+                0x0000000000006670        0xc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eerd_dword.o)
+                0x0000000000006670                eeprom_read_dword
+                0x0000000000006670                eeprom_read_float
  .text.avr-libc
-                0x0000000000006e08        0xc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eerd_word.o)
-                0x0000000000006e08                eeprom_read_word
+                0x000000000000667c        0xc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eerd_word.o)
+                0x000000000000667c                eeprom_read_word
  .text.avr-libc
-                0x0000000000006e14       0x10 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eewr_dword.o)
-                0x0000000000006e14                eeprom_write_float
-                0x0000000000006e14                eeprom_write_dword
+                0x0000000000006688        0xc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eeupd_word.o)
+                0x0000000000006688                eeprom_update_word
  .text.avr-libc
-                0x0000000000006e24        0xa /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eewr_word.o)
-                0x0000000000006e24                eeprom_write_word
+                0x0000000000006694       0x10 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eewr_dword.o)
+                0x0000000000006694                eeprom_write_float
+                0x0000000000006694                eeprom_write_dword
  .text.avr-libc
-                0x0000000000006e2e       0x20 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eerd_block.o)
-                0x0000000000006e2e                eeprom_read_block
-                0x0000000000006e32                eeprom_read_blraw
+                0x00000000000066a4        0xa /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eewr_word.o)
+                0x00000000000066a4                eeprom_write_word
  .text.avr-libc
-                0x0000000000006e4e       0x1c /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eewr_byte.o)
-                0x0000000000006e4e                eeprom_write_byte
-                0x0000000000006e50                eeprom_write_r18
+                0x00000000000066ae       0x20 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eerd_block.o)
+                0x00000000000066ae                eeprom_read_block
+                0x00000000000066b2                eeprom_read_blraw
+ .text.avr-libc
+                0x00000000000066ce       0x24 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eeupd_byte.o)
+                0x00000000000066ce                eeprom_update_byte
+                0x00000000000066d0                eeprom_update_r18
+ .text.avr-libc
+                0x00000000000066f2       0x1c /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libatmega328p.a(eewr_byte.o)
+                0x00000000000066f2                eeprom_write_byte
+                0x00000000000066f4                eeprom_write_r18
  .text.libgcc.div
-                0x0000000000006e6a       0x2e /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_divmodsi4.o)
-                0x0000000000006e6a                __divmodsi4
+                0x000000000000670e       0x2e /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_divmodsi4.o)
+                0x000000000000670e                __divmodsi4
  .text.libgcc.div
-                0x0000000000006e98       0x10 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_negsi2.o)
-                0x0000000000006e98                __negsi2
+                0x000000000000673c       0x10 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_negsi2.o)
+                0x000000000000673c                __negsi2
  .text.libgcc.mul
-                0x0000000000006ea8       0x16 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_muluhisi3.o)
-                0x0000000000006ea8                __muluhisi3
+                0x000000000000674c       0x16 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_muluhisi3.o)
+                0x000000000000674c                __muluhisi3
  .text.libgcc.mul
-                0x0000000000006ebe       0x10 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_mulshisi3.o)
-                0x0000000000006ebe                __mulshisi3
-                0x0000000000006ec4                __mulohisi3
+                0x0000000000006762       0x10 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_mulshisi3.o)
+                0x0000000000006762                __mulshisi3
+                0x0000000000006768                __mulohisi3
  .text.libgcc.div
-                0x0000000000006ece       0x44 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_udivmodsi4.o)
-                0x0000000000006ece                __udivmodsi4
+                0x0000000000006772       0x44 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_udivmodsi4.o)
+                0x0000000000006772                __udivmodsi4
  .text.libgcc.mul
-                0x0000000000006f12       0x1e /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_umulhisi3.o)
-                0x0000000000006f12                __umulhisi3
+                0x00000000000067b6       0x1e /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_umulhisi3.o)
+                0x00000000000067b6                __umulhisi3
  .text.libgcc.mul
-                0x0000000000006f30       0x20 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_mulsi3.o)
-                0x0000000000006f30                __mulsi3
+                0x00000000000067d4       0x20 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_mulsi3.o)
+                0x00000000000067d4                __mulsi3
  .text.libgcc.div
-                0x0000000000006f50       0x18 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_udivmodqi4.o)
-                0x0000000000006f50                __udivmodqi4
+                0x00000000000067f4       0x18 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_udivmodqi4.o)
+                0x00000000000067f4                __udivmodqi4
  .text.libgcc.div
-                0x0000000000006f68       0x28 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_udivmodhi4.o)
-                0x0000000000006f68                __udivmodhi4
- .text.libgcc   0x0000000000006f90        0xc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_tablejump2.o)
-                0x0000000000006f90                __tablejump2__
+                0x000000000000680c       0x28 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_udivmodhi4.o)
+                0x000000000000680c                __udivmodhi4
+ .text.libgcc   0x0000000000006834        0xc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_tablejump2.o)
+                0x0000000000006834                __tablejump2__
  .text.avr-libc.fplib
-                0x0000000000006f9c        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(addsf3.o)
-                0x0000000000006f9c                __subsf3
-                0x0000000000006f9e                __addsf3
+                0x0000000000006840        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(addsf3.o)
+                0x0000000000006840                __subsf3
+                0x0000000000006842                __addsf3
  .text.avr-libc.fplib
-                0x0000000000006faa       0xcc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(addsf3x.o)
-                0x0000000000006fcc                __addsf3x
+                0x000000000000684e       0xcc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(addsf3x.o)
+                0x0000000000006870                __addsf3x
  .text.avr-libc.fplib
-                0x0000000000007076        0xa /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(cmpsf2.o)
-                0x0000000000007076                __lesf2
-                0x0000000000007076                __nesf2
-                0x0000000000007076                __eqsf2
-                0x0000000000007076                __cmpsf2
-                0x0000000000007076                __ltsf2
+                0x000000000000691a        0xa /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(cmpsf2.o)
+                0x000000000000691a                __lesf2
+                0x000000000000691a                __nesf2
+                0x000000000000691a                __eqsf2
+                0x000000000000691a                __cmpsf2
+                0x000000000000691a                __ltsf2
  .text.avr-libc.fplib
-                0x0000000000007080        0x8 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(divsf3.o)
-                0x0000000000007080                __divsf3
+                0x0000000000006924        0x8 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(divsf3.o)
+                0x0000000000006924                __divsf3
  .text.avr-libc.fplib
-                0x0000000000007088       0xdc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(divsf3x.o)
-                0x00000000000070a8                __divsf3x
-                0x00000000000070ae                __divsf3_pse
+                0x000000000000692c       0xdc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(divsf3x.o)
+                0x000000000000694c                __divsf3x
+                0x0000000000006952                __divsf3_pse
  .text.avr-libc.fplib
-                0x0000000000007164        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fixsfsi.o)
-                0x0000000000007164                __fixsfsi
+                0x0000000000006a08        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fixsfsi.o)
+                0x0000000000006a08                __fixsfsi
  .text.avr-libc.fplib
-                0x0000000000007172       0x5e /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fixunssfsi.o)
-                0x0000000000007172                __fixunssfsi
+                0x0000000000006a16       0x5e /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fixunssfsi.o)
+                0x0000000000006a16                __fixunssfsi
  .text.avr-libc.fplib
-                0x00000000000071d0       0x7a /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(floatsisf.o)
-                0x00000000000071d0                __floatunsisf
-                0x00000000000071d4                __floatsisf
+                0x0000000000006a74       0x7a /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(floatsisf.o)
+                0x0000000000006a74                __floatunsisf
+                0x0000000000006a78                __floatsisf
  .text.avr-libc.fplib
-                0x000000000000724a       0x48 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_cmp.o)
-                0x000000000000724a                __fp_cmp
+                0x0000000000006aee       0x48 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_cmp.o)
+                0x0000000000006aee                __fp_cmp
  .text.avr-libc.fplib
-                0x0000000000007292        0xc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_inf.o)
-                0x0000000000007292                __fp_inf
+                0x0000000000006b36        0xc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_inf.o)
+                0x0000000000006b36                __fp_inf
  .text.avr-libc.fplib
-                0x000000000000729e        0x6 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_nan.o)
-                0x000000000000729e                __fp_nan
+                0x0000000000006b42        0x6 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_nan.o)
+                0x0000000000006b42                __fp_nan
  .text.avr-libc.fplib
-                0x00000000000072a4        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_pscA.o)
-                0x00000000000072a4                __fp_pscA
+                0x0000000000006b48        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_pscA.o)
+                0x0000000000006b48                __fp_pscA
  .text.avr-libc.fplib
-                0x00000000000072b2        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_pscB.o)
-                0x00000000000072b2                __fp_pscB
+                0x0000000000006b56        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_pscB.o)
+                0x0000000000006b56                __fp_pscB
  .text.avr-libc.fplib
-                0x00000000000072c0       0x22 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_round.o)
-                0x00000000000072c0                __fp_round
+                0x0000000000006b64       0x22 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_round.o)
+                0x0000000000006b64                __fp_round
  .text.avr-libc.fplib
-                0x00000000000072e2       0x44 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_split3.o)
-                0x00000000000072e2                __fp_split3
-                0x00000000000072f2                __fp_splitA
+                0x0000000000006b86       0x44 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_split3.o)
+                0x0000000000006b86                __fp_split3
+                0x0000000000006b96                __fp_splitA
  .text.avr-libc.fplib
-                0x0000000000007326        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_zero.o)
-                0x0000000000007326                __fp_zero
-                0x0000000000007328                __fp_szero
+                0x0000000000006bca        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(fp_zero.o)
+                0x0000000000006bca                __fp_zero
+                0x0000000000006bcc                __fp_szero
  .text.avr-libc.fplib
-                0x0000000000007334        0xa /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(gesf2.o)
-                0x0000000000007334                __gtsf2
-                0x0000000000007334                __gesf2
+                0x0000000000006bd8        0xa /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(gesf2.o)
+                0x0000000000006bd8                __gtsf2
+                0x0000000000006bd8                __gesf2
  .text.avr-libc.fplib
-                0x000000000000733e        0x8 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(mulsf3.o)
-                0x000000000000733e                __mulsf3
+                0x0000000000006be2        0x8 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(mulsf3.o)
+                0x0000000000006be2                __mulsf3
  .text.avr-libc.fplib
-                0x0000000000007346       0xd2 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(mulsf3x.o)
-                0x0000000000007364                __mulsf3x
-                0x000000000000736a                __mulsf3_pse
+                0x0000000000006bea       0xd2 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libm.a(mulsf3x.o)
+                0x0000000000006c08                __mulsf3x
+                0x0000000000006c0e                __mulsf3_pse
  .text.avr-libc
-                0x0000000000007418        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(memset.o)
-                0x0000000000007418                memset
+                0x0000000000006cbc        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(memset.o)
+                0x0000000000006cbc                memset
  .text.avr-libc
-                0x0000000000007426        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(strcpy.o)
-                0x0000000000007426                strcpy
+                0x0000000000006cca        0xe /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(strcpy.o)
+                0x0000000000006cca                strcpy
  .text.avr-libc
-                0x0000000000007434       0x46 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(sprintf.o)
-                0x0000000000007434                sprintf
+                0x0000000000006cd8       0x46 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(sprintf.o)
+                0x0000000000006cd8                sprintf
  .text.avr-libc
-                0x000000000000747a      0x3b4 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
-                0x000000000000747a                vfprintf
+                0x0000000000006d1e      0x3b4 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
+                0x0000000000006d1e                vfprintf
  .text.avr-libc
-                0x000000000000782e       0x16 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
-                0x000000000000782e                strnlen_P
+                0x00000000000070d2       0x16 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(strnlen_P.o)
+                0x00000000000070d2                strnlen_P
  .text.avr-libc
-                0x0000000000007844       0x16 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(strnlen.o)
-                0x0000000000007844                strnlen
+                0x00000000000070e8       0x16 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(strnlen.o)
+                0x00000000000070e8                strnlen
  .text.avr-libc
-                0x000000000000785a       0x60 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(fputc.o)
-                0x000000000000785a                fputc
+                0x00000000000070fe       0x60 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(fputc.o)
+                0x00000000000070fe                fputc
  .text.avr-libc
-                0x00000000000078ba       0xbc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
-                0x00000000000078ba                __ultoa_invert
+                0x000000000000715e       0xbc /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(ultoa_invert.o)
+                0x000000000000715e                __ultoa_invert
  .text.libgcc.prologue
-                0x0000000000007976       0x38 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_prologue.o)
-                0x0000000000007976                __prologue_saves__
+                0x000000000000721a       0x38 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_prologue.o)
+                0x000000000000721a                __prologue_saves__
  .text.libgcc.prologue
-                0x00000000000079ae       0x36 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_epilogue.o)
-                0x00000000000079ae                __epilogue_restores__
-                0x00000000000079e4                . = ALIGN (0x2)
+                0x0000000000007252       0x36 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_epilogue.o)
+                0x0000000000007252                __epilogue_restores__
+                0x0000000000007288                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x00000000000079e4        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_exit.o)
-                0x00000000000079e4                exit
-                0x00000000000079e4                _exit
+ .fini9         0x0000000000007288        0x0 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_exit.o)
+                0x0000000000007288                exit
+                0x0000000000007288                _exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -1319,48 +1312,48 @@ END GROUP
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x00000000000079e4        0x4 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_exit.o)
+ .fini0         0x0000000000007288        0x4 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/avr5/libgcc.a(_exit.o)
  *(.fini0)
-                0x00000000000079e8                _etext = .
+                0x000000000000728c                _etext = .
 
-.data           0x0000000000800100      0x134 load address 0x00000000000079e8
+.data           0x0000000000800100      0x110 load address 0x000000000000728c
                 0x0000000000800100                PROVIDE (__data_start, .)
  *(.data)
- .data          0x0000000000800100        0x9 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o
+ .data          0x0000000000800100        0x8 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o
  *(.data*)
  *(.gnu.linkonce.d*)
  *(.rodata)
- .rodata        0x0000000000800109       0xf1 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o
+ .rodata        0x0000000000800108       0xd7 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o
  *(.rodata*)
  .rodata.str1.1
-                0x00000000008001fa       0x3a /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o
-                                         0x40 (size before relaxing)
+                0x00000000008001df       0x31 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o
+                                         0x37 (size before relaxing)
  *(.gnu.linkonce.r*)
-                0x0000000000800234                . = ALIGN (0x2)
-                0x0000000000800234                _edata = .
-                0x0000000000800234                PROVIDE (__data_end, .)
+                0x0000000000800210                . = ALIGN (0x2)
+                0x0000000000800210                _edata = .
+                0x0000000000800210                PROVIDE (__data_end, .)
 
-.bss            0x0000000000800234      0x3bf
-                0x0000000000800234                PROVIDE (__bss_start, .)
+.bss            0x0000000000800210      0x37c
+                0x0000000000800210                PROVIDE (__bss_start, .)
  *(.bss)
- .bss           0x0000000000800234      0x3bf /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o
+ .bss           0x0000000000800210      0x37c /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o
  *(.bss*)
  *(COMMON)
-                0x00000000008005f3                PROVIDE (__bss_end, .)
-                0x00000000000079e8                __data_load_start = LOADADDR (.data)
-                0x0000000000007b1c                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x000000000080058c                PROVIDE (__bss_end, .)
+                0x000000000000728c                __data_load_start = LOADADDR (.data)
+                0x000000000000739c                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x00000000008005f3        0x0
+.noinit         0x000000000080058c        0x0
                 [!provide]                        PROVIDE (__noinit_start, .)
  *(.noinit*)
                 [!provide]                        PROVIDE (__noinit_end, .)
-                0x00000000008005f3                _end = .
+                0x000000000080058c                _end = .
                 [!provide]                        PROVIDE (__heap_start, .)
 
-.eeprom         0x0000000000810000       0x8c
+.eeprom         0x0000000000810000       0x52
  *(.eeprom*)
- .eeprom        0x0000000000810000       0x8c /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o
-                0x000000000081008c                __eeprom_end = .
+ .eeprom        0x0000000000810000       0x52 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o
+                0x0000000000810052                __eeprom_end = .
 
 .fuse
  *(.fuse)
@@ -1397,7 +1390,7 @@ END GROUP
 
 .comment        0x0000000000000000       0x11
  *(.comment)
- .comment       0x0000000000000000       0x11 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccdGXS7h.ltrans0.ltrans.o
+ .comment       0x0000000000000000       0x11 /var/folders/1r/4jl13l9d1kgg9fz7f_55_pb00000gn/T//ccLDYg6X.ltrans0.ltrans.o
                                          0x12 (size before relaxing)
  .comment       0x0000000000000011       0x12 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(sprintf.o)
  .comment       0x0000000000000011       0x12 /Users/ruslanpavluchenko/.platformio/packages/toolchain-atmelavr/bin/../lib/gcc/avr/7.3.0/../../../../avr/lib/avr5/libc.a(vfprintf_std.o)
