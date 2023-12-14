@@ -1,13 +1,16 @@
 #include <Arduino.h>
 #include <Wire.h>
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 1
+#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 1
 #include <EEPROM.h>
+#endif
 #endif
 #include <avr/wdt.h>
 #include <U8g2lib.h>
 #include <GyverTimers.h>
 #include <GyverBME280.h>
 #include <PID_v1.h>
+#include <pid/pidautotuner.h> //https://github.com/jackw01/arduino-pid-autotuner
 #include <pid/pidautotuner.h> //https://github.com/jackw01/arduino-pid-autotuner
 #include <thermistor/thermistor.h>
 #include <Configuration.h>
@@ -257,11 +260,18 @@ uint16_t prevSpoolMass[4] EEMEM{
     0,
 };
 
-stateS prevState = MENU;
-bool filamentExpenseFlag[SCALES_MODULE_NUM] = {0};
-uint8_t alertFlag[SCALES_MODULE_NUM] = {0};
-const unsigned long measureTime = 600 * 1000;
-unsigned long lastTime = 0;
+enum filamentExpense
+{
+    ZERO,
+    DATA_RESET,
+    UPDATE_DATA,
+    START,
+    WAIT_ALERT_MASS_1,
+    WAIT_ALERT_MASS_2,
+    WAIT_RESET,
+};
+filamentExpense filamentExpenseFlag[SCALES_MODULE_NUM] = {UPDATE_DATA};
+
 #endif
 
 double Setpoint, Input, Output;
@@ -345,7 +355,7 @@ void setSpool1();
 void setSpool2();
 void setSpool3();
 void setSpool4();
-void filamentCheck(uint8_t sensorNum, uint16_t mass, stateS state, uint16_t spoolMassArray[]);
+void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, uint16_t spoolMassArray[]);
 /* 18 */ // PID TUNING;
 /* 20 */ void scaleShow();
 // /* 21 */ void getdataAndSetpoint();
@@ -416,10 +426,12 @@ public:
 
     uint16_t openTime = 0;
     uint16_t closedTime = 0;
-    uint8_t angleMultiplier = 2;
+
+    uint8_t angleMultiplier = 1;
     uint16_t closedAngle = 90 * angleMultiplier;
-    uint16_t angle = 0;
-    uint16_t currentAngle = 0;
+    uint16_t angle = 90;
+    uint16_t currentAngle = 90;
+
     uint8_t changeState = 0;
     uint8_t servoPin = 0;
     uint16_t pulseWidth = 0;
@@ -443,10 +455,12 @@ public:
 
     void updateServo()
     {
-        if (setAngle(currentAngle, angle))
+        // if (setAngle(currentAngle, angle))
+        if (setAngle())
         {
             if (changeState)
             {
+
                 if (currentAngle == closedAngle)
                 {
                     state = CLOSED;
@@ -476,7 +490,8 @@ public:
         }
     }
 
-    bool setAngle(uint16_t &currentAngle, uint16_t &angle)
+    // bool setAngle(uint16_t &currentAngle, uint16_t &angle)
+    bool setAngle()
     {
         if (currentAngle != angle)
         {
@@ -484,6 +499,7 @@ public:
             {
                 prevState = state;
                 state = MOVE;
+                PORTD &= ~(1 << pin);
                 Timer1.enableISR(CHANNEL_A);
             }
             if (currentAngle < angle)
@@ -504,6 +520,8 @@ public:
 
     void close()
     {
+        state = OPEN;
+        currentAngle = 130;
         changeState = 1;
         angle = closedAngle;
         updateServo();
@@ -643,7 +661,7 @@ ISR(TIMER1_A)
         //     // PORTD &= ~(1 << DIMMER_PIN);
         // }
     }
-    else
+    else if (Servo.state == MOVE)
     {
         Servo.updateServo();
     }
@@ -803,6 +821,10 @@ void setup()
     Serial.begin(9600);
 #endif
 
+    pinMode(SERVO_1_PIN, OUTPUT);
+    PORTD &= ~(1 << SERVO_1_PIN);
+    // digitalWrite(SERVO_1_PIN, 0);
+
     DDRC &= ~((1 << PC1) | (1 << PC2) | (1 << PC3));
     PORTC |= (1 << PC1) | (1 << PC2) | (1 << PC3);
 
@@ -828,8 +850,6 @@ void setup()
     digitalWrite(BUZZER_PIN, 0);
     pinMode(FAN, OUTPUT);
     digitalWrite(FAN, 0);
-    pinMode(SERVO_1_PIN, OUTPUT);
-    digitalWrite(SERVO_1_PIN, 0);
 #if SCALES_MODULE_NUM != 0
     pinMode(FILAMENT_SENSOR, OUTPUT);
     digitalWrite(FILAMENT_SENSOR, 0);
@@ -907,6 +927,8 @@ void setup()
 
     while (!bme.begin(0x76))
         ;
+    while (analogRead(NTC_PIN) < ADC_MIN || analogRead(NTC_PIN) > ADC_MAX)
+        ;
 
     // Для первоначального обновления меню
     subMenuM.levelUpdate = DOWN;
@@ -922,7 +944,7 @@ void setup()
         i--;
     }
 
-    // Servo.close();
+    Servo.close();
 
 #ifdef PWM_TEST
     pwm_test();
@@ -952,18 +974,14 @@ void setup()
 
 void loop()
 {
-    // digitalWrite(FILAMENT_SENSOR, 1);
-
     enc.tick();
     buzzer.update();
 
     tmpTemp = (tmpTemp * 9 + analogRead(NTC_PIN)) / 10;
     if (tmpTemp <= ADC_MIN || tmpTemp >= ADC_MAX)
     {
-
         if (state == DRY || state == STORAGE)
         {
-
             setError(30);
             state = NTC_ERROR;
         }
@@ -1439,7 +1457,7 @@ void updateIDyerData()
     pid.SetSampleTime((int)iDryer.data.sampleTime);
 
     Servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
-    Servo.toggle();
+    // Servo.toggle();
     WDT_DISABLE();
 }
 
@@ -1976,50 +1994,59 @@ void scaleShow()
     WDT_DISABLE();
 }
 
-void filamentCheck(uint8_t sensorNum, uint16_t mass, stateS state, uint16_t spoolMassArray[])
+void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, uint16_t spoolMassArray[])
 {
 #ifdef FILAMENT_SENSOR_ON
-    if (state == MENU && prevState != MENU)
+
+    if (mass < 0)
     {
-        prevState = MENU;
-        for (uint8_t i = 0; i < SCALES_MODULE_NUM; i++)
+        filamentExpenseFlag[sensorNum] = ZERO;
+    }
+
+    switch (filamentExpenseFlag[sensorNum])
+    {
+    case ZERO:
+        filamentExpenseFlag[sensorNum] = DATA_RESET;
+        digitalWrite(FILAMENT_SENSOR, 0);
+        break;
+    case DATA_RESET:
+        if (mass > ALERT_MASS)
         {
-            alertFlag[i] = 0;
+            filamentExpenseFlag[sensorNum] = UPDATE_DATA;
             eeprom_update_word((uint16_t *)&spoolMassArray[sensorNum], 0);
         }
-        digitalWrite(FILAMENT_SENSOR, 0);
-        lastTime = 0;
-    }
-
-    if ((state == DRY || state == STORAGE) && prevState == MENU)
-    {
-        prevState = state;
-        lastTime = millis();
-        eeprom_update_word((uint16_t *)&spoolMassArray[sensorNum], mass);
-    }
-
-    if (eeprom_read_word(&spoolMassArray[sensorNum]) != 0 && eeprom_read_word(&spoolMassArray[sensorNum]) - mass > FLOW_MEASUREMENT_TIME * 1000 && mass > 10 && millis() - lastTime > measureTime)
-    {
-        filamentExpenseFlag[sensorNum] = true;
-    }
-
-    if (filamentExpenseFlag[sensorNum] && !alertFlag[sensorNum])
-    {
+        break;
+    case UPDATE_DATA:
+        eeprom_update_word((uint16_t *)&spoolMassArray[sensorNum], mass > 10 ? mass : 0);
+        filamentExpenseFlag[sensorNum] = START;
+        break;
+    case START:
+        if ((int16_t)eeprom_read_word(&spoolMassArray[sensorNum]) - mass >= FILAMENT_REFERENCE_FLOW_RATE_MASS)
+        {
+            filamentExpenseFlag[sensorNum] = WAIT_ALERT_MASS_1;
+        }
+        break;
+    case WAIT_ALERT_MASS_1:
         if (mass < ALERT_MASS && mass > FILAMENT_SENSOR_MASS)
         {
             piii(ALERT_MASS_PIII_TIME * 1000);
-            alertFlag[sensorNum] = 1;
+            filamentExpenseFlag[sensorNum] = WAIT_ALERT_MASS_2;
         }
-    }
-
-    if (filamentExpenseFlag[sensorNum] && alertFlag[sensorNum] == 1)
-    {
+        break;
+    case WAIT_ALERT_MASS_2:
         if (mass < FILAMENT_SENSOR_MASS)
         {
-            alertFlag[sensorNum] = 2;
             digitalWrite(FILAMENT_SENSOR, 1);
             piii(FILAMENT_SENSOR_MASS_PIII_TIME * 1000);
+            filamentExpenseFlag[sensorNum] = WAIT_RESET;
         }
+        break;
+        // case WAIT_RESET:
+        //     if (mass < 0)
+        //         filamentExpenseFlag[sensorNum] = ZERO;
+        break;
+    default:
+        break;
     }
 #endif
 }

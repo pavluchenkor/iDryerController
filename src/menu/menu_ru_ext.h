@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "version.h"
+
 const char PROGMEM s0[] = "ПРОШИВКА";
 const char PROGMEM s1[] = "АЙДРАЙ";
 const char PROGMEM s2[] = "ВЕРСИЯ";
@@ -18,7 +19,11 @@ const char PROGMEM s14[] = "КАТУШКА";
 const char PROGMEM s15[] = "УСТАНОВКА";
 const char PROGMEM s16[] = "УСТАНОВИ";
 const char PROGMEM s17[] = "ВЕС";
-const char PROGMEM s18[] = "ГР";
+const char PROGMEM s18[] = "Г";
+const char PROGMEM s19[] = "С";
+const char PROGMEM s20[]  = "ПРОШЕЙ";
+const char PROGMEM s21[]  = "ЧАСТЬ 2";
+const char PROGMEM s22[]  = "ЧАСТОТА";
 
 const char i0[] PROGMEM = "МЕНЮ";
 const char i1[] PROGMEM = "СУШКА";
@@ -30,15 +35,15 @@ const char i5[] PROGMEM = "ХРАНЕНИЕ";
 const char i7[] PROGMEM = "ВЛАЖНОСТЬ";
 // const char i8[] PROGMEM = "СТАРТ";
 const char i9[] PROGMEM = "ПРЕСЕТЫ";
-const char i10[] PROGMEM = "ПЛА";
+const char i10[] PROGMEM = PRESET_NAME_1;
 // ; const char i11[] PROGMEM = "ТЕМПЕРАТУРА";
 // ; const char i12[] PROGMEM = "ВРЕМЯ";
 // ; const char i13[] PROGMEM = "СТАРТ";
-const char i14[] PROGMEM = "ПЕТГ";
+const char i14[] PROGMEM = PRESET_NAME_2;
 // ; const char i15[] PROGMEM = "ТЕМПЕРАТУРА";
 // ; const char i16[] PROGMEM = "ВРЕМЯ";
 // ; const char i17[] PROGMEM = "СТАРТ";
-const char i18[] PROGMEM = "АБС";
+const char i18[] PROGMEM = PRESET_NAME_3;
 // ; const char i19[] PROGMEM = "ТЕМПЕРАТУРА";
 // ; const char i20[] PROGMEM = "ВРЕМЯ";
 // ; const char i21[] PROGMEM = "СТАРТ";
@@ -61,22 +66,22 @@ const char i37[] PROGMEM = "ТЕСТ";
 const char i38[] PROGMEM = "СОХРАНИТЬ";
 #if SCALES_MODULE_NUM > 0
 const char i39[] PROGMEM = "ВЕСЫ";
-const char i40[] PROGMEM = "КАТУШКА 1";
+const char i40[] PROGMEM = "КАТУШКА1";
 const char i41[] PROGMEM = "ТАРА";
 const char i42[] PROGMEM = "УСТАНОВКА";
 #endif
 #if SCALES_MODULE_NUM > 1
-const char i43[] PROGMEM = "КАТУШКА 2";
-const char i44[] PROGMEM = "ТАРА";
-const char i45[] PROGMEM = "УСТАНОВКА";
+const char i43[] PROGMEM = "КАТУШКА2";
+// const char i44[] PROGMEM = "ТАРА";
+// const char i45[] PROGMEM = "УСТАНОВКА";
 #endif
 #if SCALES_MODULE_NUM > 2
-const char i46[] PROGMEM = "КАТУШКА 3";
-const char i47[] PROGMEM = "ТАРА";
-const char i48[] PROGMEM = "УСТАНОВКА";
+const char i46[] PROGMEM = "КАТУШКА3";
+// const char i47[] PROGMEM = "ТАРА";
+// const char i48[] PROGMEM = "УСТАНОВКА";
 #endif
 #if SCALES_MODULE_NUM > 3
-const char i49[] PROGMEM = "КАТУШКА 4";
-const char i50[] PROGMEM = "ТАРА";
-const char i51[] PROGMEM = "УСТАНОВКА";
+const char i49[] PROGMEM = "КАТУШКА4";
+// const char i50[] PROGMEM = "ТАРА";
+// const char i51[] PROGMEM = "УСТАНОВКА";
 #endif

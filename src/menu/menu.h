@@ -1,18 +1,17 @@
 #include <Arduino.h>
 #include "Configuration.h"
 
-#ifdef WITH_BLACKJACK_AND_HOOKERS
 #if LANG == 0
-#include "menu_rus_ext.h"
+#include "menu_ru_ext.h"
+#include "font_ru.h"
+#define PADDING_V 0
+#define PADDING_OFFSET 0
+
 #elif LANG == 1
 #include "menu_en_ext.h"
-#endif
-#else
-#if LANG == 0
-#include "menu_rus.h"
-#elif LANG == 1
-#include "menu_no_rus.h"
-#endif
+#include "font_en.h"
+#define PADDING_OFFSET 1
+#define PADDING_V 2
 #endif
 
 struct menuS
@@ -66,9 +65,12 @@ PGM_P const serviceTxt[] PROGMEM = {
     s16,
     s17,
     s18,
+    s19,
+    s20,
+    s21,
+    s22,
 };
 
-#ifdef WITH_BLACKJACK_AND_HOOKERS
 PGM_P const menuTxt[] PROGMEM = {
     i0,
     i1,
@@ -117,65 +119,31 @@ PGM_P const menuTxt[] PROGMEM = {
 #endif
 #if SCALES_MODULE_NUM > 1
     i43,
-    i44,
-    i45,
+    i41,
+    i42,
 #endif
 #if SCALES_MODULE_NUM > 2
     i46,
-    i47,
-    i48,
+    i41,
+    i42,
 #endif
 #if SCALES_MODULE_NUM > 3
     i49,
-    i50,
-    i51,
+    i41,
+    i42,
 #endif
 };
-#else
-PGM_P const menuTxt[] PROGMEM = {
-    i0,
-    i1,
-    i2,
-    i3,
-    i4,
-    i5,
-    i2,
-    i7,
-    i4,
-    i9,
-    i10,
-    i2,
-    i3,
-    i4,
-    i14,
-    i2,
-    i3,
-    i4,
-    i18,
-    i2,
-    i3,
-    i4,
-    i22,
-    i23,
-    i24,
-    i25,
-    i26,
-    i27,
-    i28,
-    i2,
-    i4,
-    i31,
-    i32,
-    i33,
-};
-#endif
 
+<<<<<<< HEAD
 // uint16_t menuVal[] EEMEM =
 menuS menuPGM[] EEMEM = {
+=======
+const menuS menuPGM[] PROGMEM = {
+>>>>>>> bac21a9
     {0, NULL, 0, 0},
     {1, 0, 0, 0},
     {2, 1, 0, 100},
-    {3, 1, 0, 600},
+    {3, 1, 0, 1140},
     {4, 1, 0, 0},
     {5, 0, 0, 0},
     {6, 5, 0, 100},
@@ -184,21 +152,21 @@ menuS menuPGM[] EEMEM = {
     {9, 0, 0, 0},
     {10, 9, 0, 0},
     {11, 10, 45, 100},
-    {12, 10, 120, 600},
+    {12, 10, 120, 1140},
     {13, 10, 0, 0},
     {14, 9, 0, 0},
     {15, 14, 45, 100},
-    {16, 14, 120, 600},
+    {16, 14, 120, 1140},
     {17, 14, 0, 0},
     {18, 9, 0, 0},
     {19, 18, 45, 100},
-    {20, 18, 120, 600},
+    {20, 18, 120, 1140},
     {21, 18, 0, 0},
     {22, 0, 0, 0},
     {23, 22, 0, 0},
-    {24, 23, 0, 10000},
-    {25, 23, 0, 10000},
-    {26, 23, 0, 10000},
+    {24, 23, 0, 65535},
+    {25, 23, 0, 65535},
+    {26, 23, 0, 65535},
     {27, 23, 0, 0},
     {28, 27, 50, 1000},
     {29, 27, 30, 100},
@@ -234,111 +202,61 @@ menuS menuPGM[] EEMEM = {
 #endif
 };
 
-#ifdef WITH_BLACKJACK_AND_HOOKERS
-
-#else
-uint16_t menuValDefault[] = {
-    123, // id: 0
-    0,   // id: 1
-    60,  // id: 2
-    240, // id: 3
-    0,   // id: 4
-    0,   // id: 5
-    35,  // id: 6
-    15,  // id: 7
-    0,   // id: 8
-    0,   // id: 9
-    0,   // id: 10
-    50,  // id: 11
-    240, // id: 12
-    0,   // id: 13
-    0,   // id: 14
-    50,  // id: 15
-    240, // id: 16
-    0,   // id: 17
-    0,   // id: 18
-    50,  // id: 19
-    240, // id: 20
-    0,   // id: 21
-    0,   // id: 22
-    0,   // id: 23
-    400, // id: 24
-    200, // id: 25
-    200, // id: 26
-    0,   // id: 27
-    500, // id: 28
-    60,  // id: 29
-    0,   // id: 30
-    50,  // id: 31
-    8,   // id: 32
-    0,   // id: 33
-    0,   // id: 34
-    30,  // id: 35
-    1,   // id: 36
-    60,  // id: 37
-    0,   // id: 38
-    30,  // id: 39
-    1,   // id: 40
-    60,  // id: 41
-    0,   // id: 42
-};
-#endif
-
 uint16_t menuVal[] EEMEM = {
-    123, // id: 0
-    0,   // id: 1
-    60,  // id: 2
-    240, // id: 3
-    0,   // id: 4
-    0,   // id: 5
-    35,  // id: 6
-    15,  // id: 7
-    0,   // id: 8
-    0,   // id: 9
-    0,   // id: 10
-    50,  // id: 11
-    240, // id: 12
-    0,   // id: 13
-    0,   // id: 14
-    50,  // id: 15
-    240, // id: 16
-    0,   // id: 17
-    0,   // id: 18
-    50,  // id: 19
-    240, // id: 20
-    0,   // id: 21
-    0,   // id: 22
-    0,   // id: 23
-    500, // id: 24
-    1,   // id: 25
-    200, // id: 26
-    0,   // id: 27
-    300, // id: 28
-    60,  // id: 29
-    0,   // id: 30
-    50,  // id: 31
-    8,   // id: 32
-    0,   // id: 33
-    30,  // id: 34
-    1,   // id: 35
-    55,  // id: 36
-    0,   // id: 37
-    0,   // id: 38
+    123,   // id: 0
+    0,     // id: 1
+    60,    // id: 2
+    240,   // id: 3
+    0,     // id: 4
+    0,     // id: 5
+    35,    // id: 6
+    15,    // id: 7
+    0,     // id: 8
+    0,     // id: 9
+    0,     // id: 10
+    55,    // id: 11
+    180,   // id: 12
+    0,     // id: 13
+    0,     // id: 14
+    65,    // id: 15
+    240,   // id: 16
+    0,     // id: 17
+    0,     // id: 18
+    90,    // id: 19
+    240,   // id: 20
+    0,     // id: 21
+    0,     // id: 22
+    0,     // id: 23
+    49029, // id: 24 Kp 500
+    2092,  // id: 25 Ki 1
+    37444, // id: 26 Kd 200
+    0,     // id: 27
+    400,   // id: 28
+    65,    // id: 29
+    0,     // id: 30
+    90,    // id: 31
+    8,     // id: 32
+    0,     // id: 33
+    30,    // id: 34
+    1,     // id: 35
+    55,    // id: 36
+    0,     // id: 37
+    0,     // id: 38
 #if SCALES_MODULE_NUM > 0
-    0,   // id: 39
-    0,   // id: 40
-    110, // id: 41
-    0,   // id: 42
+    0, // id: 39
+    0, // id: 40
+    0, // id: 41
+    0, // id: 42
 #endif
 #if SCALES_MODULE_NUM > 1
-    0,   // id: 43
-    200, // id: 44
-    0,   // id: 45
+    0, // id: 43
+    0, // id: 44
+    0, // id: 45
 #endif
 #if SCALES_MODULE_NUM > 2
-    0,   // id: 46
-    300, // id: 47
-    0,   // id: 48
+    0, // id: 46
+    0, // id: 47
+    0, // id: 48
 #endif
 #if SCALES_MODULE_NUM > 3
     0, // id: 49
