@@ -220,12 +220,15 @@ if your SCALES_MODULE_NUM not 0 do this:
  ********************/
 #define AUTOPID_RUN 0
 #define SCALES_MODULE_NUM 4
-#define FILAMENT_SENSOR_ON                //
-#define ALERT_MASS 100                    // There will be a buzz
-#define FILAMENT_SENSOR_MASS 70           // HIG level on filament sensor output
-#define ALERT_MASS_PIII_TIME 10           // sec
-#define FILAMENT_SENSOR_MASS_PIII_TIME 30 // sec
-#define FLOW_MEASUREMENT_TIME 60          // sec
+
+#define FILAMENT_SENSOR_ON                   //
+#define ALERT_MASS 100                       // There will be a buzz 100 and more
+#define FILAMENT_SENSOR_MASS 30              // HIG level on filament sensor output 20 - 100
+#define FILAMENT_REFERENCE_FLOW_RATE_MASS 15 // Reference weight of the filament consumption at which the tracking of the spool weight change starts
+
+#define ALERT_MASS_PIII_TIME 5            // sec
+#define FILAMENT_SENSOR_MASS_PIII_TIME 15 // sec
+
 #define MENU_SCALE_SWITCH_TIME 5000
 
 /**********************
