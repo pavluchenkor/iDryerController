@@ -11,7 +11,6 @@
 #include <GyverBME280.h>
 #include <PID_v1.h>
 #include <pid/pidautotuner.h> //https://github.com/jackw01/arduino-pid-autotuner
-#include <pid/pidautotuner.h> //https://github.com/jackw01/arduino-pid-autotuner
 #include <thermistor/thermistor.h>
 #include <Configuration.h>
 #include "menu/menu.h"
@@ -445,7 +444,7 @@ public:
         openTime = _openTime;
         angle = _angle * angleMultiplier;
     }
-    
+
     void set(uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
     {
         closedTime = _closedTime;
