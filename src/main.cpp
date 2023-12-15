@@ -1,9 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 1
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 1
 #include <EEPROM.h>
-#endif
 #endif
 #include <avr/wdt.h>
 #include <U8g2lib.h>
