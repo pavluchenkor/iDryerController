@@ -45,7 +45,7 @@
   - пользовательские названия пресетов
   - расширенное меню и функции
   - безопасность прошивки
-  - 
+  
 !!! warning annotate "ВАЖНО!"
 
     :arrow_forward:</i> При эксплуатации необходимо помнить о правилах обращения с бытовой электротехникой и электро нагревательными приборами. 
@@ -111,7 +111,18 @@
 
 > Если после прошивки и в процессе эксплуатации на экране появятся ошибки, обратитесь к файлу configuration.h
 
-или за помощью в группу
+## Учебное видео
+<div class="video-wrapper">
+  <iframe width="1280" height="720" src="https://www.youtube.com/embed/psw30jXlxPQ" frameborder="0" allowfullscreen></iframe>
+</div>
+Ссылки к видео:
+
+[VS Code](https://code.visualstudio.com/Download)
+
+[Драйвер](https://zadig.akeo.ie/)
+
+[Прошивка](https://github.com/pavluchenkor/iDryerController)
+
 
 [группа в телеграмм :fontawesome-solid-paper-plane:](https://t.me/iDryer){ .md-button }
 
