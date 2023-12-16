@@ -24,24 +24,39 @@
 Потребуется программатор USBASP
 
 2.1 смена фьюзов
-    pio run -e fuses -t fuses
+```
+pio run -e fuses -t fuses
+```
 
 2.2 прошивка EEPROM<br>
-    pio run -e EEP -t uploadeep
-    если используется Atmega328PB
-    pio run -e EEPB -t uploadeep
+
+```
+pio run -e EEP -t uploadeep
+```
+если используется Atmega328PB
+```
+pio run -e EEPB -t uploadeep
+```
 
 ###Прошивка общая
 2.3 прошивка МК<br>
-    pio run -e EEP -t upload
-    если используется Atmega328PB
-    pio run -e EEPB -t upload 
+```
+pio run -e EEP -t upload
+```
+
+если используется Atmega328PB
+    
+```
+pio run -e EEPB -t upload 
+```
 
 ###Прошивка для работы с модулями весов
 Выполняется в два этапа:
 В configuration.h устанавливается
-#define AUTOPID_RUN 1
-#define SCALES_MODULE_NUM Х (Х = количество весов)
+```
+ #define AUTOPID_RUN 1
+ #define SCALES_MODULE_NUM Х (Х = количество весов)
+```
 Выполняется прошивка п.2.3
 После прошивки начнется автоматическая настройдка PID, по окончании на экране появится надпись "Прошей часть 2"
 сменить на #define AUTOPID_RUN 0

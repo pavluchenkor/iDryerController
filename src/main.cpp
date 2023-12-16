@@ -1187,7 +1187,9 @@ void loop()
 #if SCALES_MODULE_NUM == 0
     case AUTOPID:
         autoPidM();
+#ifndef PWM_TEST
         autoPid();
+#endif
 #endif
         break;
     }
@@ -1415,6 +1417,7 @@ void autoPidM()
 {
     WDT(WDTO_500MS, 12);
 #if SCALES_MODULE_NUM == 0 || AUTOPID_RUN == 1
+#ifndef PWM_TEST
 
     heaterON();
 
@@ -1432,6 +1435,7 @@ void autoPidM()
 #else
     state = MENU;
     WDT_DISABLE();
+#endif
 #endif
 }
 

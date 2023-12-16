@@ -43,7 +43,7 @@ PCB - https://oshwlab.com/svet_team/idryer
 0 - русский
 1 - english
  ********************/
-#define LANG 1
+#define LANG 0
 
 /**********************
 Sound notification when the heater is switched on
@@ -193,7 +193,7 @@ FAN PWM frequency
 Temporarily uncomment to perform a
 test at the specified PWM frequency
  *************************/
-// #define PWM_TEST
+#define PWM_TEST
 
 /**********************
 SERVO
@@ -219,7 +219,7 @@ if your SCALES_MODULE_NUM not 0 do this:
    6 pio run -e EEP -t fullclean -t upload
  ********************/
 #define AUTOPID_RUN 0
-#define SCALES_MODULE_NUM 4
+#define SCALES_MODULE_NUM 0
 
 #define FILAMENT_SENSOR_ON                   //
 #define ALERT_MASS 100                       // There will be a buzz 100 and more
