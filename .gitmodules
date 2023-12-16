@@ -2,6 +2,6 @@
     path = MiniCore
     url = https://github.com/MCUdude/MiniCore.git
 
-[submodule "lib/EncButton"]
-	path = lib/EncButton
-	url = https://github.com/GyverLibs/EncButton.git
+; [submodule "lib/EncButton"]
+; 	path = lib/EncButton
+; 	url = https://github.com/GyverLibs/EncButton.git
