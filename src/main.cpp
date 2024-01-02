@@ -1000,13 +1000,11 @@ void loop()
         if (state == DRY || state == STORAGE)
         {
             WDT_DISABLE();
-            state = MENU;
             heaterOFF();
             piii(500);
             subMenuM.levelUpdate = UP;
-            subMenuM.parentID = 0;
-            subMenuM.pointerPos = 0;
-            subMenuM.pointerUpdate = 1;
+            subMenuM.position = state == STORAGE;
+            state = MENU;
             while (digitalRead(encBut))
                 ;
         }
@@ -1050,14 +1048,8 @@ void loop()
         WDT(WDTO_8S, 22);
         if (iDryer.getData())
         {
-            if (iDryer.data.ntcTemp > 40)
-            {
-                analogWrite(FAN, 255);
-            }
-            else
-            {
-                analogWrite(FAN, 0);
-            }
+            if (iDryer.data.ntcTemp > 45) analogWrite(FAN, 255);
+            else if (iDryer.data.ntcTemp < 40) analogWrite(FAN, 0);
         }
 
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
@@ -1085,7 +1077,7 @@ void loop()
                 displayPrint(&subMenuM);
             }
 
-            if (subMenuM.pointerUpdate)
+            if (subMenuM.pointerUpdate || ((subMenuM.parentID == 0) && iDryer.data.flagScreenUpdate))
             {
                 screen(&subMenuM);
                 displayPrint(&subMenuM);
@@ -1133,7 +1125,7 @@ void loop()
     case STORAGE:
 
         WDT(WDTO_4S, 24);
-
+        
         getData();
         setPoint();
         screenUpdate();
@@ -1214,6 +1206,7 @@ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptr
             if (functionMenu[subMenu->membersID[subMenu->position]]) // подменю с функцией
             {
                 functionMenu[subMenu->membersID[subMenu->position]]();
+                screenTime = 0;
             }
             else // подменю с изменяемыми параметрами
             {
