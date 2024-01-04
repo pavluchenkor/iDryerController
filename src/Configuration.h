@@ -1,4 +1,5 @@
-﻿#ifndef CONFIGURATION_H
+#ifndef CONFIGURATION_H
+
 #define CONFIGURATION_H
 
 /* !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
@@ -222,8 +223,8 @@ if your SCALES_MODULE_NUM not 0 do this:
 #define SCALES_MODULE_NUM 0
 
 #define FILAMENT_SENSOR_ON                   //
-#define ALERT_MASS 100                       // There will be a buzz 100 and more
-#define FILAMENT_SENSOR_MASS 30              // HIG level on filament sensor output 20 - 100
+#define ALERT_MASS 100                       // Beep by buzzer when less than this amount of filament left
+#define FILAMENT_SENSOR_MASS 30              // [20 - 100] Send filament sensor signal (HIGH level) when less than this amount of filament left
 #define FILAMENT_REFERENCE_FLOW_RATE_MASS 15 // Reference weight of the filament consumption at which the tracking of the spool weight change starts
 
 #define ALERT_MASS_PIII_TIME 5            // sec
@@ -241,13 +242,13 @@ language, will not be displayed
  *********************/
 
 #if LANG == 0
-#define PRESET_NAME_1 "ПЛА"
-#define PRESET_NAME_2 "ПЕТГ"
-#define PRESET_NAME_3 "РА6"
+  #define PRESET_NAME_1 "ПЛА"
+  #define PRESET_NAME_2 "ПЭТГ"
+  #define PRESET_NAME_3 "РА6"
 #elif LANG == 1
-#define PRESET_NAME_1 "PLA"
-#define PRESET_NAME_2 "PETG"
-#define PRESET_NAME_3 "PA6"
+  #define PRESET_NAME_1 "PLA"
+  #define PRESET_NAME_2 "PETG"
+  #define PRESET_NAME_3 "PA6"
 #endif
 
-#endif
+#endif // for #ifndef
