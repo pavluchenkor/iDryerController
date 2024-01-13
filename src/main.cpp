@@ -1050,14 +1050,10 @@ void loop()
         WDT(WDTO_8S, 22);
         if (iDryer.getData())
         {
-            if (iDryer.data.ntcTemp > 40)
-            {
+            if (iDryer.data.ntcTemp > 45)
                 analogWrite(FAN, 255);
-            }
-            else
-            {
+            else if (iDryer.data.ntcTemp < 40)
                 analogWrite(FAN, 0);
-            }
         }
 
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
@@ -1085,7 +1081,7 @@ void loop()
                 displayPrint(&subMenuM);
             }
 
-            if (subMenuM.pointerUpdate)
+            if (subMenuM.pointerUpdate || iDryer.data.flagScreenUpdate) //TODO: проверить
             {
                 screen(&subMenuM);
                 displayPrint(&subMenuM);
@@ -1786,7 +1782,8 @@ void autoPid()
                      printMenuItem(&serviceTxt[DEF_T_CELSIUS]),
 #ifdef v220V
                      (uint8_t)map(dimmer, HEATER_MAX, HEATER_MIN, 0, 100)
-#elif v24V
+#endif
+#ifdef v24V
                      (uint8_t)map(dimmer, HEATER_MIN, HEATER_MAX, 0, 100)
 #endif
             );

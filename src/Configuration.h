@@ -51,7 +51,7 @@ Sound notification when the heater is switched on
 Comment if it bothers you that the
 buzzer beeps every time the heater comes on
 **********************/
-#define HEATER_ON_SOUND_NOTIFICATION
+// #define HEATER_ON_SOUND_NOTIFICATION
 
 /*****************************************************************************************************
 --NORMAL IS 4.7kohm PULLUP!-- 1kohm pullup can be used on hotend sensor, using correct resistor and table
@@ -139,7 +139,7 @@ Your revision PCB
 1 - 220v revision
 2 - 24v revision
  ********************/
-#define REV 1
+#define REV 2
 
 /**********************
 1 - SH1106
@@ -194,7 +194,7 @@ FAN PWM frequency
 Temporarily uncomment to perform a
 test at the specified PWM frequency
  *************************/
-#define PWM_TEST
+// #define PWM_TEST
 
 /**********************
 SERVO
