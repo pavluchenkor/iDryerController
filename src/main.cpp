@@ -1085,7 +1085,7 @@ void loop()
                 displayPrint(&subMenuM);
             }
 
-            if (subMenuM.pointerUpdate)
+            if (subMenuM.pointerUpdate || iDryer.data.flagScreenUpdate) //TODO: проверить
             {
                 screen(&subMenuM);
                 displayPrint(&subMenuM);
@@ -1786,7 +1786,8 @@ void autoPid()
                      printMenuItem(&serviceTxt[DEF_T_CELSIUS]),
 #ifdef v220V
                      (uint8_t)map(dimmer, HEATER_MAX, HEATER_MIN, 0, 100)
-#elif v24V
+#endif
+#ifdef v24V
                      (uint8_t)map(dimmer, HEATER_MIN, HEATER_MAX, 0, 100)
 #endif
             );

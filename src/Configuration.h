@@ -138,7 +138,7 @@ Your revision PCB
 1 - 220v revision
 2 - 24v revision
  ********************/
-#define REV 1
+#define REV 2
 
 /**********************
 1 - SH1106
