@@ -1050,14 +1050,10 @@ void loop()
         WDT(WDTO_8S, 22);
         if (iDryer.getData())
         {
-            if (iDryer.data.ntcTemp > 40)
-            {
+            if (iDryer.data.ntcTemp > 45)
                 analogWrite(FAN, 255);
-            }
-            else
-            {
+            else if (iDryer.data.ntcTemp < 40)
                 analogWrite(FAN, 0);
-            }
         }
 
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
