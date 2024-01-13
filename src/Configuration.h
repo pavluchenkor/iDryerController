@@ -242,7 +242,7 @@ language, will not be displayed
 
 #if LANG == 0
 #define PRESET_NAME_1 "ПЛА"
-#define PRESET_NAME_2 "ПЕТГ"
+#define PRESET_NAME_2 "ПЭТГ"
 #define PRESET_NAME_3 "РА6"
 #elif LANG == 1
 #define PRESET_NAME_1 "PLA"
