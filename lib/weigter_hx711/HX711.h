@@ -56,6 +56,8 @@ public:
   // HX711Multi(uint8_t numSensors, uint8_t *dtPins, uint8_t sckPins);
   HX711Multi(uint8_t numSensors, uint8_t dtPin, uint8_t sckPin, uint8_t aPin, uint8_t bPin);
   void begin(byte gain);
+  void setTemperature(uint8_t current_temperature); 
+  double HX711Multi::getTemperatureOffset(uint8_t numSensors);
   // int32_t readSensor(int sensorIndex);
   int32_t getZeroWeight(uint8_t numSensor);
   // int32_t getOffset(uint8_t numSensor);
@@ -76,6 +78,7 @@ public:
   void zeroSetMulti(uint8_t avg_size, uint8_t sensorNum);
   uint16_t tare[MAX_SENSORS];
   uint8_t sensorNum;
+  uint8_t current_temperature;
 
 private:
   uint8_t _numSensors;

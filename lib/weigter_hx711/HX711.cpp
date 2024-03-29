@@ -16,6 +16,21 @@ uint32_t offset_eep[] EEMEM{
     0,
 };
 
+uint8_t temperature_offset_array[][4] EEMEM{
+    {0, 0, 0, 0,},
+    {0, 0, 0, 0,},
+    {0, 0, 0, 0,},
+    {0, 0, 0, 0,}
+};
+
+  uint8_t t_array[] = {
+      25,
+      45,
+      65,
+      85,
+      100,
+  };
+
 float calibration_mass = CALIBRATION_MASS;
 
 HX711Multi::HX711Multi(uint8_t numSensors, uint8_t dtPin, uint8_t sckPin, uint8_t aPin, uint8_t bPin)
@@ -29,6 +44,7 @@ HX711Multi::HX711Multi(uint8_t numSensors, uint8_t dtPin, uint8_t sckPin, uint8_
   _multiplexerPinSetFlag = false;
   sensorNum = 0;
   _prevNum = _numSensors + 1;
+  current_temperature = 20;
 
   pinMode(sckPin, OUTPUT);
   pinMode(dtPin, INPUT);
@@ -86,6 +102,33 @@ void HX711Multi::begin(byte gain)
   digitalWrite(_aPin, LOW);
   digitalWrite(_bPin, LOW);
   setGain(gain);
+}
+
+void HX711Multi::setTemperature(uint8_t temperature)
+{
+  current_temperature = temperature;
+}
+
+
+double HX711Multi::getTemperatureOffset(uint8_t numSensors)
+{
+  if (current_temperature < t_array[1])
+  {
+    return (current_temperature - t_array[0]) * ((int8_t)temperature_offset_array[0][numSensors] - 0) / (t_array[1] - t_array[0]);
+  };
+  if (current_temperature < t_array[2])
+  {
+    return (current_temperature - t_array[1]) * ((int8_t)temperature_offset_array[1][numSensors] - (int8_t)temperature_offset_array[0][numSensors]) / (t_array[2] - t_array[1]);
+  }
+  if (current_temperature < t_array[3])
+  {
+    return (current_temperature - t_array[2]) * ((int8_t)temperature_offset_array[2][numSensors] - (int8_t)temperature_offset_array[1][numSensors]) / (t_array[3] - t_array[2]);
+  }
+  if (current_temperature > t_array[3])
+  {
+    return (current_temperature - t_array[3]) * ((int8_t)temperature_offset_array[3][numSensors] - (int8_t)temperature_offset_array[2][numSensors]) / (t_array[4] - t_array[3]);
+  }
+  return 0;
 }
 
 void HX711Multi::setGain(byte gain)
@@ -466,6 +509,9 @@ int16_t HX711::read_mass()
 {
   // Чтение значения
   mass += int16_t(calibration_mass * ((float)(read() - zero_weight) / (float)(offset - zero_weight)));
+
+  // mass = mass_20 (1 + 0.0043 * (50 - 20))
+
   mass /= 2;
 
   // Обновление медианного фильтра

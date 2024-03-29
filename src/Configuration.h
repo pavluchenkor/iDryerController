@@ -1,6 +1,9 @@
 ﻿#ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
+// При старте висит на заставке и пищит коротко(0,2с) - ошибка инициализации BME 
+// При старте висит на заставке и пищит продолжительно(1.5с) - ошибка температуры с термистора
+
 /* !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 // /* 01 */ void heaterOFF();
 // /* 02 */ void heater(uint16_t Output, uint16_t &dimmer);
@@ -138,7 +141,7 @@ Your revision PCB
 1 - 220v revision
 2 - 24v revision
  ********************/
-#define REV 2
+#define REV 1
 
 /**********************
 1 - SH1106
@@ -219,11 +222,11 @@ if your SCALES_MODULE_NUM not 0 do this:
    6 pio run -e EEP -t fullclean -t upload
  ********************/
 #define AUTOPID_RUN 0
-#define SCALES_MODULE_NUM 0
+#define SCALES_MODULE_NUM 4
 
 #define FILAMENT_SENSOR_ON                   //
-#define ALERT_MASS 100                       // There will be a buzz 100 and more
-#define FILAMENT_SENSOR_MASS 30              // HIG level on filament sensor output 20 - 100
+#define ALERT_MASS 100                       // Beep by buzzer when less than this amount of filament left
+#define FILAMENT_SENSOR_MASS 30              // [20 - 100] Send filament sensor signal (HIGH level) when less than this amount of filament left
 #define FILAMENT_REFERENCE_FLOW_RATE_MASS 15 // Reference weight of the filament consumption at which the tracking of the spool weight change starts
 
 #define ALERT_MASS_PIII_TIME 5            // sec

@@ -37,8 +37,8 @@ unsigned long printOldTime = 0;
 uint8_t isrFlag = 0;
 #endif
 
-uint32_t ERROR_CODE EEMEM = 0x0; // EEMEM = 0b0000000000000000;
-uint32_t WDT_ERROR = 0;          // EEMEM = 0b0000000000000000;
+uint32_t ERROR_CODE EEMEM = 0x0;
+uint32_t WDT_ERROR = 0;
 
 #if REV == 0
 #define ERROR
@@ -922,10 +922,20 @@ void setup()
     enc.setFastTimeout(30);
     enc.setEncReverse(ENCODER_REVERSE);
 
+    bme.setFilter(FILTER_COEF_8);
+    bme.setStandbyTime(STANDBY_250MS);
+
     while (!bme.begin(0x76))
-        ;
+    {
+        piii(200);
+        delay(50);
+    }
+
     while (analogRead(NTC_PIN) < ADC_MIN || analogRead(NTC_PIN) > ADC_MAX)
-        ;
+    {
+        piii(1500);
+        delay(500);
+    }
 
     // Для первоначального обновления меню
     subMenuM.levelUpdate = DOWN;
@@ -986,6 +996,7 @@ void loop()
 
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
 
+    hx711Multi.setTemperature(iDryer.data.bmeTemp);
     hx711Multi.readMassMulti();
     filamentCheck(sensorNum, hx711Multi.getMassMulti(sensorNum), state, prevSpoolMass);
     sensorNum++;
@@ -1081,7 +1092,7 @@ void loop()
                 displayPrint(&subMenuM);
             }
 
-            if (subMenuM.pointerUpdate || iDryer.data.flagScreenUpdate) //TODO: проверить
+            if (subMenuM.pointerUpdate || iDryer.data.flagScreenUpdate) // TODO: проверить
             {
                 screen(&subMenuM);
                 displayPrint(&subMenuM);
@@ -1709,6 +1720,10 @@ void getData()
             state = NTC_ERROR;
         }
     }
+    else
+    {
+        ERROR_COUNTER = 0;
+    }
 }
 
 void setPoint()
@@ -1784,7 +1799,7 @@ void autoPid()
                      (uint8_t)map(dimmer, HEATER_MAX, HEATER_MIN, 0, 100)
 #endif
 #ifdef v24V
-                     (uint8_t)map(dimmer, HEATER_MIN, HEATER_MAX, 0, 100)
+                         (uint8_t) map(dimmer, HEATER_MIN, HEATER_MAX, 0, 100)
 #endif
             );
             oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 1, serviceString);
@@ -1876,7 +1891,7 @@ void setSpool(uint8_t spool)
 {
     WDT_DISABLE();
 
-    for (uint8_t i = 0; i < 4; i++)
+    for (uint8_t i = 0; i < 6; i++)
     {
         oled.firstPage();
         do
@@ -1887,7 +1902,7 @@ void setSpool(uint8_t spool)
             snprintf(serviceString, sizeof(serviceString), "%s", printMenuItem(&serviceTxt[DEF_T_REMOVE]));
             snprintf(serviceString, sizeof(serviceString), "%s %s", serviceString, printMenuItem(&serviceTxt[DEF_T_WEIGHT]));
             oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
-            snprintf(serviceString, sizeof(serviceString), "%2d ", 6 - i);
+            snprintf(serviceString, sizeof(serviceString), "%2d ", 5 - i);
             oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 4, serviceString);
         } while (oled.nextPage());
         delay(800);
