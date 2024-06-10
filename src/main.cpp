@@ -250,7 +250,7 @@ uint32_t offset_eep[] EEMEM{
 #endif
 
 #if SCALES_MODULE_NUM != 0
-uint16_t prevSpoolMass[4] EEMEM{
+volatile uint16_t prevSpoolMass[4] EEMEM{
     0,
     0,
     0,
