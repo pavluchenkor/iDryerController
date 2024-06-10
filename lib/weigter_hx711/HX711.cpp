@@ -16,21 +16,6 @@ uint32_t offset_eep[] EEMEM{
     0,
 };
 
-uint8_t temperature_offset_array[][4] EEMEM{
-    {0, 0, 0, 0,},
-    {0, 0, 0, 0,},
-    {0, 0, 0, 0,},
-    {0, 0, 0, 0,}
-};
-
-  uint8_t t_array[] = {
-      25,
-      45,
-      65,
-      85,
-      100,
-  };
-
 float calibration_mass = CALIBRATION_MASS;
 
 HX711Multi::HX711Multi(uint8_t numSensors, uint8_t dtPin, uint8_t sckPin, uint8_t aPin, uint8_t bPin)
@@ -44,7 +29,6 @@ HX711Multi::HX711Multi(uint8_t numSensors, uint8_t dtPin, uint8_t sckPin, uint8_
   _multiplexerPinSetFlag = false;
   sensorNum = 0;
   _prevNum = _numSensors + 1;
-  current_temperature = 20;
 
   pinMode(sckPin, OUTPUT);
   pinMode(dtPin, INPUT);
@@ -61,39 +45,7 @@ HX711Multi::HX711Multi(uint8_t numSensors, uint8_t dtPin, uint8_t sckPin, uint8_
   // }
 }
 
-// int32_t HX711Multi::getZeroWeight(uint8_t numSensor)
-// {
-//   // Чтение значения из EEPROM
-//   return static_cast<int32_t>(eeprom_read_dword(&zero_weight_eep[numSensor]));
-// }
 
-// void HX711Multi::setZeroWeight(int32_t value, uint8_t numSensor)
-// {
-//   // //Serial.println("Запись значения в EEPROM setZeroWeight");
-//   eeprom_write_dword(&zero_weight_eep[numSensor], static_cast<uint32_t>(value));
-//   // //Serial.println("Запись значения в EEPROM setZeroWeight завершена");
-// }
-
-// int32_t HX711Multi::getOffset(uint8_t numSensor)
-// {
-//   // Чтение значения из EEPROM
-//   return static_cast<int32_t>(eeprom_read_dword(&offset_eep[numSensor]));
-// }
-
-// void HX711Multi::setOffset(int32_t value, uint8_t numSensor)
-// {
-//   // Запись значения в EEPROM
-//   eeprom_write_dword(&offset_eep[numSensor], static_cast<uint32_t>(value));
-// }
-
-// int32_t HX711Multi::readSensor(int sensorIndex)
-// {
-//   if (sensorIndex >= 0 && sensorIndex < _numSensors)
-//   {
-//     return _sensors[sensorIndex].read();
-//   }
-//   return 0;
-// }
 
 void HX711Multi::begin(byte gain)
 {
@@ -102,33 +54,6 @@ void HX711Multi::begin(byte gain)
   digitalWrite(_aPin, LOW);
   digitalWrite(_bPin, LOW);
   setGain(gain);
-}
-
-void HX711Multi::setTemperature(uint8_t temperature)
-{
-  current_temperature = temperature;
-}
-
-
-double HX711Multi::getTemperatureOffset(uint8_t numSensors)
-{
-  if (current_temperature < t_array[1])
-  {
-    return (current_temperature - t_array[0]) * ((int8_t)temperature_offset_array[0][numSensors] - 0) / (t_array[1] - t_array[0]);
-  };
-  if (current_temperature < t_array[2])
-  {
-    return (current_temperature - t_array[1]) * ((int8_t)temperature_offset_array[1][numSensors] - (int8_t)temperature_offset_array[0][numSensors]) / (t_array[2] - t_array[1]);
-  }
-  if (current_temperature < t_array[3])
-  {
-    return (current_temperature - t_array[2]) * ((int8_t)temperature_offset_array[2][numSensors] - (int8_t)temperature_offset_array[1][numSensors]) / (t_array[3] - t_array[2]);
-  }
-  if (current_temperature > t_array[3])
-  {
-    return (current_temperature - t_array[3]) * ((int8_t)temperature_offset_array[3][numSensors] - (int8_t)temperature_offset_array[2][numSensors]) / (t_array[4] - t_array[3]);
-  }
-  return 0;
 }
 
 void HX711Multi::setGain(byte gain)
@@ -160,7 +85,7 @@ void HX711Multi::setupGainMulti(uint8_t sensorNum)
   }
 }
 
-// int16_t HX711Multi::readMassMulti(uint8_t sensorNum)
+
 int16_t HX711Multi::readMassMulti()
 {
   if (readyToSend(sensorNum))
@@ -182,11 +107,6 @@ int16_t HX711Multi::readMassMulti()
         }
       }
     }
-
-    //   mass += int16_t(calibration_mass * ((float)(read() - zero_weight) / (float)(offset - zero_weight)));
-
-    //  mass_filter[sensorNum][0] = readMulti(sensorNum)  / 100;
-    // (int16_t)(eeprom_read_dword(&zero_weight_eep[sensorNum]));
 
     mass_filter[sensorNum][0] =
         uint16_t((float)calibration_mass *
@@ -509,9 +429,6 @@ int16_t HX711::read_mass()
 {
   // Чтение значения
   mass += int16_t(calibration_mass * ((float)(read() - zero_weight) / (float)(offset - zero_weight)));
-
-  // mass = mass_20 (1 + 0.0043 * (50 - 20))
-
   mass /= 2;
 
   // Обновление медианного фильтра

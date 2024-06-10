@@ -996,7 +996,6 @@ void loop()
 
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
 
-    hx711Multi.setTemperature(iDryer.data.bmeTemp);
     hx711Multi.readMassMulti();
     filamentCheck(sensorNum, hx711Multi.getMassMulti(sensorNum), state, prevSpoolMass);
     sensorNum++;
@@ -1431,7 +1430,7 @@ void autoPidM()
 #ifdef DEBUG
     WDT_DISABLE();
 #endif
-    piii(100);
+    // piii(100);
 
     state = AUTOPID;
     iDryer.data.flag = true;
@@ -1753,7 +1752,7 @@ void autoPid()
     tuner.setLoopInterval(long(iDryer.data.sampleTime) * 1000);
     tuner.setOutputRange(HEATER_MIN, HEATER_MAX);
     tuner.setTuningCycles(AUTOPID_ATTEMPT);
-    tuner.setZNMode(PIDAutotuner::ZNModeNoOvershoot); // ZNModeNoOvershoot - Defaults,   ZNModeBasicPID
+    tuner.setZNMode(PIDAutotuner::ZNModeBasicPID); // ZNModeNoOvershoot - Defaults,   ZNModeBasicPID
 
     oled.clear();
     oled.firstPage();
@@ -1766,7 +1765,7 @@ void autoPid()
         oled.drawButtonUTF8(0, 3 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
         oled.drawButtonUTF8(0, 4 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
     } while (oled.nextPage());
-    piii(500);
+    // piii(500);
 
     unsigned long microseconds;
 

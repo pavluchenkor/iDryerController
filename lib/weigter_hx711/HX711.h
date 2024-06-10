@@ -5,11 +5,10 @@
 #define RATE 1
 
 #if RATE == 1
-  #define RATE_DELAY 60
+#define RATE_DELAY 60
 #elif RATE == 0
-  #define RATE_DELAY 600
+#define RATE_DELAY 600
 #endif
-
 
 extern uint32_t zero_weight_eep[] EEMEM;
 extern uint32_t offset_eep[] EEMEM;
@@ -51,24 +50,13 @@ public:
 class HX711Multi
 {
 public:
-  // HX711 _sensors[MAX_SENSORS];
-
-  // HX711Multi(uint8_t numSensors, uint8_t *dtPins, uint8_t sckPins);
   HX711Multi(uint8_t numSensors, uint8_t dtPin, uint8_t sckPin, uint8_t aPin, uint8_t bPin);
   void begin(byte gain);
-  void setTemperature(uint8_t current_temperature); 
-  double HX711Multi::getTemperatureOffset(uint8_t numSensors);
-  // int32_t readSensor(int sensorIndex);
   int32_t getZeroWeight(uint8_t numSensor);
-  // int32_t getOffset(uint8_t numSensor);
-  // void setZeroWeight(int32_t value, uint8_t numSensor);
-  // void setOffset(int32_t value, uint8_t numSensor);
   void zeroSetupMulti(uint8_t sensorNum);
   void offsetSetupMulti(uint8_t sensorNum);
   int32_t readMulti(uint8_t sensorIndex);
-  // int16_t readMassMulti(uint8_t sensorNum);
   int16_t readMassMulti();
-  // void HX711Multi::updateFilter(uint8_t sensorNum, uint16_t newValue);
   void setGain(byte gain);
   void setupGainMulti(uint8_t sensorIndex);
   bool readyToSend(uint8_t sensorIndex);
@@ -84,9 +72,7 @@ private:
   uint8_t _numSensors;
   uint8_t _prevNum;
   uint8_t _multiplexerPinSetFlag;
-  // uint8_t _currentSensor;
   unsigned long _lastTime;
-  // uint8_t *_dtPins;
   uint8_t _dtPin;
   uint8_t _sckPin;
   uint8_t _aPin;
@@ -94,7 +80,6 @@ private:
   uint8_t GAIN;
   bool pinsConfigured;
 
-  // int16_t mass[MAX_SENSORS];
   uint16_t mass_filter[MAX_SENSORS][5];
 };
 
