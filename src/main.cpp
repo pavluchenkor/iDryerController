@@ -778,8 +778,8 @@ void displayPrintMode()
         char val[4];
         oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[text]))) / 2, LINE_HIGHT, printMenuItem(&menuTxt[text]));
 
-        // snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
-        snprintf(val, sizeof(val), "%2hu", (uint8_t)Setpoint);
+        snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
+        // snprintf(val, sizeof(val), "%2hu", (uint8_t)Setpoint);
         oled.drawUTF8(0, LINE_HIGHT, val);
         text == DEF_MENU_DRYING ? snprintf(val, sizeof(val), "%3hu", iDryer.data.setTime) : snprintf(val, sizeof(val), "%3hu", iDryer.data.setHumidity);
         oled.drawUTF8(100, LINE_HIGHT, val);
