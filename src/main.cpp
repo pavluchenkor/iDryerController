@@ -1737,7 +1737,7 @@ void setPoint()
     }
     else if (round((double)iDryer.data.bmeTemp) > iDryer.data.setTemp)
     {
-        Setpoint = iDryer.data.setTemp / 2;
+        Setpoint = iDryer.data.setTemp - iDryer.data.deltaT;
     }
     else if (round((double)iDryer.data.bmeTemp) < iDryer.data.setTemp)
     {
