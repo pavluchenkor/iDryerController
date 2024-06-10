@@ -778,8 +778,8 @@ void displayPrintMode()
         char val[4];
         oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[text]))) / 2, LINE_HIGHT, printMenuItem(&menuTxt[text]));
 
-        snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
-        // snprintf(val, sizeof(val), "%2hu", (uint8_t)Setpoint);
+        // // snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
+        snprintf(val, sizeof(val), "%2hu", (uint8_t)Setpoint);
         oled.drawUTF8(0, LINE_HIGHT, val);
         text == DEF_MENU_DRYING ? snprintf(val, sizeof(val), "%3hu", iDryer.data.setTime) : snprintf(val, sizeof(val), "%3hu", iDryer.data.setHumidity);
         oled.drawUTF8(100, LINE_HIGHT, val);
@@ -794,7 +794,7 @@ void displayPrintMode()
             switch (i)
             {
             case 0: // Воздух
-                data = round((double)iDryer.data.bmeTemp);
+                data = trunc((double)iDryer.data.bmeTemp);
                 break;
             case 1: // Нагреватель
                 data = iDryer.data.ntcTemp;
@@ -1735,11 +1735,11 @@ void setPoint()
         //     Setpoint = TMP_MAX;
         // pid.SetTunings(iDryer.data.Kp, iDryer.data.Ki, iDryer.data.Kd, PID_TYPE);
     }
-    else if (round((double)iDryer.data.bmeTemp)> iDryer.data.setTemp)
+    else if (round((double)iDryer.data.bmeTemp) > iDryer.data.setTemp)
     {
         Setpoint = iDryer.data.setTemp / 2;
     }
-    else if (round((double)iDryer.data.bmeTemp) <= iDryer.data.setTemp)
+    else if (round((double)iDryer.data.bmeTemp) < iDryer.data.setTemp)
     {
         Setpoint = iDryer.data.setTemp - iDryer.data.bmeTemp + iDryer.data.setTemp;
         if (Setpoint > iDryer.data.setTemp + iDryer.data.deltaT)
@@ -1747,6 +1747,10 @@ void setPoint()
         // if (Setpoint > TMP_MAX)
         //     Setpoint = TMP_MAX;
         // pid.SetTunings(iDryer.data.Kp, iDryer.data.Ki, iDryer.data.Kd, PID_TYPE);
+    }
+    else if (round((double)iDryer.data.bmeTemp) == iDryer.data.setTemp)
+    {
+        Setpoint = iDryer.data.setTemp;
     }
 
     if (Setpoint > TMP_MAX)
