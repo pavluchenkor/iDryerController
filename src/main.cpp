@@ -1765,37 +1765,17 @@ void getData()
 
 void setPoint()
 {
-    double currentTemp = round((double)iDryer.data.bmeTemp);
-    double setTemp = iDryer.data.setTemp;
-    double deltaT = iDryer.data.deltaT;
-    int8_t dropThreshold = int8_t(setTemp - currentTemp);
-    uint8_t K = 4;
 
-    if (!iDryer.data.flagTimeCounter)
+    if (iDryer.data.bmeTemp < iDryer.data.setTemp)
     {
-        if (dropThreshold < 0)
-        {
-            Setpoint = setTemp + deltaT;
-        }
-        else
-        {
-            Setpoint = setTemp;
-        }
+        Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
     }
     else
     {
-        if (dropThreshold != 0)
-        {
-            Setpoint = setTemp + dropThreshold * K;
-        }
-        else
-        {
-            Setpoint = setTemp;
-        }
+        Setpoint = iDryer.data.setTemp - iDryer.data.bmeTemp + iDryer.data.setTemp;
+        if (Setpoint > iDryer.data.setTemp + iDryer.data.deltaT)
+            Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
     }
-
-    if (Setpoint > setTemp + deltaT)
-        Setpoint = setTemp + deltaT;
 
     if (Setpoint > TMP_MAX)
         Setpoint = TMP_MAX;
