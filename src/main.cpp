@@ -395,7 +395,7 @@ public:
             data.flagScreenUpdate = false;
         }
 
-        if (round(data.bmeTemp) >= data.setTemp && !data.flagTimeCounter)
+        if (uint8_t(ceil(data.bmeTemp)) >= uint8_t(data.setTemp) && !data.flagTimeCounter)
             data.flagTimeCounter = true;
 
         if (data.ntcTemp < TMP_MIN)
@@ -778,8 +778,8 @@ void displayPrintMode()
         char val[4];
         oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[text]))) / 2, LINE_HIGHT, printMenuItem(&menuTxt[text]));
 
-        snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
-        // snprintf(val, sizeof(val), "%2hu", (uint8_t)Setpoint);
+        // snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
+        snprintf(val, sizeof(val), "%2hu", (uint8_t)Setpoint);
         oled.drawUTF8(0, LINE_HIGHT, val);
         text == DEF_MENU_DRYING ? snprintf(val, sizeof(val), "%3hu", iDryer.data.setTime) : snprintf(val, sizeof(val), "%3hu", iDryer.data.setHumidity);
         oled.drawUTF8(100, LINE_HIGHT, val);
@@ -920,22 +920,27 @@ void setup()
 
     enc.setEncISR(true);
     enc.setEncType(MY_ENCODER_TYPE);
-    enc.setFastTimeout(30);
+    // enc.setFastTimeout(30);
     enc.setEncReverse(ENCODER_REVERSE);
+    enc.counter = 0;
 
     bme.setFilter(FILTER_COEF_8);
     bme.setStandbyTime(STANDBY_250MS);
 
     while (!bme.begin(0x76))
     {
-        piii(200);
-        delay(50);
+        digitalWrite(BUZZER_PIN, HIGH);
+        delay(300);
+        digitalWrite(BUZZER_PIN, LOW);
+        delay(300);
     }
 
     while (analogRead(NTC_PIN) < ADC_MIN || analogRead(NTC_PIN) > ADC_MAX)
     {
-        piii(1500);
-        delay(500);
+        digitalWrite(BUZZER_PIN, HIGH);
+        delay(1000);
+        digitalWrite(BUZZER_PIN, LOW);
+        delay(1000);
     }
 
     // Для первоначального обновления меню
@@ -1726,32 +1731,71 @@ void getData()
     }
 }
 
+// void setPoint()
+// {
+//     if (round((double)iDryer.data.bmeTemp) <= iDryer.data.setTemp && !iDryer.data.flagTimeCounter)
+//     {
+//         Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
+//     }
+//     else if (round((double)iDryer.data.bmeTemp) + 2 < iDryer.data.setTemp && iDryer.data.flagTimeCounter)
+//     {
+//         Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
+//     }
+//     else if (round((double)iDryer.data.bmeTemp) > iDryer.data.setTemp)
+//     {
+//         Setpoint = iDryer.data.setTemp - iDryer.data.deltaT;
+//     }
+//     else if (round((double)iDryer.data.bmeTemp) < iDryer.data.setTemp)
+//     {
+//         Setpoint = iDryer.data.setTemp - iDryer.data.bmeTemp + iDryer.data.setTemp;
+//         if (Setpoint > iDryer.data.setTemp + iDryer.data.deltaT)
+//             Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
+//     }
+//     else if (round((double)iDryer.data.bmeTemp) == iDryer.data.setTemp)
+//     {
+//         Setpoint = iDryer.data.setTemp;
+//     }
+
+//     if (Setpoint > TMP_MAX)
+//         Setpoint = TMP_MAX;
+
+//     pid.SetTunings(iDryer.data.Kp, iDryer.data.Ki, iDryer.data.Kd, PID_TYPE);
+//     DEBUG_PRINT(Setpoint);
+// }
+
 void setPoint()
 {
-    if (round((double)iDryer.data.bmeTemp) + 2 < iDryer.data.setTemp)
+    double currentTemp = round((double)iDryer.data.bmeTemp);
+    double setTemp = iDryer.data.setTemp;
+    double deltaT = iDryer.data.deltaT;
+    int8_t dropThreshold = int8_t(setTemp - currentTemp);
+    uint8_t K = 4;
+
+    if (!iDryer.data.flagTimeCounter)
     {
-        Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
-        // if (Setpoint > TMP_MAX)
-        //     Setpoint = TMP_MAX;
-        // pid.SetTunings(iDryer.data.Kp, iDryer.data.Ki, iDryer.data.Kd, PID_TYPE);
+        if (dropThreshold < 0)
+        {
+            Setpoint = setTemp + deltaT;
+        }
+        else
+        {
+            Setpoint = setTemp;
+        }
     }
-    else if (round((double)iDryer.data.bmeTemp) > iDryer.data.setTemp)
+    else
     {
-        Setpoint = iDryer.data.setTemp - iDryer.data.deltaT;
+        if (dropThreshold != 0)
+        {
+            Setpoint = setTemp + dropThreshold * K;
+        }
+        else
+        {
+            Setpoint = setTemp;
+        }
     }
-    else if (round((double)iDryer.data.bmeTemp) < iDryer.data.setTemp)
-    {
-        Setpoint = iDryer.data.setTemp - iDryer.data.bmeTemp + iDryer.data.setTemp;
-        if (Setpoint > iDryer.data.setTemp + iDryer.data.deltaT)
-            Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
-        // if (Setpoint > TMP_MAX)
-        //     Setpoint = TMP_MAX;
-        // pid.SetTunings(iDryer.data.Kp, iDryer.data.Ki, iDryer.data.Kd, PID_TYPE);
-    }
-    else if (round((double)iDryer.data.bmeTemp) == iDryer.data.setTemp)
-    {
-        Setpoint = iDryer.data.setTemp;
-    }
+
+    if (Setpoint > setTemp + deltaT)
+        Setpoint = setTemp + deltaT;
 
     if (Setpoint > TMP_MAX)
         Setpoint = TMP_MAX;

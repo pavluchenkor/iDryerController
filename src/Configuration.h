@@ -98,7 +98,7 @@ buzzer beeps every time the heater comes on
   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
  */
-#define TEMP_SENSOR_0 6 // This is thermistor 0  /EPCOS 100K B57560G104F - 6
+#define TEMP_SENSOR_0 11 // This is thermistor 0  /EPCOS 100K B57560G104F - 6
 
 #define TMP_MIN 1
 #define TMP_MAX 120
@@ -163,15 +163,15 @@ EB_STEP4_HIGH
 EB_STEP2
 EB_STEP1
 ********************/
-#define MY_ENCODER_TYPE EB_STEP2  // 0
-#define ENCODER_FAST_INCREMENT 10 // 10
+#define MY_ENCODER_TYPE EB_STEP4_LOW // 0
+#define ENCODER_FAST_INCREMENT 10    // 10
 
 /**********************
 Encoder direction
 0 - normal
 1 - reverse
  ********************/
-#define ENCODER_REVERSE 1
+#define ENCODER_REVERSE 0
 
 /**********************
 screen update time, change if you know what you're doing.
