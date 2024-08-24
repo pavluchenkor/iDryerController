@@ -101,7 +101,7 @@ buzzer beeps every time the heater comes on
 #define TEMP_SENSOR_0 11 // This is thermistor 0  /EPCOS 100K B57560G104F - 6
 
 #define TMP_MIN 1
-#define TMP_MAX 120
+#define TMP_MAX 125
 #define HUMIDITY_HYSTERESIS 5 // 10
 #define TEMP_HYSTERESIS 5     // 5
 /**********************
