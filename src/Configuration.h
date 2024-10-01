@@ -101,9 +101,26 @@ buzzer beeps every time the heater comes on
 #define TEMP_SENSOR_0 11 // This is thermistor 0  /EPCOS 100K B57560G104F - 6
 
 #define TMP_MIN 1
-#define TMP_MAX 125
+#define TMP_MAX 130
 #define HUMIDITY_HYSTERESIS 5 // 10
 #define TEMP_HYSTERESIS 5     // 5
+
+
+// Linear Temperature Calibration for BME280
+#define T_0 0.0
+#define T_100 100
+
+// Polynomial Temperature Calibration for BME280
+// #define COEFF_A 0.0
+// #define COEFF_B 0.0
+// #define COEFF_C 0.0
+// #define COEFF_D 0.0
+
+// #define COEFF_A 7.8e-05
+// #define COEFF_B -0.010865
+// #define COEFF_C 0.484942
+// #define COEFF_D -3.841228
+
 /**********************
 Select the power-on algorithm.
 In storage mode, switching on can only be done
@@ -154,7 +171,7 @@ Screen rotation
 0 - norm,
 1 - rev
 **/
-#define SCREEN_FLIP 1
+#define SCREEN_FLIP 0
 
 /**********************
 Encoder Type
@@ -222,7 +239,7 @@ if your SCALES_MODULE_NUM not 0 do this:
    6 pio run -e EEP -t fullclean -t upload
  ********************/
 #define AUTOPID_RUN 0
-#define SCALES_MODULE_NUM 4
+#define SCALES_MODULE_NUM 0
 
 #define FILAMENT_SENSOR_ON                   //
 #define ALERT_MASS 100                       // Beep by buzzer when less than this amount of filament left

@@ -382,7 +382,16 @@ public:
     bool getData()
     {
         data.ntcTemp = (ntc.analog2temp() + data.ntcTemp) / 2.0;
-        data.bmeTemp = (bme.readTemperature() + data.bmeTemp) / 2.0;
+        data.bmeTemp = bme.readTemperature();
+        // data.bmeTemp =  data.bmeTemp +
+        //                 COEFF_A * (data.bmeTemp * data.bmeTemp * data.bmeTemp) +
+        //                 COEFF_B * (data.bmeTemp * data.bmeTemp) +
+        //                 COEFF_C * data.bmeTemp +
+        //                 COEFF_D;
+        float slope = (100.0 - T_0) / (T_100 - T_0);  
+        float offset = T_0 - (slope * T_0);
+        data.bmeTemp = slope * data.bmeTemp + offset;
+
         data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2.0;
         if (data != oldData && millis() - screenTime > SCREEN_UPADATE_TIME)
         {
@@ -778,8 +787,8 @@ void displayPrintMode()
         char val[4];
         oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[text]))) / 2, LINE_HIGHT, printMenuItem(&menuTxt[text]));
 
-        // snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
-        snprintf(val, sizeof(val), "%2hu", (uint8_t)Setpoint);
+        snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
+        // snprintf(val, sizeof(val), "%2hu", (uint8_t)Setpoint);
         oled.drawUTF8(0, LINE_HIGHT, val);
         text == DEF_MENU_DRYING ? snprintf(val, sizeof(val), "%3hu", iDryer.data.setTime) : snprintf(val, sizeof(val), "%3hu", iDryer.data.setHumidity);
         oled.drawUTF8(100, LINE_HIGHT, val);
@@ -924,8 +933,8 @@ void setup()
     enc.setEncReverse(ENCODER_REVERSE);
     enc.counter = 0;
 
-    bme.setFilter(FILTER_COEF_8);
-    bme.setStandbyTime(STANDBY_250MS);
+    // bme.setFilter(FILTER_COEF_16);
+    // bme.setStandbyTime(STANDBY_250MS);
 
     while (!bme.begin(0x76))
     {
@@ -1128,6 +1137,7 @@ void loop()
 
         if (iDryer.data.setTime == 0)
         {
+            piii(1000);
             DEBUG_PRINT(5);
             subMenuM.parentID = 5; // ID пункта хранение
             heaterOFF();
