@@ -359,6 +359,7 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, uint16_t spool
 void getData();
 void setPoint();
 void screenUpdate();
+void drawLine(const char *text, int lineIndex, bool background = false, bool center = true, int x = 0, int backgroundX = 0);
 /* 22 */ // CASE MENU
 /* 23 */ // CASE DRY
 /* 24 */ // CASE STORAGE
@@ -388,7 +389,7 @@ public:
         //                 COEFF_B * (data.bmeTemp * data.bmeTemp) +
         //                 COEFF_C * data.bmeTemp +
         //                 COEFF_D;
-        float slope = (100.0 - T_0) / (T_100 - T_0);  
+        float slope = (100.0 - T_0) / (T_100 - T_0);
         float offset = T_0 - (slope * T_0);
         data.bmeTemp = slope * data.bmeTemp + offset;
 
@@ -717,9 +718,8 @@ void displayPrint(struct subMenu *subMenu)
     oled.firstPage();
     do
     {
-        oled.setFont(u8g2_font);
         uint8_t maxPos = SCREEN_LINES - MENU_HEADER < subMenu->membersQuantity ? SCREEN_LINES - MENU_HEADER : subMenu->membersQuantity;
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[subMenuM.parentID]))) / 2 - 10, 16, printMenuItem(&menuTxt[subMenuM.parentID]));
+        drawLine(printMenuItem(&menuTxt[subMenuM.parentID]), 1, false, true, -10);
         if (subMenuM.parentID == 0)
         {
             char val[6];
@@ -727,17 +727,17 @@ void displayPrint(struct subMenu *subMenu)
 #ifdef DEBUG
             snprintf(val, sizeof(val), "%4d", oldTime1 - oldTime2);
 #endif
-            oled.drawUTF8(88, 16, val);
+            drawLine(val, 1, false, false, 88);
             snprintf(val, sizeof(val), "%2hu", (uint16_t)iDryer.data.ntcTemp);
 #ifdef DEBUG
             snprintf(val, sizeof(val), "%3hu", dimmer);
 #endif
-            oled.drawUTF8(0, 16, val);
+            drawLine(val, 1, false, false);
         }
         oled.drawLine(0, LINE_HIGHT + 2, 128, LINE_HIGHT + 2);
         for (uint8_t i = 0; i < maxPos; i++)
         {
-            oled.drawUTF8(0, (i + 2) * LINE_HIGHT, printMenuItem(&menuTxt[subMenuM.membersID[subMenuM.linesToScreen[i]]]));
+            drawLine(printMenuItem(&menuTxt[subMenuM.membersID[subMenuM.linesToScreen[i]]]), i + 2, subMenuM.pointerPos == i && !subMenu->changeVal, false);
 
             if (pgm_read_word(&menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]].min) ||
                 pgm_read_word(&menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]].max) ||
@@ -745,19 +745,7 @@ void displayPrint(struct subMenu *subMenu)
             {
                 char val[6];
                 snprintf(val, sizeof(val), "%5u", eeprom_read_word(&menuVal[subMenuM.membersID[subMenuM.linesToScreen[i]]]));
-                oled.drawUTF8(88, (i + 2) * LINE_HIGHT, val);
-            }
-
-            if (subMenuM.pointerPos == i)
-            {
-                if (!subMenu->changeVal)
-                {
-                    oled.drawButtonUTF8(0, LINE_HIGHT * (i + 2) - PADDING_OFFSET, U8G2_BTN_INV, 128, 0, PADDING_V, "");
-                }
-                else
-                {
-                    oled.drawButtonUTF8(96, LINE_HIGHT * (i + 2) - PADDING_OFFSET, U8G2_BTN_INV, 128, 0, PADDING_V, "");
-                }
+                drawLine(val, i + 2, subMenuM.pointerPos == i && subMenu->changeVal, false, 88, 96);
             }
         }
     } while (oled.nextPage());
@@ -772,8 +760,6 @@ void displayPrintMode()
     oled.firstPage();
     do
     {
-        oled.setFont(u8g2_font);
-
         uint8_t text = 0;
         if (state == DRY)
         {
@@ -785,19 +771,17 @@ void displayPrintMode()
         }
 
         char val[4];
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[text]))) / 2, LINE_HIGHT, printMenuItem(&menuTxt[text]));
+        drawLine(printMenuItem(&menuTxt[text]), 1);
 
         snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
         // snprintf(val, sizeof(val), "%2hu", (uint8_t)Setpoint);
-        oled.drawUTF8(0, LINE_HIGHT, val);
+        drawLine(val, 1, false, false);
         text == DEF_MENU_DRYING ? snprintf(val, sizeof(val), "%3hu", iDryer.data.setTime) : snprintf(val, sizeof(val), "%3hu", iDryer.data.setHumidity);
-        oled.drawUTF8(100, LINE_HIGHT, val);
-
-        oled.drawButtonUTF8(0, LINE_HIGHT - 1, U8G2_BTN_INV, 128, 1, 1, "");
+        drawLine(val, 1, true, false, 100);
 
         for (uint8_t i = 0; i < 3; i++)
         {
-            oled.drawUTF8(0, (i + 2) * LINE_HIGHT, printMenuItem(&serviceTxt[i + 6]));
+            drawLine(printMenuItem(&serviceTxt[i + 6]), i + 2, false, false, 0);
             text = i;
             uint8_t data = 0;
             switch (i)
@@ -815,7 +799,7 @@ void displayPrintMode()
                 break;
             }
             snprintf(val, sizeof(val), "%3hu", data);
-            oled.drawUTF8(100, (i + 2) * LINE_HIGHT, val);
+            drawLine(val, i + 2, false, false, 100);
         }
     } while (oled.nextPage());
     iDryer.data.flagScreenUpdate = false;
@@ -824,6 +808,8 @@ void displayPrintMode()
 
 void setup()
 {
+    WDT_DISABLE();
+
 #ifdef KASYAK_FINDER
     Serial.begin(9600);
 #endif
@@ -867,46 +853,60 @@ void setup()
     oled.enableUTF8Print();
     oled.setFont(u8g2_font);
 
+    oled.firstPage();
+    do
+    {
+        drawLine(printMenuItem(&serviceTxt[DEF_T_AYRA]), 1);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_VERSION]), 2);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_VER]), 3);
+    } while (oled.nextPage());
+
+    delay(3000);
+
     menuSize = sizeof(menuTxt) / sizeof(menuTxt[0]);
+
+    uint16_t test = eeprom_read_word(&menuVal[0]);
+
+    if (test != EEPROM_VALIDATION_VALUE)
+    {
+        setError(31);
+    }
+
     uint32_t errorCode = readError();
 
     if (errorCode)
     {
+        oled.clear();
+
         do
         {
-            oled.setFont(u8g2_font);
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_ERROR]))) / 2, LINE_HIGHT, printMenuItem(&serviceTxt[DEF_T_ERROR]));
+            drawLine(printMenuItem(&serviceTxt[DEF_T_ERROR]), 1, true);
+
             uint8_t charCounter = 0;
             for (uint8_t i = 0; i < 32; i++)
             {
                 if (errorTmpArray[i])
                 {
                     snprintf(serviceString, sizeof(serviceString), "%2d", i);
-                    oled.drawUTF8((charCounter * 32) % 128 + 4, LINE_HIGHT * (charCounter / 4 + 2), serviceString);
+                    drawLine(serviceString, charCounter / 4 + 2, true, false, (charCounter * 32) % 128 + 4);
                     if (charCounter % 5 == 0)
                         snprintf(serviceString, sizeof(serviceString), "%s", "");
                     charCounter++;
                 }
             }
-            oled.drawButtonUTF8(0, 1 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 1, "");
-            oled.drawButtonUTF8(0, 2 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 1, "");
-            oled.drawButtonUTF8(0, 3 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 1, "");
-            oled.drawButtonUTF8(0, 4 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 1, "");
         } while (oled.nextPage());
-        MCUSR = 0;
-        analogWrite(FAN, 255);
+
         while (digitalRead(encBut))
         {
             piii(500);
-            delay(500);
         }
         eeprom_write_dword(&ERROR_CODE, 0UL);
-    }
 
-    uint16_t test;
-    test = eeprom_read_word(&menuVal[0]);
-    while (test != 123)
-        ;
+        WDT(WDTO_15MS, 0);
+        while (true)
+        {
+        }
+    }
 
 #if OVERWRITE_PID == 1
     eeprom_update_word(&menuVal[DEF_PID_KP], K_PROPRTIONAL);
@@ -916,16 +916,6 @@ void setup()
 #endif
 
     updateIDyerData();
-
-    oled.firstPage();
-    do
-    {
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_AYRA]))) / 2, LINE_HIGHT, printMenuItem(&serviceTxt[DEF_T_AYRA]));
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_VERSION]))) / 2, LINE_HIGHT * 2, printMenuItem(&serviceTxt[DEF_T_VERSION]));
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_VER]))) / 2, LINE_HIGHT * 3, printMenuItem(&serviceTxt[DEF_T_VER]));
-    } while (oled.nextPage());
-
-    delay(3000);
 
     enc.setEncISR(true);
     enc.setEncType(MY_ENCODER_TYPE);
@@ -938,18 +928,12 @@ void setup()
 
     while (!bme.begin(0x76))
     {
-        digitalWrite(BUZZER_PIN, HIGH);
-        delay(300);
-        digitalWrite(BUZZER_PIN, LOW);
-        delay(300);
+        piii(300);
     }
 
     while (analogRead(NTC_PIN) < ADC_MIN || analogRead(NTC_PIN) > ADC_MAX)
     {
-        digitalWrite(BUZZER_PIN, HIGH);
-        delay(1000);
-        digitalWrite(BUZZER_PIN, LOW);
-        delay(1000);
+        piii(1000);
     }
 
     // Для первоначального обновления меню
@@ -984,8 +968,8 @@ void setup()
     oled.firstPage();
     do
     {
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_BURN]))) / 2, LINE_HIGHT * 2, printMenuItem(&serviceTxt[DEF_T_BURN]));
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_PART]))) / 2, LINE_HIGHT * 3, printMenuItem(&serviceTxt[DEF_T_PART]));
+        drawLine(printMenuItem(&serviceTxt[DEF_T_BURN]), 2);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_PART]), 3);
     } while (oled.nextPage());
     delay(300000);
 #endif
@@ -1012,7 +996,7 @@ void loop()
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
 
     hx711Multi.readMassMulti();
-    filamentCheck(sensorNum, hx711Multi.getMassMulti(sensorNum), state, prevSpoolMass);
+    filamentCheck(sensorNum, hx711Multi.getMassMulti(sensorNum), state, (uint16_t *)prevSpoolMass);
     sensorNum++;
 
     if (sensorNum >= SCALES_MODULE_NUM)
@@ -1021,7 +1005,6 @@ void loop()
 
     if (enc.hold())
     {
-
         if (state == DRY || state == STORAGE)
         {
             WDT_DISABLE();
@@ -1048,15 +1031,10 @@ void loop()
         oled.firstPage();
         do
         {
-            oled.setFont(u8g2_font);
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_ERROR]))) / 2, LINE_HIGHT, printMenuItem(&serviceTxt[DEF_T_ERROR]));
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_CHECK]))) / 2, LINE_HIGHT * 2, printMenuItem(&serviceTxt[DEF_T_CHECK]));
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_THERMISTOR]))) / 2, LINE_HIGHT * 3, printMenuItem(&serviceTxt[DEF_T_THERMISTOR]));
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_OVERLOAD]))) / 2, LINE_HIGHT * 4, printMenuItem(&serviceTxt[DEF_T_OVERLOAD]));
-            oled.drawButtonUTF8(0, 1 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
-            oled.drawButtonUTF8(0, 2 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
-            oled.drawButtonUTF8(0, 3 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
-            oled.drawButtonUTF8(0, 4 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
+            drawLine(printMenuItem(&serviceTxt[DEF_T_ERROR]), 2, true);
+            drawLine(printMenuItem(&serviceTxt[DEF_T_CHECK]), 2, true);
+            drawLine(printMenuItem(&serviceTxt[DEF_T_THERMISTOR]), 2, true);
+            drawLine(printMenuItem(&serviceTxt[DEF_T_OVERLOAD]), 2, true);
         } while (oled.nextPage());
 
         while (digitalRead(encBut))
@@ -1490,7 +1468,7 @@ void saveAll()
     oled.firstPage();
     do
     {
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_AYRA]))) / 2, LINE_HIGHT * 3, printMenuItem(&serviceTxt[DEF_T_AYRA]));
+        drawLine(printMenuItem(&serviceTxt[DEF_T_AYRA]), 3);
     } while (oled.nextPage());
     delay(500);
     subMenuM.pointerUpdate = 1;
@@ -1515,6 +1493,7 @@ ISR(WDT_vect)
 
 void WDT_DISABLE()
 {
+    MCUSR = 0;
     wdt_reset();
     wdt_disable();
 }
@@ -1548,14 +1527,16 @@ uint32_t printError(uint32_t error)
 
 void piii(uint16_t time_ms)
 {
-    // WDT(WDTO_8S, 9);
-    // time_ms = time_ms < 10 ? 10 : time_ms;
-    // digitalWrite(BUZZER_PIN, HIGH);
-    // delay(time_ms);
-    // digitalWrite(BUZZER_PIN, LOW);
-    // WDT_DISABLE();
-    if (state != AUTOPID)
-        buzzer.buzz(time_ms);
+    if (state == AUTOPID)
+    {
+        return;
+    }
+
+    time_ms = max(10u, time_ms);
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(time_ms);
+    digitalWrite(BUZZER_PIN, LOW);
+    delay(time_ms);
 }
 
 void heater(uint16_t Output, uint16_t &dimmer)
@@ -1676,11 +1657,10 @@ void pwm_test()
             oled.firstPage();
             do
             {
-                oled.setFont(u8g2_font);
                 snprintf(serviceString, sizeof(serviceString), "%s %6hu", printMenuItem(&serviceTxt[DEF_T_FREQUENCY]), frequency);
-                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 2, serviceString);
+                drawLine(serviceString, 2);
                 snprintf(serviceString, sizeof(serviceString), "%4s %6hu", printMenuItem(&menuTxt[DEF_SETTINGS_BLOWING]), k);
-                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
+                drawLine(serviceString, 3);
             } while (oled.nextPage());
             delay(3000);
             k -= 10;
@@ -1710,6 +1690,23 @@ void screenUpdate()
         }
     }
 #endif
+}
+
+void drawLine(const char *text, int lineIndex, bool background, bool center, int x, int backgroundX)
+{
+    auto y = LINE_HIGHT * lineIndex;
+
+    if (center)
+    {
+        x += (128 - oled.getUTF8Width(text)) / 2;
+    }
+
+    oled.drawUTF8(x, y, text);
+
+    if (background)
+    {
+        oled.drawButtonUTF8(backgroundX, y, U8G2_BTN_INV, 128, 0, 1, "");
+    }
 }
 
 void getData()
@@ -1807,14 +1804,11 @@ void autoPid()
     oled.firstPage();
     do
     {
-        oled.setFont(u8g2_font);
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[DEF_PID_AVTOPID]))) / 2, LINE_HIGHT * 3, printMenuItem(&menuTxt[DEF_PID_AVTOPID]));
-        oled.drawButtonUTF8(0, 1 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
-        oled.drawButtonUTF8(0, 2 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
-        oled.drawButtonUTF8(0, 3 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
-        oled.drawButtonUTF8(0, 4 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
+        drawLine("", 1, true);
+        drawLine("", 2, true);
+        drawLine(printMenuItem(&menuTxt[DEF_PID_AVTOPID]), 3, true);
+        drawLine("", 4, true);
     } while (oled.nextPage());
-    // piii(500);
 
     unsigned long microseconds;
 
@@ -1839,7 +1833,6 @@ void autoPid()
         do
         {
             // 20/20 100С 9500
-            oled.setFont(u8g2_font);
             memset(serviceString, 0, sizeof(serviceString));
             snprintf(serviceString, sizeof(serviceString), "%2d/%2d  %d%s  %3d", tuner.getCycle(), AUTOPID_ATTEMPT, (int)ntc.analog2temp(),
                      printMenuItem(&serviceTxt[DEF_T_CELSIUS]),
@@ -1850,17 +1843,16 @@ void autoPid()
                          (uint8_t) map(dimmer, HEATER_MIN, HEATER_MAX, 0, 100)
 #endif
             );
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 1, serviceString);
+            drawLine(serviceString, 1);
 
             snprintf(serviceString, sizeof(serviceString), "%2s %6hu", printMenuItem(&menuTxt[DEF_PID_KP]), (uint16_t)(abs(tuner.getKp()) * 100));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 2, serviceString);
+            drawLine(serviceString, 2);
 
             snprintf(serviceString, sizeof(serviceString), "%2s %6hu", printMenuItem(&menuTxt[DEF_PID_KI]), (uint16_t)(abs(tuner.getKi()) * 100));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
+            drawLine(serviceString, 3);
 
             snprintf(serviceString, sizeof(serviceString), "%2s %6u", printMenuItem(&menuTxt[DEF_PID_KD]), (uint16_t)(abs(tuner.getKd()) * 100));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 4, serviceString);
-
+            drawLine(serviceString, 4);
         } while (oled.nextPage());
         DEBUG_PRINT(1006);
 
@@ -1891,9 +1883,8 @@ void autoPid()
     oled.clear();
     do
     {
-        oled.setFont(u8g2_font);
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[DEF_SETTINGS_PID]))) / 2, LINE_HIGHT * 2, printMenuItem(&menuTxt[DEF_SETTINGS_PID]));
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_SAVED]))) / 2, LINE_HIGHT * 3, printMenuItem(&serviceTxt[DEF_T_SAVED]));
+        drawLine(printMenuItem(&menuTxt[DEF_SETTINGS_PID]), 2);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_SAVED]), 3);
     } while (oled.nextPage());
 
     uint8_t time_delay = 40;
@@ -1904,11 +1895,9 @@ void autoPid()
         do
         {
             snprintf(val, sizeof(val), "%3d", time_delay);
-            oled.setFont(u8g2_font);
             snprintf(serviceString, sizeof(serviceString), "%12s", printMenuItem(&serviceTxt[4]));
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_COOLING]))) / 2, LINE_HIGHT * 2, printMenuItem(&serviceTxt[DEF_T_COOLING]));
-
-            oled.drawUTF8((128 - oled.getUTF8Width(val)) / 2, LINE_HIGHT * 3, val);
+            drawLine(printMenuItem(&serviceTxt[DEF_T_COOLING]), 2);
+            drawLine(val, 3);
         } while (oled.nextPage());
         time_delay--;
         delay(1000);
@@ -1944,14 +1933,15 @@ void setSpool(uint8_t spool)
         oled.firstPage();
         do
         {
-            oled.setFont(u8g2_font);
             snprintf(serviceString, sizeof(serviceString), "%s %1d", printMenuItem(&serviceTxt[DEF_T_SPOOL]), spool + 1);
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 2, serviceString);
+            drawLine(serviceString, 2);
+
             snprintf(serviceString, sizeof(serviceString), "%s", printMenuItem(&serviceTxt[DEF_T_REMOVE]));
             snprintf(serviceString, sizeof(serviceString), "%s %s", serviceString, printMenuItem(&serviceTxt[DEF_T_WEIGHT]));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
+            drawLine(serviceString, 3);
+
             snprintf(serviceString, sizeof(serviceString), "%2d ", 5 - i);
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 4, serviceString);
+            drawLine(serviceString, 4);
         } while (oled.nextPage());
         delay(800);
     }
@@ -1959,11 +1949,10 @@ void setSpool(uint8_t spool)
     oled.firstPage();
     do
     {
-        oled.setFont(u8g2_font);
         snprintf(serviceString, sizeof(serviceString), "%s %1d", printMenuItem(&serviceTxt[DEF_T_SPOOL]), spool + 1);
-        oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 2, serviceString);
+        drawLine(serviceString, 2);
         snprintf(serviceString, sizeof(serviceString), "%s", printMenuItem(&serviceTxt[DEF_T_SETUP]));
-        oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
+        drawLine(serviceString, 3);
     } while (oled.nextPage());
     delay(1000);
 
@@ -1974,16 +1963,15 @@ void setSpool(uint8_t spool)
         oled.firstPage();
         do
         {
-            oled.setFont(u8g2_font);
             snprintf(serviceString, sizeof(serviceString), "%s %1d", printMenuItem(&serviceTxt[DEF_T_SPOOL]), spool + 1);
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 1, serviceString);
+            drawLine(serviceString, 1);
             snprintf(serviceString, sizeof(serviceString), "%s", printMenuItem(&serviceTxt[DEF_T_PUT]));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 2, serviceString);
+            drawLine(serviceString, 2);
             snprintf(serviceString, sizeof(serviceString), "%s %4d", printMenuItem(&serviceTxt[DEF_T_WEIGHT]), 1000);
             snprintf(serviceString, sizeof(serviceString), "%s %s", serviceString, printMenuItem(&serviceTxt[DEF_T_GRAM]));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
+            drawLine(serviceString, 3);
             snprintf(serviceString, sizeof(serviceString), "%2d ", 10 - i);
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 4, serviceString);
+            drawLine(serviceString, 4);
         } while (oled.nextPage());
         delay(800);
     }
@@ -1991,11 +1979,10 @@ void setSpool(uint8_t spool)
     oled.firstPage();
     do
     {
-        oled.setFont(u8g2_font);
         snprintf(serviceString, sizeof(serviceString), "%s", printMenuItem(&serviceTxt[DEF_T_SETUP]));
-        oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 2, serviceString);
+        drawLine(serviceString, 2);
         snprintf(serviceString, sizeof(serviceString), "%s %1d", printMenuItem(&serviceTxt[DEF_T_SPOOL]), spool + 1);
-        oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
+        drawLine(serviceString, 3);
     } while (oled.nextPage());
     delay(800);
 
@@ -2041,15 +2028,10 @@ void scaleShow()
     oled.firstPage();
     do
     {
-        oled.setFont(u8g2_font);
         for (uint8_t i = 0; i < SCALES_MODULE_NUM; i++)
         {
             snprintf(serviceString, sizeof(serviceString), "%10s %5d", printMenuItem(&menuTxt[stringNum + i * 3]), (uint16_t)hx711Multi.getMassMulti(i));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * (i + 2) - 16, serviceString);
-            if (hx711Multi.getMassMulti(i) < FILAMENT_SENSOR_MASS)
-            {
-                oled.drawButtonUTF8(96, LINE_HIGHT * (i + 2) - PADDING_OFFSET - 16, U8G2_BTN_INV, 128, 0, PADDING_V, "");
-            }
+            drawLine(serviceString, i + 1, hx711Multi.getMassMulti(i) < FILAMENT_SENSOR_MASS, true, 0, 96);
         }
     } while (oled.nextPage());
     WDT_DISABLE();

@@ -14,6 +14,8 @@
 #define PADDING_V 2
 #endif
 
+#define EEPROM_VALIDATION_VALUE 123
+
 struct menuS
 {
     uint8_t id;
@@ -198,45 +200,45 @@ const menuS menuPGM[] PROGMEM = {
 };
 
 uint16_t menuVal[] EEMEM = {
-    123,   // id: 0
-    0,     // id: 1
-    60,    // id: 2
-    240,   // id: 3
-    0,     // id: 4
-    0,     // id: 5
-    35,    // id: 6
-    15,    // id: 7
-    0,     // id: 8
-    0,     // id: 9
-    0,     // id: 10
-    55,    // id: 11
-    180,   // id: 12
-    0,     // id: 13
-    0,     // id: 14
-    65,    // id: 15
-    240,   // id: 16
-    0,     // id: 17
-    0,     // id: 18
-    90,    // id: 19
-    240,   // id: 20
-    0,     // id: 21
-    0,     // id: 22
-    0,     // id: 23
-    49029, // id: 24 Kp 500
-    2092,  // id: 25 Ki 1
-    37444, // id: 26 Kd 200
-    0,     // id: 27
-    400,   // id: 28
-    65,    // id: 29
-    0,     // id: 30
-    90,    // id: 31
-    8,     // id: 32
-    0,     // id: 33
-    30,    // id: 34
-    1,     // id: 35
-    55,    // id: 36
-    0,     // id: 37
-    0,     // id: 38
+    EEPROM_VALIDATION_VALUE, // id: 0
+    0,                       // id: 1
+    60,                      // id: 2
+    240,                     // id: 3
+    0,                       // id: 4
+    0,                       // id: 5
+    35,                      // id: 6
+    15,                      // id: 7
+    0,                       // id: 8
+    0,                       // id: 9
+    0,                       // id: 10
+    55,                      // id: 11
+    180,                     // id: 12
+    0,                       // id: 13
+    0,                       // id: 14
+    65,                      // id: 15
+    240,                     // id: 16
+    0,                       // id: 17
+    0,                       // id: 18
+    90,                      // id: 19
+    240,                     // id: 20
+    0,                       // id: 21
+    0,                       // id: 22
+    0,                       // id: 23
+    49029,                   // id: 24 Kp 500
+    2092,                    // id: 25 Ki 1
+    37444,                   // id: 26 Kd 200
+    0,                       // id: 27
+    400,                     // id: 28
+    65,                      // id: 29
+    0,                       // id: 30
+    90,                      // id: 31
+    8,                       // id: 32
+    0,                       // id: 33
+    30,                      // id: 34
+    1,                       // id: 35
+    55,                      // id: 36
+    0,                       // id: 37
+    0,                       // id: 38
 #if SCALES_MODULE_NUM > 0
     0, // id: 39
     0, // id: 40
@@ -262,66 +264,65 @@ uint16_t menuVal[] EEMEM = {
 
 typedef void (*ptrFunc)();
 
-const ptrFunc menuFunc[]
-{
+const ptrFunc menuFunc[]{
     NULL,
-        NULL,
-        NULL,
-        NULL,
-        &mainDryStart,
-        NULL,
-        NULL,
-        NULL,
-        &storageStart,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        &plaDryStart,
-        NULL,
-        NULL,
-        NULL,
-        &petgDryStart,
-        NULL,
-        NULL,
-        NULL,
-        &absDryStart,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        &autoPidM,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        &servoTest,
-        &saveAll,
+    NULL,
+    NULL,
+    NULL,
+    &mainDryStart,
+    NULL,
+    NULL,
+    NULL,
+    &storageStart,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    &plaDryStart,
+    NULL,
+    NULL,
+    NULL,
+    &petgDryStart,
+    NULL,
+    NULL,
+    NULL,
+    &absDryStart,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    &autoPidM,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    &servoTest,
+    &saveAll,
 #if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
-        NULL,
-        NULL,
-        NULL,
-        setSpool1,
+    NULL,
+    NULL,
+    NULL,
+    setSpool1,
 #endif
 #if SCALES_MODULE_NUM > 1 && AUTOPID_RUN == 0
-        NULL,
-        NULL,
-        &setSpool2,
+    NULL,
+    NULL,
+    &setSpool2,
 #endif
 #if SCALES_MODULE_NUM > 2 && AUTOPID_RUN == 0
-        NULL,
-        NULL,
-        &setSpool3,
+    NULL,
+    NULL,
+    &setSpool3,
 #endif
 #if SCALES_MODULE_NUM > 3 && AUTOPID_RUN == 0
-        NULL,
-        NULL,
-        &setSpool4,
+    NULL,
+    NULL,
+    &setSpool4,
 #endif
 };

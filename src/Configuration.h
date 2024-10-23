@@ -34,6 +34,7 @@
 // /* 28 */ // BME MIN
 // /* 29 */ // BME MAX
 // /* 30 */ // ADC ERROR
+// /* 31 */ // EEPROM TEST FAIL
 // /* 0 */  // ADC ACCUMULATED ERROR
 // /* 31 */ // iDryer.getData
 /* !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
