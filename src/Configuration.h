@@ -172,7 +172,7 @@ Screen rotation
 0 - norm,
 1 - rev
 **/
-#define SCREEN_FLIP 1
+#define SCREEN_FLIP 0
 
 /**********************
 Encoder Type
@@ -240,7 +240,7 @@ if your SCALES_MODULE_NUM not 0 do this:
    6 pio run -e EEP -t fullclean -t upload
  ********************/
 #define AUTOPID_RUN 0
-#define SCALES_MODULE_NUM 2
+#define SCALES_MODULE_NUM 0
 
 #define FILAMENT_SENSOR_ON                   //
 #define ALERT_MASS 100                       // Beep by buzzer when less than this amount of filament left
