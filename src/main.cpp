@@ -737,16 +737,17 @@ void displayPrint(struct subMenu *subMenu)
         oled.drawLine(0, LINE_HIGHT + 2, 128, LINE_HIGHT + 2);
         for (uint8_t i = 0; i < maxPos; i++)
         {
-            drawLine(printMenuItem(&menuTxt[subMenuM.membersID[subMenuM.linesToScreen[i]]]), i + 2, subMenuM.pointerPos == i && !subMenu->changeVal, false);
+            drawLine(printMenuItem(&menuTxt[subMenuM.membersID[subMenuM.linesToScreen[i]]]), i + 2, false, false);
 
+            char val[6] = {};
             if (pgm_read_word(&menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]].min) ||
                 pgm_read_word(&menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]].max) ||
                 eeprom_read_word(&menuVal[subMenuM.membersID[subMenuM.linesToScreen[i]]]))
             {
-                char val[6];
                 snprintf(val, sizeof(val), "%5u", eeprom_read_word(&menuVal[subMenuM.membersID[subMenuM.linesToScreen[i]]]));
-                drawLine(val, i + 2, subMenuM.pointerPos == i && subMenu->changeVal, false, 88, 96);
             }
+
+            drawLine(val, i + 2, subMenuM.pointerPos == i, false, 88, subMenu->changeVal ? 96 : 0);
         }
     } while (oled.nextPage());
     iDryer.data.flagScreenUpdate = false;
@@ -1705,7 +1706,7 @@ void drawLine(const char *text, int lineIndex, bool background, bool center, int
 
     if (background)
     {
-        oled.drawButtonUTF8(backgroundX, y, U8G2_BTN_INV, 128, 0, 1, "");
+        oled.drawButtonUTF8(backgroundX, y, U8G2_BTN_INV, 128, 0, PADDING_V, "");
     }
 }
 
