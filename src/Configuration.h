@@ -240,7 +240,7 @@ if your SCALES_MODULE_NUM not 0 do this:
    6 pio run -e EEP -t fullclean -t upload
  ********************/
 #define AUTOPID_RUN 0
-#define SCALES_MODULE_NUM 0
+#define SCALES_MODULE_NUM 2
 
 #define FILAMENT_SENSOR_ON                   //
 #define ALERT_MASS 100                       // Beep by buzzer when less than this amount of filament left
@@ -250,7 +250,7 @@ if your SCALES_MODULE_NUM not 0 do this:
 #define ALERT_MASS_PIII_TIME 5            // sec
 #define FILAMENT_SENSOR_MASS_PIII_TIME 15 // sec
 
-#define MENU_SCALE_SWITCH_TIME 5000
+#define MENU_SCALE_SWITCH_TIME 15000
 
 /**********************
 My presets name
