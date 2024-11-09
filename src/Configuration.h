@@ -1,8 +1,8 @@
 ﻿#ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
-// При старте висит на заставке и пищит коротко(0,2с) - ошибка инициализации BME
-// При старте висит на заставке и пищит продолжительно(1.5с) - ошибка температуры с термистора
+// При старте висит на заставке и пищит коротко(0,3с) - ошибка инициализации BME
+// При старте висит на заставке и пищит продолжительно(1с) - ошибка температуры с термистора
 
 /* !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 // /* 01 */ void heaterOFF();
@@ -239,7 +239,7 @@ if your SCALES_MODULE_NUM not 0 do this:
    6 pio run -e EEP -t fullclean -t upload
  ********************/
 #define AUTOPID_RUN 0
-#define SCALES_MODULE_NUM 0
+#define SCALES_MODULE_NUM 2
 
 #define FILAMENT_SENSOR_ON                   //
 #define ALERT_MASS 100                       // Beep by buzzer when less than this amount of filament left
