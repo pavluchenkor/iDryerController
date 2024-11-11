@@ -35,7 +35,7 @@ pio run -e EEP -t uploadeep
 ```
 если используется Atmega328PB
 ```
-pio run -e EEPB -t uploadeep
+pio run -e EEPPB -t uploadeep
 ```
 
 ###Прошивка общая
@@ -47,7 +47,7 @@ pio run -e EEP -t upload
 если используется Atmega328PB
     
 ```
-pio run -e EEPB -t upload 
+pio run -e EEPPB -t upload 
 ```
 
 ###Прошивка для работы с модулями весов
