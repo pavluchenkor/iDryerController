@@ -13,11 +13,18 @@
 
 Компиляция и прошивка:
 
-!!! warning annotate "Внимание"
+!!! info annotate "configuration.h"
 
     :arrow_forward:</i> В файле configuration.h сконфигурируйте прошивку.
     
-    :arrow_forward:</i> в файле platformio.ini указать USB порт к которому подключена ардуина
+
+!!! warning annotate "Ошибки при компиляции"  
+    Если при компиляции возникают ошибки указывающие на несоответсвие размера прошивки размеру памяти МК чаще всего помогает последовательный ввод команд
+    ```
+    pio update
+    pio pkg update
+    ```
+
 
 
 1. Прошивка ядра MiniCore
@@ -25,50 +32,106 @@
 
 2.1 смена фьюзов
 ```
-pio run -e fuses -t fuses
+
 ```
+
+=== "Atmega328P"
+
+    ``` 
+    pio run -e fuses -t fuses
+    ```
+
+=== "Atmega328PB"
+
+    ```
+    pio run -e fuses -t fuses
+    ```
+
 
 2.2 прошивка EEPROM<br>
 
-```
-pio run -e EEP -t uploadeep
-```
-если используется Atmega328PB
-```
-pio run -e EEPPB -t uploadeep
-```
+=== "Atmega328P"
+
+    ``` 
+    pio run -e EEP -t uploadeep
+    ```
+
+=== "Atmega328PB"
+
+    ```
+    pio run -e EEPPB -t uploadeep
+    ```
+
 
 ###Прошивка общая
 2.3 прошивка МК<br>
-```
-pio run -e EEP -t upload
-```
 
-если используется Atmega328PB
-    
-```
-pio run -e EEPPB -t upload 
-```
+=== "Atmega328P"
 
-###Прошивка для работы с модулями весов
+    ``` 
+    pio run -e EEP -t upload
+    ```
+
+=== "Atmega328PB"
+
+    ```
+    pio run -e EEPPB -t upload
+    ```
+
+
+### Прошивка для работы с модулями весов
+
+=== "2 модуля"
+
+    ``` 
+    #define SCALES_MODULE_NUM 2
+    ```
+
+=== "3 модуля"
+
+    ``` 
+    #define SCALES_MODULE_NUM 3
+    ```
+=== "4 модуля"
+
+    ``` 
+    #define SCALES_MODULE_NUM 4
+    ```
+
+### Автопид (Pid calibrate)
+
 Выполняется в два этапа:
 В configuration.h устанавливается
 ```
  #define AUTOPID_RUN 1
- #define SCALES_MODULE_NUM Х (Х = количество весов)
+ #define SCALES_MODULE_NUM X (X = количество весов)
 ```
 Выполняется прошивка п.2.3
 После прошивки начнется автоматическая настройдка PID, по окончании на экране появится надпись "Прошей часть 2"
 сменить на #define AUTOPID_RUN 0
 и выполнить п.2.3
 
-###Прошивка теста кулера
-В configuration.h раскомментировать // #define PWM_TEST
+### Прошивка теста кулера
+
+Выполняется при необходимости
+В configuration.h раскомментировать 
+```
+// #define PWM_TEST
+```
 выполнить п.2.3
-Начнется тест кулера на всех доступных частотах с заполнением ШИМ 100-10% и выводом режима работы на экран. По окнчании теста, ориентируясь на свои предпочтения по уровню шума и качеству работы кулера установить в configuration.h #define PWM_11_FREQUENCY желаемую частоту,  закмментировать #define PWM_TEST, прошить МК п.2.3
+Начнется тест кулера на всех доступных частотах с заполнением ШИМ 100-10% и выводом режима работы на экран. По окончании теста, ориентируясь на свои предпочтения по уровню шума и качеству работы кулера установить в configuration.h 
+```
+#define PWM_11_FREQUENCY
+```
+желаемую частоту, закомментировать 
+```
+#define PWM_TEST
+```
 
+прошить МК п.2.3
 
-> Если после прошивки и в процессе эксплуатации на экране появятся ошибки, обратитесь к файлу configuration.h
+!!! warning annotate "Ошибки при старте"
+    Если после прошивки и в процессе эксплуатации на экране появятся ошибки, обратитесь к файлу configuration.h
 
 ## Учебное видео
 <div class="video-wrapper">
@@ -86,3 +149,5 @@ pio run -e EEPPB -t upload
 [группа в телеграмм :fontawesome-solid-paper-plane:](https://t.me/iDryer){ .md-button }
 
 [Contributing :material-file-edit:](https://github.com/pavluchenkor/iDryerController)
+
+
