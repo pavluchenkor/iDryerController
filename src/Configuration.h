@@ -98,17 +98,27 @@ buzzer beeps every time the heater comes on
   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
  */
-#define TEMP_SENSOR_0 11 // This is thermistor 0  /EPCOS 100K B57560G104F - 6
+
+#define TEMP_SENSOR_0 5
 
 #define TMP_MIN 1
 #define TMP_MAX 130
-#define HUMIDITY_HYSTERESIS 5 // 10
-#define TEMP_HYSTERESIS 5     // 5
+#define HUMIDITY_HYSTERESIS 5
+#define TEMP_HYSTERESIS 5
+
+/**********************
+110 Celsius enabler
+100 or 110
+ ********************/
+ 
+ #define CE 110 //*
 
 
 // Linear Temperature Calibration for BME280
-#define T_0 0.0
-#define T_100 100
+#define MIN_CALIB_TEMP 25           // Regular ambient temperature
+#define MAX_CALIB_TEMP CE           //!! Do not edit 
+#define REAL_CALIB_TEMP_MIN 27      // BME280 readings at regular air temperature
+#define REAL_CALIB_TEMP_MAX 120     // BME280 readings during thermocouple calibration
 
 // Polynomial Temperature Calibration for BME280
 // #define COEFF_A 0.0
@@ -120,6 +130,7 @@ buzzer beeps every time the heater comes on
 // #define COEFF_B -0.010865
 // #define COEFF_C 0.484942
 // #define COEFF_D -3.841228
+
 
 /**********************
 Select the power-on algorithm.

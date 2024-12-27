@@ -25,6 +25,12 @@
 #define DEBUG_PRINT(x)
 #endif
 
+// Пороговые значения для температурных фаз
+#define HEATING_THRESHOLD 1.5         // Порог для агрессивного нагрева (°C)
+#define OVERHEAT_THRESHOLD 0.5        // Порог перегрева (°C) для активации защиты от перегрева
+#define CRITICAL_OVERHEAT 1         // Критическая температура (°C)
+
+
 // #define DEBUG
 #ifdef DEBUG
 uint8_t testPWM = 0;
@@ -388,8 +394,11 @@ public:
         //                 COEFF_B * (data.bmeTemp * data.bmeTemp) +
         //                 COEFF_C * data.bmeTemp +
         //                 COEFF_D;
-        float slope = (100.0 - T_0) / (T_100 - T_0);  
-        float offset = T_0 - (slope * T_0);
+
+        float slope = (float)(REAL_CALIB_TEMP_MAX - REAL_CALIB_TEMP_MIN) / (float)(MAX_CALIB_TEMP - MIN_CALIB_TEMP);
+        float offset = (float)REAL_CALIB_TEMP_MIN - (slope * (float)MIN_CALIB_TEMP);
+
+
         data.bmeTemp = slope * data.bmeTemp + offset;
 
         data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2.0;
@@ -1162,7 +1171,6 @@ void loop()
 
         if (iDryer.data.flag)
         {
-
             iDryer.data.flagTimeCounter ? analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)) : analogWrite(FAN, 255);
             Input = iDryer.data.ntcTemp;
             pid.Compute();
@@ -1776,22 +1784,73 @@ void getData()
 void setPoint()
 {
 
-    if (iDryer.data.bmeTemp < iDryer.data.setTemp)
-    {
-        Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
+    // if (iDryer.data.bmeTemp < iDryer.data.setTemp)
+    // {
+    //     Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
+    //     analogWrite(FAN, 255);
+    // }
+    // else
+    // {
+    //     Setpoint = iDryer.data.setTemp - iDryer.data.bmeTemp + iDryer.data.setTemp;
+    //     if (Setpoint > iDryer.data.setTemp + iDryer.data.deltaT)
+    //         Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
+    //         analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
+    // }
+
+    // if (Setpoint > TMP_MAX)
+    //     Setpoint = TMP_MAX;
+
+    // pid.SetTunings(iDryer.data.Kp, iDryer.data.Ki, iDryer.data.Kd, PID_TYPE);
+    // DEBUG_PRINT(Setpoint);
+
+    float currentTemp = iDryer.data.bmeTemp;                    // Текущая температура
+    float desiredTemp = (float)iDryer.data.setTemp - 0.5f;      // Заданная температура
+    float deltaT = iDryer.data.deltaT;                        // Дополнительный коэффициент для агрессивного нагрева
+
+    float slope = (float)(REAL_CALIB_TEMP_MAX - REAL_CALIB_TEMP_MIN) / (float)(MAX_CALIB_TEMP - MIN_CALIB_TEMP);
+    float offset = (float)REAL_CALIB_TEMP_MIN - (slope * (float)MIN_CALIB_TEMP);
+    float raw_bme_temp = (currentTemp - REAL_CALIB_TEMP_MIN) / slope + MIN_CALIB_TEMP;
+
+    // Отключение при критическом перегреве
+    if (currentTemp >= desiredTemp + CRITICAL_OVERHEAT) {
+        Setpoint = 0;
+        // pid.Compute();
+        // heater(Output, dimmer);
+        // analogWrite(FAN, 255); // Максимальная скорость вентилятора для охлаждения
+        return;
     }
-    else
-    {
-        Setpoint = iDryer.data.setTemp - iDryer.data.bmeTemp + iDryer.data.setTemp;
-        if (Setpoint > iDryer.data.setTemp + iDryer.data.deltaT)
-            Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
+        
+    // Защита от перегрева
+    if (currentTemp >= (desiredTemp + OVERHEAT_THRESHOLD)) {
+        Setpoint = (slope * raw_bme_temp + offset) * 0.9f;
+        // analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
+    }
+
+    // Агрессивный нагрев
+    else if (currentTemp <= (desiredTemp - HEATING_THRESHOLD)) {
+        Setpoint = desiredTemp + deltaT;
+        // analogWrite(FAN, 255); // Максимальная скорость вентилятора для быстрого нагрева
+    }
+
+    // Мягкое поддержание температуры
+    else {
+        // Плавное изменение температуры
+        float temperatureDifference = currentTemp - desiredTemp;
+        if (temperatureDifference > OVERHEAT_THRESHOLD) {
+            Setpoint = desiredTemp - (temperatureDifference * 0.1f);
+            // analogWrite(FAN, 255); // Максимальная скорость вентилятора для охлаждения
+        } else if (temperatureDifference < -HEATING_THRESHOLD) {
+            Setpoint = desiredTemp + deltaT;
+            // analogWrite(FAN, 255); // Максимальная скорость вентилятора для быстрого нагрева
+        } else {
+            Setpoint = desiredTemp; // Поддерживаем заданную температуру
+            // analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
+        }
     }
 
     if (Setpoint > TMP_MAX)
-        Setpoint = TMP_MAX;
+    Setpoint = TMP_MAX;
 
-    pid.SetTunings(iDryer.data.Kp, iDryer.data.Ki, iDryer.data.Kd, PID_TYPE);
-    DEBUG_PRINT(Setpoint);
 }
 
 void autoPid()
