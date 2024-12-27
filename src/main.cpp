@@ -1749,60 +1749,8 @@ void getData()
     }
 }
 
-// void setPoint()
-// {
-//     if (round((double)iDryer.data.bmeTemp) <= iDryer.data.setTemp && !iDryer.data.flagTimeCounter)
-//     {
-//         Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
-//     }
-//     else if (round((double)iDryer.data.bmeTemp) + 2 < iDryer.data.setTemp && iDryer.data.flagTimeCounter)
-//     {
-//         Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
-//     }
-//     else if (round((double)iDryer.data.bmeTemp) > iDryer.data.setTemp)
-//     {
-//         Setpoint = iDryer.data.setTemp - iDryer.data.deltaT;
-//     }
-//     else if (round((double)iDryer.data.bmeTemp) < iDryer.data.setTemp)
-//     {
-//         Setpoint = iDryer.data.setTemp - iDryer.data.bmeTemp + iDryer.data.setTemp;
-//         if (Setpoint > iDryer.data.setTemp + iDryer.data.deltaT)
-//             Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
-//     }
-//     else if (round((double)iDryer.data.bmeTemp) == iDryer.data.setTemp)
-//     {
-//         Setpoint = iDryer.data.setTemp;
-//     }
-
-//     if (Setpoint > TMP_MAX)
-//         Setpoint = TMP_MAX;
-
-//     pid.SetTunings(iDryer.data.Kp, iDryer.data.Ki, iDryer.data.Kd, PID_TYPE);
-//     DEBUG_PRINT(Setpoint);
-// }
-
 void setPoint()
 {
-
-    // if (iDryer.data.bmeTemp < iDryer.data.setTemp)
-    // {
-    //     Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
-    //     analogWrite(FAN, 255);
-    // }
-    // else
-    // {
-    //     Setpoint = iDryer.data.setTemp - iDryer.data.bmeTemp + iDryer.data.setTemp;
-    //     if (Setpoint > iDryer.data.setTemp + iDryer.data.deltaT)
-    //         Setpoint = iDryer.data.setTemp + iDryer.data.deltaT;
-    //         analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
-    // }
-
-    // if (Setpoint > TMP_MAX)
-    //     Setpoint = TMP_MAX;
-
-    // pid.SetTunings(iDryer.data.Kp, iDryer.data.Ki, iDryer.data.Kd, PID_TYPE);
-    // DEBUG_PRINT(Setpoint);
-
     float currentTemp = iDryer.data.bmeTemp;                    // Текущая температура
     float desiredTemp = (float)iDryer.data.setTemp - 0.5f;      // Заданная температура
     float deltaT = iDryer.data.deltaT;                        // Дополнительный коэффициент для агрессивного нагрева
@@ -1814,22 +1762,17 @@ void setPoint()
     // Отключение при критическом перегреве
     if (currentTemp >= desiredTemp + CRITICAL_OVERHEAT) {
         Setpoint = 0;
-        // pid.Compute();
-        // heater(Output, dimmer);
-        // analogWrite(FAN, 255); // Максимальная скорость вентилятора для охлаждения
         return;
     }
         
     // Защита от перегрева
     if (currentTemp >= (desiredTemp + OVERHEAT_THRESHOLD)) {
         Setpoint = (slope * raw_bme_temp + offset) * 0.9f;
-        // analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
     }
 
     // Агрессивный нагрев
     else if (currentTemp <= (desiredTemp - HEATING_THRESHOLD)) {
         Setpoint = desiredTemp + deltaT;
-        // analogWrite(FAN, 255); // Максимальная скорость вентилятора для быстрого нагрева
     }
 
     // Мягкое поддержание температуры
@@ -1838,13 +1781,10 @@ void setPoint()
         float temperatureDifference = currentTemp - desiredTemp;
         if (temperatureDifference > OVERHEAT_THRESHOLD) {
             Setpoint = desiredTemp - (temperatureDifference * 0.1f);
-            // analogWrite(FAN, 255); // Максимальная скорость вентилятора для охлаждения
         } else if (temperatureDifference < -HEATING_THRESHOLD) {
             Setpoint = desiredTemp + deltaT;
-            // analogWrite(FAN, 255); // Максимальная скорость вентилятора для быстрого нагрева
         } else {
             Setpoint = desiredTemp; // Поддерживаем заданную температуру
-            // analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
         }
     }
 
