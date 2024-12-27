@@ -25,61 +25,7 @@
     pio pkg update
     ```
 
-
-
-1. Прошивка ядра MiniCore
-Потребуется программатор USBASP
-
-2.1 смена фьюзов
-```
-
-```
-
-=== "Atmega328P"
-
-    ``` 
-    pio run -e fuses -t fuses
-    ```
-
-=== "Atmega328PB"
-
-    ```
-    pio run -e fuses -t fuses
-    ```
-
-
-2.2 прошивка EEPROM<br>
-
-=== "Atmega328P"
-
-    ``` 
-    pio run -e EEP -t uploadeep
-    ```
-
-=== "Atmega328PB"
-
-    ```
-    pio run -e EEPPB -t uploadeep
-    ```
-
-
-###Прошивка общая
-2.3 прошивка МК<br>
-
-=== "Atmega328P"
-
-    ``` 
-    pio run -e EEP -t upload
-    ```
-
-=== "Atmega328PB"
-
-    ```
-    pio run -e EEPPB -t upload
-    ```
-
-
-### Прошивка для работы с модулями весов
+### Выбор количества модулей весов
 
 === "2 модуля"
 
@@ -98,9 +44,59 @@
     #define SCALES_MODULE_NUM 4
     ```
 
+### 1. Прошивка ядра MiniCore
+
+Потребуется программатор USBASP
+
+2.1 смена фьюзов
+
+
+=== "Atmega328P"
+
+    ``` 
+    pio run -e fuses -t fuses
+    ```
+
+=== "Atmega328PB"
+
+    ```
+    pio run -e fuses -t fuses
+    ```
+
+### 2.2 прошивка EEPROM
+
+=== "Atmega328P"
+
+    ``` 
+    pio run -e EEP -t uploadeep
+    ```
+
+=== "Atmega328PB"
+
+    ```
+    pio run -e EEPPB -t uploadeep
+    ```
+
+
+### Прошивка микроконтроллера
+
+=== "Atmega328P"
+
+    ``` 
+    pio run -e EEP -t upload
+    ```
+
+=== "Atmega328PB"
+
+    ```
+    pio run -e EEPPB -t upload
+    ```
+
 ### Автопид (Pid calibrate)
 
-Выполняется в два этапа:
+Выполняется при необходимости
+
+Производится в два этапа:
 В configuration.h устанавливается
 ```
  #define AUTOPID_RUN 1
@@ -114,6 +110,7 @@
 ### Прошивка теста кулера
 
 Выполняется при необходимости
+
 В configuration.h раскомментировать 
 ```
 // #define PWM_TEST
@@ -132,6 +129,7 @@
 
 !!! warning annotate "Ошибки при старте"
     Если после прошивки и в процессе эксплуатации на экране появятся ошибки, обратитесь к файлу configuration.h
+
 
 ## Учебное видео
 <div class="video-wrapper">
