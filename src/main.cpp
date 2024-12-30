@@ -340,17 +340,15 @@ struct Data
 /* 07 */ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu);
 /* 08 */ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu);
 /* 09 */ void piii(uint16_t time_ms);
-/* 10 */ void dryStart();
-/* 11 */ void storageStart();
-/* 12 */ void autoPidM();
-/* 13 */
-uint32_t printError(uint32_t error);
-/* 14 */
-uint32_t readError();
-/* 15 */
-bool setError(uint8_t errorCode);
-/* 16 */ void displayPrint(struct subMenu *subMenu);
-/* 17 */ void displayPrintMode();
+/* 10 */ void async_piii(uint16_t time_ms);
+/* 11 */ void dryStart();
+/* 12 */ void storageStart();
+/* 13 */ void autoPidM();
+/* 14 */ uint32_t printError(uint32_t error);
+/* 15 */ uint32_t readError();
+/* 16 */ bool setError(uint8_t errorCode);
+/* 17 */ void displayPrint(struct subMenu *subMenu);
+/* 18 */ void displayPrintMode();
 void pwm_test();
 void offset_set_by_num(uint8_t numSensor);
 void zero_set_by_num(uint8_t numSensor);
@@ -1020,7 +1018,7 @@ void loop()
             WDT_DISABLE();
             state = MENU;
             heaterOFF();
-            piii(500);
+            async_piii(500);
             subMenuM.levelUpdate = UP;
             subMenuM.parentID = 0;
             subMenuM.pointerPos = 0;
@@ -1049,7 +1047,7 @@ void loop()
 
         while (digitalRead(encBut))
         {
-            piii(500);
+            async_piii(500);
             delay(500);
         }
         break;
@@ -1125,7 +1123,7 @@ void loop()
 
         if (iDryer.data.setTime == 0)
         {
-            piii(1000);
+            async_piii(1000);
             DEBUG_PRINT(5);
             subMenuM.parentID = 5; // ID пункта хранение
             heaterOFF();
@@ -1546,6 +1544,16 @@ void piii(uint16_t time_ms)
     delay(time_ms);
     digitalWrite(BUZZER_PIN, LOW);
     delay(time_ms);
+}
+
+void async_piii(uint16_t time_ms)
+{
+    if (state == AUTOPID)
+    {
+        return;
+    }
+
+    buzzer.buzz(time_ms);
 }
 
 void heater(uint16_t Output, uint16_t &dimmer)
@@ -2072,7 +2080,7 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint1
     case WAIT_ALERT_MASS_1:
         if (mass < ALERT_MASS && mass > FILAMENT_SENSOR_MASS)
         {
-            piii(ALERT_MASS_PIII_TIME * 1000);
+            async_piii(ALERT_MASS_PIII_TIME * 1000);
             filamentExpenseFlag[sensorNum] = WAIT_ALERT_MASS_2;
         }
         break;
@@ -2080,7 +2088,7 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint1
         if (mass < FILAMENT_SENSOR_MASS)
         {
             digitalWrite(FILAMENT_SENSOR, 1);
-            piii(FILAMENT_SENSOR_MASS_PIII_TIME * 1000);
+            async_piii(FILAMENT_SENSOR_MASS_PIII_TIME * 1000);
             filamentExpenseFlag[sensorNum] = WAIT_RESET;
         }
         break;
