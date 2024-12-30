@@ -26,10 +26,9 @@
 #endif
 
 // Пороговые значения для температурных фаз
-#define HEATING_THRESHOLD 1.5         // Порог для агрессивного нагрева (°C)
-#define OVERHEAT_THRESHOLD 0.5        // Порог перегрева (°C) для активации защиты от перегрева
-#define CRITICAL_OVERHEAT 1         // Критическая температура (°C)
-
+#define HEATING_THRESHOLD 1.5  // Порог для агрессивного нагрева (°C)
+#define OVERHEAT_THRESHOLD 0.5 // Порог перегрева (°C) для активации защиты от перегрева
+#define CRITICAL_OVERHEAT 1    // Критическая температура (°C)
 
 // #define DEBUG
 #ifdef DEBUG
@@ -334,6 +333,9 @@ struct Data
 /* 01 */ void heaterOFF();
 /* 02 */ void heater(uint16_t Output, uint16_t &dimmer);
 /* 03 */ void heaterON();
+void fanMAX();
+void fanOFF();
+void fanON(int percent);
 /* 04 */ void updateIDyerData();
 /* 05 */
 /* 06 */ void screen(struct subMenu *subMenu);
@@ -396,7 +398,6 @@ public:
 
         float slope = (float)(REAL_CALIB_TEMP_MAX - REAL_CALIB_TEMP_MIN) / (float)(MAX_CALIB_TEMP - MIN_CALIB_TEMP);
         float offset = (float)REAL_CALIB_TEMP_MIN - (slope * (float)MIN_CALIB_TEMP);
-
 
         data.bmeTemp = slope * data.bmeTemp + offset;
 
@@ -871,6 +872,8 @@ void setup()
 
     delay(3000);
 
+    fanOFF();
+
     menuSize = sizeof(menuTxt) / sizeof(menuTxt[0]);
 
     uint16_t test = eeprom_read_word(&menuVal[0]);
@@ -884,6 +887,8 @@ void setup()
 
     if (errorCode)
     {
+        fanON(100);
+        
         oled.clear();
 
         do
@@ -1032,7 +1037,7 @@ void loop()
     {
     case NTC_ERROR:
 
-        analogWrite(FAN, 255);
+        fanMAX();
         heaterOFF();
 
         oled.clear();
@@ -1062,9 +1067,9 @@ void loop()
         if (iDryer.getData())
         {
             if (iDryer.data.ntcTemp > 45)
-                analogWrite(FAN, 255);
+                fanMAX();
             else if (iDryer.data.ntcTemp < 40)
-                analogWrite(FAN, 0);
+                fanOFF();
         }
 
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
@@ -1109,7 +1114,7 @@ void loop()
         getData();
         setPoint();
         screenUpdate();
-        iDryer.data.flagTimeCounter ? analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)) : analogWrite(FAN, 255);
+        iDryer.data.flagTimeCounter ? fanON(iDryer.data.setFan) : fanMAX();
         Input = iDryer.data.ntcTemp;
         pid.Compute();
         heater(Output, dimmer);
@@ -1148,7 +1153,7 @@ void loop()
 
         if (iDryer.data.flag)
         {
-            iDryer.data.flagTimeCounter ? analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)) : analogWrite(FAN, 255);
+            iDryer.data.flagTimeCounter ? fanON(iDryer.data.setFan) : fanMAX();
             Input = iDryer.data.ntcTemp;
             pid.Compute();
             heater(Output, dimmer);
@@ -1173,7 +1178,7 @@ void loop()
 
             if (iDryer.data.ntcTemp <= iDryer.data.bmeTemp + TEMP_HYSTERESIS)
             {
-                analogWrite(FAN, 0);
+                fanOFF();
             }
 #if ACTIVATION_HYSTERESIS_MODE == 1
             if ((iDryer.data.bmeHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag) || (iDryer.data.bmeTemp <= iDryer.data.setHumidity - TEMP_HYSTERESIS && !iDryer.data.flag))
@@ -1182,7 +1187,7 @@ void loop()
 #endif
             {
                 iDryer.data.flag = true;
-                analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
+                fanON(map(iDryer.data.setFan, 0, 100, 0, 255));
                 heaterON();
             }
         }
@@ -1437,7 +1442,7 @@ void autoPidM()
     iDryer.data.flag = true;
     iDryer.data.flagTimeCounter = false;
     iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AVTOPID_TEMPERATURE]);
-    analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
+    fanON(map(iDryer.data.setFan, 0, 100, 0, 255));
     WDT_DISABLE();
 #else
     state = MENU;
@@ -1584,6 +1589,21 @@ void heaterON()
     WDT_DISABLE();
 }
 
+void fanMAX()
+{
+    fanON(100);
+}
+
+void fanOFF()
+{
+    fanON(0);
+}
+
+void fanON(int percent)
+{
+    analogWrite(FAN, map(percent, 0, 100, 0, 255));
+}
+
 void heaterOFF()
 {
     WDT(WDTO_250MS, 1);
@@ -1667,9 +1687,9 @@ void pwm_test()
         uint8_t k = 100;
         while (k > 0)
         {
-            analogWrite(FAN, 0);
+            fanOFF();
             delay(2000);
-            analogWrite(FAN, 255 / 100 * k);
+            fanON(255 / 100 * k);
             oled.clear();
             oled.firstPage();
             do
@@ -1757,46 +1777,54 @@ void getData()
 
 void setPoint()
 {
-    float currentTemp = iDryer.data.bmeTemp;                    // Текущая температура
-    float desiredTemp = (float)iDryer.data.setTemp - 0.5f;      // Заданная температура
-    float deltaT = iDryer.data.deltaT;                        // Дополнительный коэффициент для агрессивного нагрева
+    float currentTemp = iDryer.data.bmeTemp;               // Текущая температура
+    float desiredTemp = (float)iDryer.data.setTemp - 0.5f; // Заданная температура
+    float deltaT = iDryer.data.deltaT;                     // Дополнительный коэффициент для агрессивного нагрева
 
     float slope = (float)(REAL_CALIB_TEMP_MAX - REAL_CALIB_TEMP_MIN) / (float)(MAX_CALIB_TEMP - MIN_CALIB_TEMP);
     float offset = (float)REAL_CALIB_TEMP_MIN - (slope * (float)MIN_CALIB_TEMP);
     float raw_bme_temp = (currentTemp - REAL_CALIB_TEMP_MIN) / slope + MIN_CALIB_TEMP;
 
     // Отключение при критическом перегреве
-    if (currentTemp >= desiredTemp + CRITICAL_OVERHEAT) {
+    if (currentTemp >= desiredTemp + CRITICAL_OVERHEAT)
+    {
         Setpoint = 0;
         return;
     }
-        
+
     // Защита от перегрева
-    if (currentTemp >= (desiredTemp + OVERHEAT_THRESHOLD)) {
+    if (currentTemp >= (desiredTemp + OVERHEAT_THRESHOLD))
+    {
         Setpoint = (slope * raw_bme_temp + offset) * 0.9f;
     }
 
     // Агрессивный нагрев
-    else if (currentTemp <= (desiredTemp - HEATING_THRESHOLD)) {
+    else if (currentTemp <= (desiredTemp - HEATING_THRESHOLD))
+    {
         Setpoint = desiredTemp + deltaT;
     }
 
     // Мягкое поддержание температуры
-    else {
+    else
+    {
         // Плавное изменение температуры
         float temperatureDifference = currentTemp - desiredTemp;
-        if (temperatureDifference > OVERHEAT_THRESHOLD) {
+        if (temperatureDifference > OVERHEAT_THRESHOLD)
+        {
             Setpoint = desiredTemp - (temperatureDifference * 0.1f);
-        } else if (temperatureDifference < -HEATING_THRESHOLD) {
+        }
+        else if (temperatureDifference < -HEATING_THRESHOLD)
+        {
             Setpoint = desiredTemp + deltaT;
-        } else {
+        }
+        else
+        {
             Setpoint = desiredTemp; // Поддерживаем заданную температуру
         }
     }
 
     if (Setpoint > TMP_MAX)
-    Setpoint = TMP_MAX;
-
+        Setpoint = TMP_MAX;
 }
 
 void autoPid()
@@ -1820,7 +1848,7 @@ void autoPid()
 
     unsigned long microseconds;
 
-    analogWrite(FAN, 255);
+    fanMAX();
 
     tuner.startTuningLoop(micros());
     if (Servo.state != CLOSED)
@@ -1871,7 +1899,7 @@ void autoPid()
     }
 
     heaterOFF();
-    analogWrite(FAN, 255);
+    fanMAX();
 
     eeprom_update_word(&menuVal[DEF_PID_KP], (uint16_t)(abs(tuner.getKp()) * 100));
     eeprom_update_word(&menuVal[DEF_PID_KI], (uint16_t)(abs(tuner.getKi()) * 100));
@@ -2064,15 +2092,15 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint1
         if (mass > ALERT_MASS)
         {
             filamentExpenseFlag[sensorNum] = UPDATE_DATA;
-            eeprom_update_word((uint16_t*)&spoolMassArray[sensorNum], 0);
+            eeprom_update_word((uint16_t *)&spoolMassArray[sensorNum], 0);
         }
         break;
     case UPDATE_DATA:
-        eeprom_update_word((uint16_t*)&spoolMassArray[sensorNum], mass > 10 ? mass : 0);
+        eeprom_update_word((uint16_t *)&spoolMassArray[sensorNum], mass > 10 ? mass : 0);
         filamentExpenseFlag[sensorNum] = START;
         break;
     case START:
-        if (eeprom_read_word((const uint16_t*)&spoolMassArray[sensorNum]) - mass >= FILAMENT_REFERENCE_FLOW_RATE_MASS)
+        if (eeprom_read_word((const uint16_t *)&spoolMassArray[sensorNum]) - mass >= FILAMENT_REFERENCE_FLOW_RATE_MASS)
         {
             filamentExpenseFlag[sensorNum] = WAIT_ALERT_MASS_1;
         }
