@@ -1187,7 +1187,7 @@ void loop()
 #endif
             {
                 iDryer.data.flag = true;
-                fanON(map(iDryer.data.setFan, 0, 100, 0, 255));
+                fanON(iDryer.data.setFan);
                 heaterON();
             }
         }
@@ -1442,7 +1442,7 @@ void autoPidM()
     iDryer.data.flag = true;
     iDryer.data.flagTimeCounter = false;
     iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AVTOPID_TEMPERATURE]);
-    fanON(map(iDryer.data.setFan, 0, 100, 0, 255));
+    fanON((iDryer.data.setFan);
     WDT_DISABLE();
 #else
     state = MENU;
