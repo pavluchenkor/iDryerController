@@ -250,7 +250,7 @@ if your SCALES_MODULE_NUM not 0 do this:
 #define ALERT_MASS_PIII_TIME 5            // sec
 #define FILAMENT_SENSOR_MASS_PIII_TIME 15 // sec
 
-#define MENU_SCALE_SWITCH_TIME 15000
+#define MENU_SCALE_SWITCH_TIME 5000
 
 /**********************
 My presets name

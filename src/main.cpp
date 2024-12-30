@@ -997,7 +997,7 @@ void loop()
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
 
     hx711Multi.readMassMulti();
-    filamentCheck(sensorNum, hx711Multi.getMassMulti(sensorNum), state, (uint16_t *)prevSpoolMass);
+    filamentCheck(sensorNum, hx711Multi.getMassMulti(sensorNum), state, prevSpoolMass);
     sensorNum++;
 
     if (sensorNum >= SCALES_MODULE_NUM)
