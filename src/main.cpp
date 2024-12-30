@@ -1689,7 +1689,7 @@ void pwm_test()
         {
             fanOFF();
             delay(2000);
-            fanON(255 / 100 * k);
+            fanON(k);
             oled.clear();
             oled.firstPage();
             do
