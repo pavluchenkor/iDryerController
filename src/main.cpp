@@ -358,7 +358,7 @@ void setSpool1();
 void setSpool2();
 void setSpool3();
 void setSpool4();
-void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, uint16_t spoolMassArray[]);
+void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint16_t spoolMassArray[]);
 /* 18 */ // PID TUNING;
 /* 20 */ void scaleShow();
 // /* 21 */ void getdataAndSetpoint();
@@ -2037,7 +2037,7 @@ void scaleShow()
     WDT_DISABLE();
 }
 
-void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, uint16_t spoolMassArray[])
+void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint16_t spoolMassArray[])
 {
 #ifdef FILAMENT_SENSOR_ON
 
@@ -2056,15 +2056,15 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, uint16_t spool
         if (mass > ALERT_MASS)
         {
             filamentExpenseFlag[sensorNum] = UPDATE_DATA;
-            eeprom_update_word((uint16_t *)&spoolMassArray[sensorNum], 0);
+            eeprom_update_word((uint16_t*)&spoolMassArray[sensorNum], 0);
         }
         break;
     case UPDATE_DATA:
-        eeprom_update_word((uint16_t *)&spoolMassArray[sensorNum], mass > 10 ? mass : 0);
+        eeprom_update_word((uint16_t*)&spoolMassArray[sensorNum], mass > 10 ? mass : 0);
         filamentExpenseFlag[sensorNum] = START;
         break;
     case START:
-        if ((int16_t)eeprom_read_word(&spoolMassArray[sensorNum]) - mass >= FILAMENT_REFERENCE_FLOW_RATE_MASS)
+        if (eeprom_read_word((const uint16_t*)&spoolMassArray[sensorNum]) - mass >= FILAMENT_REFERENCE_FLOW_RATE_MASS)
         {
             filamentExpenseFlag[sensorNum] = WAIT_ALERT_MASS_1;
         }
