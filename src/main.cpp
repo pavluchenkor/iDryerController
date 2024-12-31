@@ -169,7 +169,7 @@ stateS state = MENU;
 uint8_t ERROR_COUNTER = 0;
 
 uint8_t globalErrorFuncUUID = 0;
-uint8_t errorTmpArray[32] = {0};
+bool errorTmpArray[32] = {false};
 
 const byte CLK = A1;
 const byte DT = A2;
@@ -1526,14 +1526,18 @@ uint32_t readError()
 uint32_t printError(uint32_t error)
 {
     uint32_t errorCounter = 0;
+    
     for (uint8_t i = 0; i < 32; i++)
     {
-        if (error & (1UL << i))
+        auto errorAccured = error & (1UL << i);
+        errorTmpArray[i] = errorAccured;
+        
+        if (errorAccured)
         {
-            errorTmpArray[i] = 1;
             errorCounter++;
         }
     }
+
     return errorCounter;
 }
 
