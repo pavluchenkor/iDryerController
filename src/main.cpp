@@ -1513,6 +1513,10 @@ void setError(uint8_t errorCode)
     {
         wdtError |= (1U << errorCode);
     }
+    else
+    {
+        wdtError = 0;
+    }
 
     eeprom_write_dword(&ERROR_CODE, wdtError);
 }
