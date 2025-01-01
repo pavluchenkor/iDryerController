@@ -43,7 +43,6 @@ uint8_t isrFlag = 0;
 #endif
 
 uint32_t ERROR_CODE EEMEM = 0x0;
-uint32_t WDT_ERROR = 0;
 
 #if REV == 0
 #define ERROR
@@ -169,7 +168,6 @@ stateS state = MENU;
 uint8_t ERROR_COUNTER = 0;
 
 uint8_t globalErrorFuncUUID = 0;
-bool errorTmpArray[32] = {false};
 
 const byte CLK = A1;
 const byte DT = A2;
@@ -346,9 +344,9 @@ void async_piii(uint16_t time_ms);
 /* 10 */ void dryStart();
 /* 11 */ void storageStart();
 /* 12 */ void autoPidM();
-/* 13 */ uint32_t printError(uint32_t error);
+/* 13 */
 /* 14 */ uint32_t readError();
-/* 15 */ bool setError(uint8_t errorCode);
+/* 15 */ void setError(uint8_t errorCode);
 /* 16 */ void displayPrint(struct subMenu *subMenu);
 /* 17 */ void displayPrintMode();
 void pwm_test();
@@ -369,8 +367,7 @@ void drawLine(const char *text, int lineIndex, bool background = false, bool cen
 /* 22 */ // CASE MENU
 /* 23 */ // CASE DRY
 /* 24 */ // CASE STORAGE
-/* 25 */
-void autoPid();
+/* 25 */ void autoPid();
 /* 26 */ // NTC MIN
 /* 27 */ // NTC MAX
 /* 28 */ // BME MIN
@@ -896,9 +893,9 @@ void setup()
             drawLine(printMenuItem(&serviceTxt[DEF_T_ERROR]), 1, true);
 
             uint8_t charCounter = 0;
-            for (uint8_t i = 0; i < 32; i++)
+            for (uint8_t i = 0; i < sizeof(errorCode) * 8; i++)
             {
-                if (errorTmpArray[i])
+                if (errorCode & (1U << i))
                 {
                     snprintf(serviceString, sizeof(serviceString), "%2d", i);
                     drawLine(serviceString, charCounter / 4 + 2, true, false, (charCounter * 32) % 128 + 4);
@@ -913,7 +910,6 @@ void setup()
         {
             piii(500);
         }
-        eeprom_write_dword(&ERROR_CODE, 0UL);
 
         WDT(WDTO_15MS, 0);
         while (true)
@@ -1500,7 +1496,6 @@ void WDT(uint16_t time, uint8_t current_function_uuid)
 ISR(WDT_vect)
 {
     setError(globalErrorFuncUUID);
-    // wdt_reset();
 }
 
 void WDT_DISABLE()
@@ -1510,35 +1505,21 @@ void WDT_DISABLE()
     wdt_disable();
 }
 
-bool setError(uint8_t errorCode)
+void setError(uint8_t errorCode)
 {
-    WDT_ERROR |= (1UL << errorCode);
-    eeprom_write_dword(&ERROR_CODE, WDT_ERROR);
-    return true;
+    auto wdtError = readError();
+
+    if (errorCode != 0)
+    {
+        wdtError |= (1U << errorCode);
+    }
+
+    eeprom_write_dword(&ERROR_CODE, wdtError);
 }
 
 uint32_t readError()
 {
-    uint32_t wdt_error = eeprom_read_dword(&ERROR_CODE);
-    return printError(wdt_error);
-}
-
-uint32_t printError(uint32_t error)
-{
-    uint32_t errorCounter = 0;
-    
-    for (uint8_t i = 0; i < 32; i++)
-    {
-        auto errorAccured = error & (1UL << i);
-        errorTmpArray[i] = errorAccured;
-        
-        if (errorAccured)
-        {
-            errorCounter++;
-        }
-    }
-
-    return errorCounter;
+    return eeprom_read_dword(&ERROR_CODE);
 }
 
 void piii(uint16_t time_ms)
