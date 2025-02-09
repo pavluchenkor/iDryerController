@@ -13,6 +13,7 @@
 #include <Configuration.h>
 #include "menu/menu.h"
 #include "menu/def.h"
+#include "math/math_extensions.h"
 #include "HX711.h"
 #include <EncButton.h>
 #include <avr/io.h>
@@ -286,6 +287,7 @@ struct Data
 {
     double ntcTemp = 0;
     float bmeTemp = 0;
+    float bmeTempCorrected = 0;
     float bmeHumidity = 0;
     bool optimalConditionsReachedFlag = false;
     unsigned long startTime = 0;
@@ -305,7 +307,9 @@ struct Data
 
     bool operator!=(const Data &other) const
     {
-        if (int(this->ntcTemp) != int(other.ntcTemp) || int(this->bmeTemp) != int(other.bmeTemp) || int(this->bmeHumidity) != int(other.bmeHumidity)
+        if (int(this->ntcTemp) != int(other.ntcTemp)
+        || int(this->bmeTemp) != int(other.bmeTemp)
+        || int(this->bmeHumidity) != int(other.bmeHumidity)
             // || int(this->startTime) == int(other.startTime)
             // || int(this->setTemp) == int(other.setTemp)
             // || int(this->setHumidity) == int(other.setHumidity)
@@ -386,19 +390,11 @@ public:
     bool getData()
     {
         data.ntcTemp = (ntc.analog2temp() + data.ntcTemp) / 2.0;
-        data.bmeTemp = bme.readTemperature();
-        // data.bmeTemp =  data.bmeTemp +
-        //                 COEFF_A * (data.bmeTemp * data.bmeTemp * data.bmeTemp) +
-        //                 COEFF_B * (data.bmeTemp * data.bmeTemp) +
-        //                 COEFF_C * data.bmeTemp +
-        //                 COEFF_D;
-
-        float slope = (float)(REAL_CALIB_TEMP_MAX - REAL_CALIB_TEMP_MIN) / (float)(MAX_CALIB_TEMP - MIN_CALIB_TEMP);
-        float offset = (float)REAL_CALIB_TEMP_MIN - (slope * (float)MIN_CALIB_TEMP);
-
-        data.bmeTemp = slope * data.bmeTemp + offset;
-
+        data.bmeTemp = (bme.readTemperature() + data.bmeTemp) / 2.0;
         data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2.0;
+
+        data.bmeTempCorrected = math::map_to_range(data.bmeTemp, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX, MIN_CALIB_TEMP, MAX_CALIB_TEMP);
+
         if (data != oldData && millis() - screenTime > SCREEN_UPADATE_TIME)
         {
             screenTime = millis();
@@ -410,7 +406,7 @@ public:
             data.flagScreenUpdate = false;
         }
 
-        if (uint8_t(ceil(data.bmeTemp)) >= uint8_t(data.setTemp) && !data.flagTimeCounter)
+        if (uint8_t(ceil(data.bmeTempCorrected)) >= data.setTemp && !data.flagTimeCounter)
             data.flagTimeCounter = true;
 
         if (data.ntcTemp < TMP_MIN)
@@ -419,10 +415,10 @@ public:
         if (data.ntcTemp > TMP_MAX + 10)
             return false;
 
-        if (data.bmeTemp < TMP_MIN)
+        if (data.bmeTempCorrected < TMP_MIN)
             return false;
 
-        if (data.bmeTemp > TMP_MAX + 10)
+        if (data.bmeTempCorrected > TMP_MAX + 10)
             return false;
 
         return true;
@@ -728,7 +724,7 @@ void displayPrint(struct subMenu *subMenu)
         if (subMenuM.parentID == 0)
         {
             char val[6];
-            snprintf(val, sizeof(val), "%2hu/%2hu", (uint16_t)iDryer.data.bmeHumidity, (uint16_t)iDryer.data.bmeTemp);
+            snprintf(val, sizeof(val), "%2hu/%2hu", (uint16_t)iDryer.data.bmeHumidity, (uint16_t)iDryer.data.bmeTempCorrected);
 #ifdef DEBUG
             snprintf(val, sizeof(val), "%4d", oldTime1 - oldTime2);
 #endif
@@ -779,34 +775,22 @@ void displayPrintMode()
         char val[4];
         drawLine(printMenuItem(&menuTxt[text]), 1);
 
-        snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
-        // snprintf(val, sizeof(val), "%2hu", (uint8_t)Setpoint);
+        snprintf(val, sizeof(val), "%2hu/%2hu", iDryer.data.setTemp, uint8_t(Setpoint));
         drawLine(val, 1, false, false);
         text == DEF_MENU_DRYING ? snprintf(val, sizeof(val), "%3hu", iDryer.data.setTime) : snprintf(val, sizeof(val), "%3hu", iDryer.data.setHumidity);
         drawLine(val, 1, true, false, 100);
 
-        for (uint8_t i = 0; i < 3; i++)
-        {
-            drawLine(printMenuItem(&serviceTxt[i + 6]), i + 2, false, false, 0);
-            text = i;
-            uint8_t data = 0;
-            switch (i)
-            {
-            case 0: // Воздух
-                data = trunc((double)iDryer.data.bmeTemp);
-                break;
-            case 1: // Нагреватель
-                data = iDryer.data.ntcTemp;
-                break;
-            case 2: // Влажность
-                data = iDryer.data.bmeHumidity;
-                break;
-            default:
-                break;
-            }
-            snprintf(val, sizeof(val), "%3hu", data);
-            drawLine(val, i + 2, false, false, 100);
-        }
+        drawLine(printMenuItem(&serviceTxt[0 + 6]), 0 + 2, false, false, 0);
+        snprintf(val, sizeof(val), "%2hu/%2hu", trunc((double)iDryer.data.bmeTempCorrected), trunc((double)iDryer.data.bmeTemp));
+        drawLine(val, 0 + 2, false, false, 100);
+
+        drawLine(printMenuItem(&serviceTxt[1 + 6]), 1 + 2, false, false, 0);
+        snprintf(val, sizeof(val), "%2hu", trunc((double)iDryer.data.ntcTemp));
+        drawLine(val, 1 + 2, false, false, 100);
+
+        drawLine(printMenuItem(&serviceTxt[2 + 6]), 2 + 2, false, false, 0);
+        snprintf(val, sizeof(val), "%2hu", trunc((double)iDryer.data.bmeHumidity));
+        drawLine(val, 2 + 2, false, false, 100);
     } while (oled.nextPage());
     iDryer.data.flagScreenUpdate = false;
     WDT_DISABLE();
@@ -885,7 +869,7 @@ void setup()
     if (errorCode)
     {
         fanON(100);
-        
+
         oled.clear();
 
         do
@@ -1155,7 +1139,7 @@ void loop()
             heater(Output, dimmer);
             Servo.check();
 
-            if (iDryer.data.setTemp <= iDryer.data.bmeTemp && iDryer.data.bmeHumidity <= iDryer.data.setHumidity)
+            if (iDryer.data.setTemp <= iDryer.data.bmeTempCorrected && iDryer.data.bmeHumidity <= iDryer.data.setHumidity)
             {
                 if (Servo.state == OPEN)
                     Servo.toggle();
@@ -1172,12 +1156,12 @@ void loop()
                 heaterOFF();
             }
 
-            if (iDryer.data.ntcTemp <= iDryer.data.bmeTemp + TEMP_HYSTERESIS)
+            if (iDryer.data.ntcTemp <= iDryer.data.bmeTempCorrected + TEMP_HYSTERESIS)
             {
                 fanOFF();
             }
 #if ACTIVATION_HYSTERESIS_MODE == 1
-            if ((iDryer.data.bmeHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag) || (iDryer.data.bmeTemp <= iDryer.data.setHumidity - TEMP_HYSTERESIS && !iDryer.data.flag))
+            if ((iDryer.data.bmeHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag) || (iDryer.data.bmeTemp <= iDryer.data.setTemp - TEMP_HYSTERESIS && !iDryer.data.flag))
 #else
             if (iDryer.data.bmeHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag)
 #endif
@@ -1748,10 +1732,10 @@ void getData()
             if (iDryer.data.ntcTemp > TMP_MAX + 10)
                 setError(27);
 
-            if (iDryer.data.bmeTemp < TMP_MIN)
+            if (iDryer.data.bmeTempCorrected < TMP_MIN)
                 setError(28);
 
-            if (iDryer.data.bmeTemp > TMP_MAX + 10)
+            if (iDryer.data.bmeTempCorrected > TMP_MAX + 10)
                 setError(29);
 
             setError(0);
@@ -1766,13 +1750,9 @@ void getData()
 
 void setPoint()
 {
-    float currentTemp = iDryer.data.bmeTemp;               // Текущая температура
-    float desiredTemp = (float)iDryer.data.setTemp - 0.5f; // Заданная температура
-    float deltaT = iDryer.data.deltaT;                     // Дополнительный коэффициент для агрессивного нагрева
-
-    float slope = (float)(REAL_CALIB_TEMP_MAX - REAL_CALIB_TEMP_MIN) / (float)(MAX_CALIB_TEMP - MIN_CALIB_TEMP);
-    float offset = (float)REAL_CALIB_TEMP_MIN - (slope * (float)MIN_CALIB_TEMP);
-    float raw_bme_temp = (currentTemp - REAL_CALIB_TEMP_MIN) / slope + MIN_CALIB_TEMP;
+    float currentTemp = iDryer.data.bmeTempCorrected; // Текущая температура
+    float desiredTemp = (float)iDryer.data.setTemp;   // Заданная температура
+    float deltaT = iDryer.data.deltaT;                // Дополнительный коэффициент для агрессивного нагрева
 
     // Отключение при критическом перегреве
     if (currentTemp >= desiredTemp + CRITICAL_OVERHEAT)
@@ -1781,14 +1761,8 @@ void setPoint()
         return;
     }
 
-    // Защита от перегрева
-    if (currentTemp >= (desiredTemp + OVERHEAT_THRESHOLD))
-    {
-        Setpoint = (slope * raw_bme_temp + offset) * 0.9f;
-    }
-
     // Агрессивный нагрев
-    else if (currentTemp <= (desiredTemp - HEATING_THRESHOLD))
+    if (currentTemp <= (desiredTemp - HEATING_THRESHOLD) && currentTemp <= (desiredTemp - OVERHEAT_THRESHOLD))
     {
         Setpoint = desiredTemp + deltaT;
     }
@@ -1796,20 +1770,7 @@ void setPoint()
     // Мягкое поддержание температуры
     else
     {
-        // Плавное изменение температуры
-        float temperatureDifference = currentTemp - desiredTemp;
-        if (temperatureDifference > OVERHEAT_THRESHOLD)
-        {
-            Setpoint = desiredTemp - (temperatureDifference * 0.1f);
-        }
-        else if (temperatureDifference < -HEATING_THRESHOLD)
-        {
-            Setpoint = desiredTemp + deltaT;
-        }
-        else
-        {
-            Setpoint = desiredTemp; // Поддерживаем заданную температуру
-        }
+        Setpoint = desiredTemp; // Поддерживаем заданную температуру
     }
 
     if (Setpoint > TMP_MAX)
@@ -1893,9 +1854,9 @@ void autoPid()
     eeprom_update_word(&menuVal[DEF_PID_KP], (uint16_t)(abs(tuner.getKp()) * 100));
     eeprom_update_word(&menuVal[DEF_PID_KI], (uint16_t)(abs(tuner.getKi()) * 100));
     eeprom_update_word(&menuVal[DEF_PID_KD], (uint16_t)(abs(tuner.getKd()) * 100));
-    if (iDryer.data.ntcTemp - iDryer.data.bmeTemp < 15)
+    if (iDryer.data.ntcTemp - iDryer.data.bmeTempCorrected < 15)
     {
-        iDryer.data.deltaT = iDryer.data.ntcTemp - iDryer.data.bmeTemp;
+        iDryer.data.deltaT = iDryer.data.ntcTemp - iDryer.data.bmeTempCorrected;
     }
     else
     {

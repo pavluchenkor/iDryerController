@@ -116,10 +116,10 @@ buzzer beeps every time the heater comes on
 
 
 // Linear Temperature Calibration for BME280
-#define MIN_CALIB_TEMP 25           // Regular ambient temperature
+#define MIN_CALIB_TEMP 28           // Regular ambient temperature
 #define MAX_CALIB_TEMP CE           //!! Do not edit 
-#define REAL_CALIB_TEMP_MIN 27      // BME280 readings at regular air temperature
-#define REAL_CALIB_TEMP_MAX 120     // BME280 readings during thermocouple calibration
+#define REAL_CALIB_TEMP_MIN 28      // BME280 readings at regular air temperature
+#define REAL_CALIB_TEMP_MAX 121     // BME280 readings during thermocouple calibration
 
 // Polynomial Temperature Calibration for BME280
 // #define COEFF_A 0.0
