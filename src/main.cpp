@@ -772,25 +772,25 @@ void displayPrintMode()
             text = DEF_MENU_STORAGE;
         }
 
-        char val[4];
-        drawLine(printMenuItem(&menuTxt[text]), 1);
+        char val[6];
+        // drawLine(printMenuItem(&menuTxt[text]), 1);
 
         snprintf(val, sizeof(val), "%2hu/%2hu", iDryer.data.setTemp, uint8_t(Setpoint));
         drawLine(val, 1, false, false);
-        text == DEF_MENU_DRYING ? snprintf(val, sizeof(val), "%3hu", iDryer.data.setTime) : snprintf(val, sizeof(val), "%3hu", iDryer.data.setHumidity);
-        drawLine(val, 1, true, false, 100);
+        text == DEF_MENU_DRYING ? snprintf(val, sizeof(val), "%4hu", iDryer.data.setTime) : snprintf(val, sizeof(val), "%4hu", iDryer.data.setHumidity);
+        drawLine(val, 1, true, false, 95);
 
         drawLine(printMenuItem(&serviceTxt[0 + 6]), 0 + 2, false, false, 0);
-        snprintf(val, sizeof(val), "%2hu/%2hu", trunc((double)iDryer.data.bmeTempCorrected), trunc((double)iDryer.data.bmeTemp));
-        drawLine(val, 0 + 2, false, false, 100);
+        snprintf(val, sizeof(val), "%4hu", uint16_t(iDryer.data.bmeTempCorrected * 100.0f));
+        drawLine(val, 0 + 2, false, false, 95);
 
         drawLine(printMenuItem(&serviceTxt[1 + 6]), 1 + 2, false, false, 0);
-        snprintf(val, sizeof(val), "%2hu", trunc((double)iDryer.data.ntcTemp));
-        drawLine(val, 1 + 2, false, false, 100);
+        snprintf(val, sizeof(val), "%4hu", uint8_t(iDryer.data.ntcTemp));
+        drawLine(val, 1 + 2, false, false, 95);
 
         drawLine(printMenuItem(&serviceTxt[2 + 6]), 2 + 2, false, false, 0);
-        snprintf(val, sizeof(val), "%2hu", trunc((double)iDryer.data.bmeHumidity));
-        drawLine(val, 2 + 2, false, false, 100);
+        snprintf(val, sizeof(val), "%2hu/%2hu", uint8_t(iDryer.data.bmeTemp), uint8_t(iDryer.data.bmeHumidity));
+        drawLine(val, 2 + 2, false, false, 86);
     } while (oled.nextPage());
     iDryer.data.flagScreenUpdate = false;
     WDT_DISABLE();
@@ -1690,14 +1690,16 @@ void screenUpdate()
         scaleTimer = millis();
         isScaleShow = !isScaleShow;
 
-        if (isScaleShow)
-        {
-            scaleShow();
-        }
-        else
-        {
-            displayPrintMode();
-        }
+        displayPrintMode();
+
+        // if (isScaleShow)
+        // {
+        //     scaleShow();
+        // }
+        // else
+        // {
+        //     displayPrintMode();
+        // }
     }
 #endif
 }
@@ -1762,9 +1764,15 @@ void setPoint()
     }
 
     // Агрессивный нагрев
-    if (currentTemp <= (desiredTemp - HEATING_THRESHOLD) && currentTemp <= (desiredTemp - OVERHEAT_THRESHOLD))
+    if (currentTemp <= (desiredTemp - HEATING_THRESHOLD) && currentTemp < (desiredTemp - OVERHEAT_THRESHOLD))
     {
         Setpoint = desiredTemp + deltaT;
+    }
+
+    // Плавно доходим до заданной температуры
+    else if (currentTemp >= (desiredTemp - OVERHEAT_THRESHOLD) && currentTemp <= desiredTemp)
+    {
+        Setpoint = desiredTemp + (desiredTemp - currentTemp);
     }
 
     // Мягкое поддержание температуры
