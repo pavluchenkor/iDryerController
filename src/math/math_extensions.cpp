@@ -11,6 +11,6 @@ namespace math
 
   float clamp(float value, float lowerBound, float upperBound)
   {
-		return (value < lowerBound) ? lowerBound : (upperBound < value) ? upperBound : value;
+    return (value < lowerBound) ? lowerBound : (upperBound < value) ? upperBound : value;
   }
 }
