@@ -778,7 +778,7 @@ void displayPrintMode()
         snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
         drawLine(val, 1, false, false);
         snprintf(val, sizeof(val), "%3hu", (text == DEF_MENU_DRYING ? iDryer.data.setTime : iDryer.data.setHumidity));
-        drawLine(val, 1, true, false, 95);
+        drawLine(val, 1, true, false, 96);
 
         drawLine(printMenuItem(&serviceTxt[6]), 2, false, false, 0);
         snprintf(val, sizeof(val), "%2hu/%2hu", uint8_t(iDryer.data.bmeTempCorrected), uint8_t(iDryer.data.bmeTemp));
@@ -790,7 +790,7 @@ void displayPrintMode()
 
         drawLine(printMenuItem(&serviceTxt[8]), 4, false, false, 0);
         snprintf(val, sizeof(val), "%2hu", uint8_t(iDryer.data.bmeHumidity));
-        drawLine(val, 4, false, false, 96);
+        drawLine(val, 4, false, false, 98);
     } while (oled.nextPage());
     iDryer.data.flagScreenUpdate = false;
     WDT_DISABLE();
