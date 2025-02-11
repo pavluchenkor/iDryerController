@@ -719,9 +719,13 @@ void displayPrint(struct subMenu *subMenu)
     oled.firstPage();
     do
     {
+        auto isTopLevelItem = subMenuM.parentID == 0;
+
         uint8_t maxPos = SCREEN_LINES - MENU_HEADER < subMenu->membersQuantity ? SCREEN_LINES - MENU_HEADER : subMenu->membersQuantity;
-        drawLine(printMenuItem(&menuTxt[subMenuM.parentID]), 1, false, true, -10);
-        if (subMenuM.parentID == 0)
+
+        drawLine(printMenuItem(&menuTxt[subMenuM.parentID]), 1, false, true, isTopLevelItem ? -10 : 0);
+
+        if (isTopLevelItem)
         {
             char val[6];
             snprintf(val, sizeof(val), "%2hu/%2hu", (uint16_t)iDryer.data.bmeHumidity, (uint16_t)iDryer.data.bmeTempCorrected);
@@ -777,7 +781,7 @@ void displayPrintMode()
 
         snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
         drawLine(val, 1, false, false);
-        snprintf(val, sizeof(val), "%3hu", (text == DEF_MENU_DRYING ? iDryer.data.setTime : iDryer.data.setHumidity));
+        snprintf(val, sizeof(val), "%3hu", text == DEF_MENU_DRYING ? iDryer.data.setTime : iDryer.data.setHumidity);
         drawLine(val, 1, true, false, 96);
 
         drawLine(printMenuItem(&serviceTxt[6]), 2, false, false, 0);
