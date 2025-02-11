@@ -393,7 +393,7 @@ public:
         data.bmeTemp = (bme.readTemperature() + data.bmeTemp) / 2.0;
         data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2.0;
 
-        data.bmeTempCorrected = math::map_to_range(data.bmeTemp, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX, MIN_CALIB_TEMP, MAX_CALIB_TEMP);
+        data.bmeTempCorrected = math::map_to_range(data.bmeTemp, MIN_CALIB_TEMP, MAX_CALIB_TEMP, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX);
 
         if (data != oldData && millis() - screenTime > SCREEN_UPADATE_TIME)
         {
@@ -772,25 +772,25 @@ void displayPrintMode()
             text = DEF_MENU_STORAGE;
         }
 
-        char val[8];
-        // drawLine(printMenuItem(&menuTxt[text]), 1);
+        char val[6];
+        drawLine(printMenuItem(&menuTxt[text]), 1);
 
-        snprintf(val, sizeof(val), "%2hu/%4hu", iDryer.data.setTemp, uint16_t(Setpoint * 100.0));
+        snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
         drawLine(val, 1, false, false);
-        text == DEF_MENU_DRYING ? snprintf(val, sizeof(val), "%3hu", iDryer.data.setTime) : snprintf(val, sizeof(val), "%3hu", iDryer.data.setHumidity);
-        drawLine(val, 1, true, false, 92);
+        snprintf(val, sizeof(val), "%3hu", (text == DEF_MENU_DRYING ? iDryer.data.setTime : iDryer.data.setHumidity));
+        drawLine(val, 1, true, false, 95);
 
-        drawLine(printMenuItem(&serviceTxt[0 + 6]), 0 + 2, false, false, 0);
-        snprintf(val, sizeof(val), "%4hu", uint16_t(iDryer.data.bmeTempCorrected * 100.0f));
-        drawLine(val, 0 + 2, false, false, 87);
+        drawLine(printMenuItem(&serviceTxt[6]), 2, false, false, 0);
+        snprintf(val, sizeof(val), "%2hu/%2hu", uint8_t(iDryer.data.bmeTempCorrected), uint8_t(iDryer.data.bmeTemp));
+        drawLine(val, 2, false, false, 88);
 
-        drawLine(printMenuItem(&serviceTxt[1 + 6]), 1 + 2, false, false, 0);
-        snprintf(val, sizeof(val), "%2hu", uint8_t(iDryer.data.ntcTemp));
-        drawLine(val, 1 + 2, false, false, 93);
+        drawLine(printMenuItem(&serviceTxt[7]), 3, false, false, 0);
+        snprintf(val, sizeof(val), "%2hu/%2hu", uint8_t(iDryer.data.ntcTemp), uint8_t(Setpoint));
+        drawLine(val, 3, false, false, 88);
 
-        drawLine(printMenuItem(&serviceTxt[2 + 6]), 2 + 2, false, false, 0);
-        snprintf(val, sizeof(val), "%2hu/%2hu", uint8_t(iDryer.data.bmeTemp), uint8_t(iDryer.data.bmeHumidity));
-        drawLine(val, 2 + 2, false, false, 90);
+        drawLine(printMenuItem(&serviceTxt[8]), 4, false, false, 0);
+        snprintf(val, sizeof(val), "%2hu", uint8_t(iDryer.data.bmeHumidity));
+        drawLine(val, 4, false, false, 96);
     } while (oled.nextPage());
     iDryer.data.flagScreenUpdate = false;
     WDT_DISABLE();
@@ -1770,9 +1770,9 @@ void setPoint()
     }
 
     // Плавно доходим до заданной температуры
-    else if (currentTemp >= (desiredTemp - HEATING_THRESHOLD) && currentTemp < (desiredTemp - OVERHEAT_THRESHOLD))
+    else if (currentTemp >= (desiredTemp - HEATING_THRESHOLD) && currentTemp < (desiredTemp + OVERHEAT_THRESHOLD))
     {
-        Setpoint = desiredTemp + (desiredTemp - currentTemp);
+        Setpoint = desiredTemp + (desiredTemp - currentTemp) / HEATING_THRESHOLD * deltaT;
     }
 
     // Мягкое поддержание температуры
