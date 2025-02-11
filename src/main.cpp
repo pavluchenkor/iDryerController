@@ -776,7 +776,7 @@ void displayPrintMode()
             text = DEF_MENU_STORAGE;
         }
 
-        char val[6];
+        char val[8];
         drawLine(printMenuItem(&menuTxt[text]), 1);
 
         snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
@@ -785,16 +785,16 @@ void displayPrintMode()
         drawLine(val, 1, true, false, 104);
 
         drawLine(printMenuItem(&serviceTxt[6]), 2, false, false, 0);
-        snprintf(val, sizeof(val), "%2hu/%2hu", uint8_t(iDryer.data.bmeTempCorrected), uint8_t(iDryer.data.bmeTemp));
-        drawLine(val, 2, false, false, 88);
+        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(iDryer.data.bmeTempCorrected), uint8_t(iDryer.data.bmeTemp));
+        drawLine(val, 2, false, false, 72);
 
         drawLine(printMenuItem(&serviceTxt[7]), 3, false, false, 0);
-        snprintf(val, sizeof(val), "%2hu/%2hu", uint8_t(iDryer.data.ntcTemp), uint8_t(Setpoint));
-        drawLine(val, 3, false, false, 88);
+        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(iDryer.data.ntcTemp), uint8_t(Setpoint));
+        drawLine(val, 3, false, false, 72);
 
         drawLine(printMenuItem(&serviceTxt[8]), 4, false, false, 0);
-        snprintf(val, sizeof(val), "%2hu", uint8_t(iDryer.data.bmeHumidity));
-        drawLine(val, 4, false, false, 110);
+        snprintf(val, sizeof(val), "%3hu", uint8_t(iDryer.data.bmeHumidity));
+        drawLine(val, 4, false, false, 104);
     } while (oled.nextPage());
     iDryer.data.flagScreenUpdate = false;
     WDT_DISABLE();
