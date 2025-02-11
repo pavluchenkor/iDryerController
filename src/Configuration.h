@@ -119,7 +119,7 @@ buzzer beeps every time the heater comes on
 #define MIN_CALIB_TEMP 28           // Regular ambient temperature
 #define MAX_CALIB_TEMP CE           //!! Do not edit 
 #define REAL_CALIB_TEMP_MIN 28      // BME280 readings at regular air temperature
-#define REAL_CALIB_TEMP_MAX 121     // BME280 readings during thermocouple calibration
+#define REAL_CALIB_TEMP_MAX 120     // BME280 readings during thermocouple calibration
 
 // Polynomial Temperature Calibration for BME280
 // #define COEFF_A 0.0
@@ -251,7 +251,7 @@ if your SCALES_MODULE_NUM not 0 do this:
    6 pio run -e EEP -t fullclean -t upload
  ********************/
 #define AUTOPID_RUN 0
-#define SCALES_MODULE_NUM 2
+#define SCALES_MODULE_NUM 0
 
 #define FILAMENT_SENSOR_ON                   //
 #define ALERT_MASS 100                       // Beep by buzzer when less than this amount of filament left

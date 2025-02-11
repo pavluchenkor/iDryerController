@@ -27,9 +27,9 @@
 #endif
 
 // Пороговые значения для температурных фаз
-#define HEATING_THRESHOLD 1.5  // Порог для агрессивного нагрева (°C)
+#define HEATING_THRESHOLD 2.5  // Порог для агрессивного нагрева (°C)
 #define OVERHEAT_THRESHOLD 0.5 // Порог перегрева (°C) для активации защиты от перегрева
-#define CRITICAL_OVERHEAT 1    // Критическая температура (°C)
+#define CRITICAL_OVERHEAT 5    // Критическая температура (°C)
 
 // #define DEBUG
 #ifdef DEBUG
@@ -1426,7 +1426,7 @@ void autoPidM()
     iDryer.data.flag = true;
     iDryer.data.flagTimeCounter = false;
     iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AVTOPID_TEMPERATURE]);
-    fanON((iDryer.data.setFan);
+    fanON(iDryer.data.setFan);
     WDT_DISABLE();
 #else
     state = MENU;
@@ -1774,9 +1774,9 @@ void setPoint()
     }
 
     // Плавно доходим до заданной температуры
-    else if (currentTemp >= (desiredTemp - HEATING_THRESHOLD) && currentTemp < (desiredTemp + OVERHEAT_THRESHOLD))
+    else if (currentTemp >= (desiredTemp - HEATING_THRESHOLD) && currentTemp < (desiredTemp - OVERHEAT_THRESHOLD))
     {
-        Setpoint = desiredTemp + (desiredTemp - currentTemp) / HEATING_THRESHOLD * deltaT;
+        Setpoint = desiredTemp + (desiredTemp - currentTemp) / (HEATING_THRESHOLD - OVERHEAT_THRESHOLD) * deltaT;
     }
 
     // Мягкое поддержание температуры
