@@ -19,7 +19,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-// #define KASYAK_FINDER
+#define KASYAK_FINDER
 #ifdef KASYAK_FINDER
 #define DEBUG_PRINT(x) Serial.println(x)
 #else
@@ -1098,7 +1098,7 @@ void loop()
         getData();
         setPoint();
         screenUpdate();
-        iDryer.data.flagTimeCounter ? fanON(iDryer.data.setFan) : fanMAX();
+        fanON(iDryer.data.setFan);
         Input = iDryer.data.ntcTemp;
         pid.Compute();
         heater(Output, dimmer);
@@ -1760,13 +1760,6 @@ void setPoint()
     float desiredTemp = (float)iDryer.data.setTemp;   // Заданная температура
     float deltaT = iDryer.data.deltaT;                // Дополнительный коэффициент для агрессивного нагрева
 
-    // Отключение при критическом перегреве
-    if (currentTemp >= desiredTemp + CRITICAL_OVERHEAT)
-    {
-        Setpoint = 0;
-        return;
-    }
-
     // Агрессивный нагрев
     if (currentTemp <= (desiredTemp - HEATING_THRESHOLD))
     {
@@ -1786,7 +1779,18 @@ void setPoint()
     }
 
     if (Setpoint > TMP_MAX)
+    {
         Setpoint = TMP_MAX;
+    }
+
+    // Отключение при критическом перегреве
+    if (currentTemp >= desiredTemp + CRITICAL_OVERHEAT)
+    {
+        Setpoint = 0;
+    }
+
+    // Serial.printf("%5.2f", Setpoint);
+    Serial.printf("hello %5.2f", Setpoint);
 }
 
 void autoPid()
@@ -1810,8 +1814,8 @@ void autoPid()
 
     unsigned long microseconds;
 
-    fanMAX();
-
+    fanON(iDryer.data.setFan);
+    
     tuner.startTuningLoop(micros());
     if (Servo.state != CLOSED)
         Servo.close();
