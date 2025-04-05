@@ -253,8 +253,8 @@ uint16_t menuVal[] EEMEM = {
     400,                        // id: 28
     65,                         // id: 29
     0,                          // id: 30
-    90,                         // id: 31
-    8,                          // id: 32
+    100,                        // id: 31 airflow
+    10,                         // id: 32 delta
     0,                          // id: 33
     30,                         // id: 34
     1,                          // id: 35
