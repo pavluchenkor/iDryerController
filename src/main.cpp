@@ -1754,9 +1754,9 @@ void getData()
 
 void setPoint()
 {
-    auto currentTemp = iDryer.data.bmeTempCorrected; // Текущая температура
-    float desiredTemp = iDryer.data.setTemp;   // Заданная температура
-    float deltaT = iDryer.data.deltaT;                // Дополнительный коэффициент для агрессивного нагрева
+    auto currentTemp = iDryer.data.bmeTempCorrected;    // Текущая температура
+    float desiredTemp = iDryer.data.setTemp;            // Заданная температура
+    float deltaT = iDryer.data.deltaT;                  // Дополнительный коэффициент для агрессивного нагрева
 
     auto delta = desiredTemp - currentTemp;
     auto adjustment = math::map_to_range(delta, 0.0f, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);
