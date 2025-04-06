@@ -27,9 +27,9 @@
 #endif
 
 // Пороговые значения для температурных фаз
-#define HEATING_THRESHOLD 2.5  // Порог для агрессивного нагрева (°C)
-#define OVERHEAT_THRESHOLD 0.5 // Порог перегрева (°C) для активации защиты от перегрева
-#define CRITICAL_OVERHEAT 5    // Критическая температура (°C)
+#define HEATING_THRESHOLD 10.0f     // Порог для агрессивного нагрева (°C)
+#define HEATER_AIR_DELTA 0.5f       // Компенсация теплопотерь (°C)
+#define CRITICAL_OVERHEAT 5.0f      // Критическая температура (°C)
 
 // #define DEBUG
 #ifdef DEBUG
@@ -1754,12 +1754,12 @@ void getData()
 
 void setPoint()
 {
-    float currentTemp = iDryer.data.bmeTempCorrected; // Текущая температура
-    float desiredTemp = (float)iDryer.data.setTemp;   // Заданная температура
+    auto currentTemp = iDryer.data.bmeTempCorrected; // Текущая температура
+    float desiredTemp = iDryer.data.setTemp;   // Заданная температура
     float deltaT = iDryer.data.deltaT;                // Дополнительный коэффициент для агрессивного нагрева
 
     auto delta = desiredTemp - currentTemp;
-    auto adjustment = math::map_to_range(delta, 0.0f, HEATING_THRESHOLD, 0.0f, deltaT);
+    auto adjustment = math::map_to_range(delta, 0.0f, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);
 
     Setpoint = desiredTemp + adjustment;
 
@@ -1775,13 +1775,20 @@ void setPoint()
     }
 
 #ifdef KASYAK_FINDER
+    Serial.print(" d: ");
     Serial.print(delta, 2);
-    Serial.print(' ');
+    Serial.print(" a: ");
     Serial.print(adjustment, 2);
-    Serial.print(' ');
+    Serial.print(" t: ");
+    Serial.print(currentTemp, 2);
+    Serial.print(" s: ");
     Serial.print(Setpoint, 2);
-    Serial.print(' ');
+    Serial.print(" n: ");
     Serial.print(iDryer.data.ntcTemp, 2);
+    Serial.print(" o: ");
+    Serial.print(Output, 2);
+    Serial.print(" d: ");
+    Serial.print(dimmer);
     Serial.println();
     Serial.flush();
 #endif

@@ -112,14 +112,14 @@ buzzer beeps every time the heater comes on
 100 or 110
  ********************/
  
- #define CE 110 //*
+#define CE 110 //*
 
 
-// Linear Temperature Calibration for BME280
-#define MIN_CALIB_TEMP 28           // Regular ambient temperature
-#define MAX_CALIB_TEMP CE           //!! Do not edit 
-#define REAL_CALIB_TEMP_MIN 28      // BME280 readings at regular air temperature
-#define REAL_CALIB_TEMP_MAX 120     // BME280 readings during thermocouple calibration
+// Калибровка показаний BME280 | Linear Temperature Calibration for BME280
+#define MIN_CALIB_TEMP 28         // Температура воздуха в комнате по показниям BME280 | Air temperature in room by BME280 measurements
+#define MAX_CALIB_TEMP CE         // Температура воздуха в камере предельная по показниям BME280 (!! Не трогать) | Air MAX temperature in chamber by BME280 measurements (!! DO NOT TOUCH)
+#define REAL_CALIB_TEMP_MIN 28    // Температура воздуха в комнате по показаниям термопары | Air temperature in room by thermocouple measurements
+#define REAL_CALIB_TEMP_MAX 120   // Температура воздуха в камере по показниям термопары при достижении заданной температуры по показаниям BME280 | Air temperature in chamber by thermocouple measurements at BME280 setpoint temperature reached
 
 // Polynomial Temperature Calibration for BME280
 // #define COEFF_A 0.0
