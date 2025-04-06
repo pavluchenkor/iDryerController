@@ -276,12 +276,7 @@ filamentExpense filamentExpenseFlag[SCALES_MODULE_NUM] = {UPDATE_DATA};
 #endif
 
 float Setpoint, Input, Output;
-
-#ifdef v24v
 PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
-#else
-PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
-#endif
 
 struct Data
 {
@@ -1084,10 +1079,10 @@ void loop()
         pid.Compute();
         heater(Output, dimmer);
 
-        if (millis() - oldTimer >= 60000 && iDryer.data.flagTimeCounter)
+        if (iDryer.data.timestamp - oldTimer >= 60000 && iDryer.data.flagTimeCounter)
         {
             // DEBUG_PRINT(4);
-            oldTimer = millis();
+            oldTimer = iDryer.data.timestamp;
             iDryer.data.setTime--;
         }
 
@@ -1419,7 +1414,6 @@ void autoPidM()
 void updateIDyerData()
 {
     WDT(WDTO_250MS, 4);
-    iDryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
     iDryer.data.Kp = (float)eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.0f;
     iDryer.data.Ki = (float)eeprom_read_word(&menuVal[DEF_PID_KI]) / 100.0f;
     iDryer.data.Kd = (float)eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.0f;
