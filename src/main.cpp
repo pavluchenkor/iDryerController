@@ -285,7 +285,7 @@ PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
 
 struct Data
 {
-    uint64_t timestamp = 0;
+    unsigned long timestamp = 0;
     float ntcTemp = 0;
     float bmeTemp = 0;
     float bmeTempCorrected = 0;
@@ -1758,6 +1758,8 @@ void setPoint()
     }
 
 #ifdef KASYAK_FINDER
+    Serial.print(" t: ");
+    Serial.print(iDryer.data.timestamp);
     Serial.print(" d: ");
     Serial.print(delta, 2);
     Serial.print(" a: ");
