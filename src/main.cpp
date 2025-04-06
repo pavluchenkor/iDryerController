@@ -275,7 +275,7 @@ filamentExpense filamentExpenseFlag[SCALES_MODULE_NUM] = {UPDATE_DATA};
 
 #endif
 
-double Setpoint, Input, Output;
+float Setpoint, Input, Output;
 
 #ifdef v24v
 PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
@@ -285,7 +285,7 @@ PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
 
 struct Data
 {
-    double ntcTemp = 0;
+    float ntcTemp = 0;
     float bmeTemp = 0;
     float bmeTempCorrected = 0;
     float bmeHumidity = 0;
@@ -299,9 +299,9 @@ struct Data
     bool flagScreenUpdate = false;
     bool flagTimeCounter = false;
     uint8_t setFan = 0;
-    double Kp = 0.0;
-    double Ki = 0.0;
-    double Kd = 0.0;
+    float Kp = 0.0;
+    float Ki = 0.0;
+    float Kd = 0.0;
     uint16_t sampleTime = 0;
     uint8_t deltaT = 0;
 
@@ -1437,9 +1437,9 @@ void updateIDyerData()
 {
     WDT(WDTO_250MS, 4);
     iDryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
-    iDryer.data.Kp = (double)eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.00;
-    iDryer.data.Ki = (double)eeprom_read_word(&menuVal[DEF_PID_KI]) / 100.00;
-    iDryer.data.Kd = (double)eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.00;
+    iDryer.data.Kp = (float)eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.0f;
+    iDryer.data.Ki = (float)eeprom_read_word(&menuVal[DEF_PID_KI]) / 100.0f;
+    iDryer.data.Kd = (float)eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.0f;
     iDryer.data.sampleTime = eeprom_read_word(&menuVal[DEF_AVTOPID_TIME_MS]);
     iDryer.data.deltaT = eeprom_read_word(&menuVal[DEF_SETTINGS_DELTA]);
     iDryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
@@ -1447,7 +1447,7 @@ void updateIDyerData()
 
     pid.SetMode(AUTOMATIC);             // MANUAL AUTOMATIC
     pid.SetControllerDirection(DIRECT); // REVERSE
-    pid.SetOutputLimits((double)HEATER_MIN, (double)HEATER_MAX);
+    pid.SetOutputLimits((float)HEATER_MIN, (float)HEATER_MAX);
     pid.SetTunings(iDryer.data.Kp, iDryer.data.Ki, iDryer.data.Kd, PID_TYPE);
     pid.SetSampleTime((int)iDryer.data.sampleTime);
 
@@ -1828,9 +1828,9 @@ void autoPid()
         iDryer.getData();
         WDT(WDTO_4S, 18);
         microseconds = micros();
-        double output = tuner.tunePID((double)iDryer.data.ntcTemp, microseconds);
+        float output = tuner.tunePID((float)iDryer.data.ntcTemp, microseconds);
         heater((uint16_t)output, dimmer);
-        // heater((uint16_t)(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)), dimmer);
+        // heater((uint16_t)(tuner.tunePID(float(iDryer.data.ntcTemp), microseconds)), dimmer);
 
         oled.firstPage();
         do
