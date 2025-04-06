@@ -27,9 +27,9 @@
 #endif
 
 // Пороговые значения для температурных фаз
-#define HEATING_THRESHOLD 10.0f     // Порог для агрессивного нагрева (°C)
-#define HEATER_AIR_DELTA 0.5f       // Компенсация теплопотерь (°C)
-#define CRITICAL_OVERHEAT 5.0f      // Критическая температура (°C)
+#define HEATING_THRESHOLD 10.0f // Порог для агрессивного нагрева (°C)
+#define HEATER_AIR_DELTA 0.5f   // Компенсация теплопотерь (°C)
+#define CRITICAL_OVERHEAT 5.0f  // Критическая температура (°C)
 
 // #define DEBUG
 #ifdef DEBUG
@@ -285,6 +285,7 @@ PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
 
 struct Data
 {
+    uint64_t timestamp = 0;
     float ntcTemp = 0;
     float bmeTemp = 0;
     float bmeTempCorrected = 0;
@@ -307,27 +308,8 @@ struct Data
 
     bool operator!=(const Data &other) const
     {
-        if (int(this->ntcTemp) != int(other.ntcTemp) || int(this->bmeTemp) != int(other.bmeTemp) || int(this->bmeHumidity) != int(other.bmeHumidity)
-            // || int(this->startTime) == int(other.startTime)
-            // || int(this->setTemp) == int(other.setTemp)
-            // || int(this->setHumidity) == int(other.setHumidity)
-            // || int(this->setTime) == int(other.setTime)
-            // || int(this->setFan) == int(other.setFan)
-            // || int(this->Kp) == int(other.Kp)
-            // || int(this->Ki) == int(other.Ki)
-            // || int(this->Kd) == int(other.Kd)
-        )
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        return timestamp != other.timestamp || int(ntcTemp) != int(other.ntcTemp) || int(bmeTemp) != int(other.bmeTemp) || int(bmeHumidity) != int(other.bmeHumidity);
     }
-    //   bool operator!=(const Data &other) const {
-    //     return !(*this == other);
-    //   }
 };
 
 /* 01 */ void heaterOFF();
@@ -387,15 +369,16 @@ public:
     Data oldData;
     bool getData()
     {
-        data.ntcTemp = (ntc.analog2temp() + data.ntcTemp) / 2.0;
-        data.bmeTemp = (bme.readTemperature() + data.bmeTemp) / 2.0;
-        data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2.0;
+        data.timestamp = millis();
+        data.ntcTemp = (ntc.analog2temp() + data.ntcTemp) / 2.0f;
+        data.bmeTemp = (bme.readTemperature() + data.bmeTemp) / 2.0f;
+        data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2.0f;
 
         data.bmeTempCorrected = math::map_to_range(data.bmeTemp, MIN_CALIB_TEMP, MAX_CALIB_TEMP, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX);
 
-        if (data != oldData && millis() - screenTime > SCREEN_UPADATE_TIME)
+        if (data != oldData && data.timestamp - screenTime > SCREEN_UPADATE_TIME)
         {
-            screenTime = millis();
+            screenTime = data.timestamp;
             data.flagScreenUpdate = true;
             oldData = data;
         }
@@ -410,13 +393,13 @@ public:
         if (data.ntcTemp < TMP_MIN)
             return false;
 
-        if (data.ntcTemp > TMP_MAX + 10)
+        if (data.ntcTemp > TMP_MAX + TMP_SAFETY_THRESHOLD)
             return false;
 
         if (data.bmeTempCorrected < TMP_MIN)
             return false;
 
-        if (data.bmeTempCorrected > TMP_MAX + 10)
+        if (data.bmeTempCorrected > TMP_MAX + TMP_SAFETY_THRESHOLD)
             return false;
 
         return true;
@@ -1754,9 +1737,9 @@ void getData()
 
 void setPoint()
 {
-    auto currentTemp = iDryer.data.bmeTempCorrected;    // Текущая температура
-    float desiredTemp = iDryer.data.setTemp;            // Заданная температура
-    float deltaT = iDryer.data.deltaT;                  // Дополнительный коэффициент для агрессивного нагрева
+    auto currentTemp = iDryer.data.bmeTempCorrected; // Текущая температура
+    float desiredTemp = iDryer.data.setTemp;         // Заданная температура
+    float deltaT = iDryer.data.deltaT;               // Дополнительный коэффициент для агрессивного нагрева
 
     auto delta = desiredTemp - currentTemp;
     auto adjustment = math::map_to_range(delta, 0.0f, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);

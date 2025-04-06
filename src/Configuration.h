@@ -104,6 +104,7 @@ buzzer beeps every time the heater comes on
 
 #define TMP_MIN 1
 #define TMP_MAX 130
+#define TMP_SAFETY_THRESHOLD 10
 #define HUMIDITY_HYSTERESIS 5
 #define TEMP_HYSTERESIS 5
 
