@@ -102,7 +102,8 @@ uint32_t ERROR_CODE EEMEM = 0x0;
  * меняй это на свой страх и риск
  ********************/
 #define HEATER_MIN 500
-#define HEATER_MAX 9500
+#define HEATER_MAX 2000
+#define HEATER_OFF 9500
 #endif
 
 #ifdef v24V
@@ -1085,6 +1086,11 @@ void loop()
         Input = iDryer.data.ntcTemp;
         pid.Compute();
         heater(Output, dimmer);
+
+        if (Setpoint == 0)
+        {
+            dimmer = HEATER_OFF;
+        }
 
         if (iDryer.data.timestamp - oldTimer >= 60000 && iDryer.data.flagTimeCounter)
         {
