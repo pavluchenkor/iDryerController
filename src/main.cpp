@@ -300,9 +300,9 @@ struct Data
     bool flagScreenUpdate = false;
     bool flagTimeCounter = false;
     uint8_t setFan = 0;
-    float Kp = 0.0;
-    float Ki = 0.0;
-    float Kd = 0.0;
+    float Kp = 0.0f;
+    float Ki = 0.0f;
+    float Kd = 0.0f;
     uint16_t sampleTime = 0;
     uint8_t deltaT = 0;
 
