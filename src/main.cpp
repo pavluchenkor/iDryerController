@@ -307,9 +307,7 @@ struct Data
 
     bool operator!=(const Data &other) const
     {
-        if (int(this->ntcTemp) != int(other.ntcTemp)
-        || int(this->bmeTemp) != int(other.bmeTemp)
-        || int(this->bmeHumidity) != int(other.bmeHumidity)
+        if (int(this->ntcTemp) != int(other.ntcTemp) || int(this->bmeTemp) != int(other.bmeTemp) || int(this->bmeHumidity) != int(other.bmeHumidity)
             // || int(this->startTime) == int(other.startTime)
             // || int(this->setTemp) == int(other.setTemp)
             // || int(this->setHumidity) == int(other.setHumidity)
@@ -1105,7 +1103,7 @@ void loop()
 
         if (millis() - oldTimer >= 60000 && iDryer.data.flagTimeCounter)
         {
-            DEBUG_PRINT(4);
+            // DEBUG_PRINT(4);
             oldTimer = millis();
             iDryer.data.setTime--;
         }
@@ -1113,16 +1111,16 @@ void loop()
         if (iDryer.data.setTime == 0)
         {
             async_piii(1000);
-            DEBUG_PRINT(5);
+            // DEBUG_PRINT(5);
             subMenuM.parentID = 5; // ID пункта хранение
             heaterOFF();
             WDT_DISABLE();
             storageStart();
-            DEBUG_PRINT(6);
+            // DEBUG_PRINT(6);
         }
 
         Servo.check();
-        DEBUG_PRINT(7);
+        // DEBUG_PRINT(7);
         WDT_DISABLE();
 
         break;
@@ -1760,23 +1758,10 @@ void setPoint()
     float desiredTemp = (float)iDryer.data.setTemp;   // Заданная температура
     float deltaT = iDryer.data.deltaT;                // Дополнительный коэффициент для агрессивного нагрева
 
-    // Агрессивный нагрев
-    if (currentTemp <= (desiredTemp - HEATING_THRESHOLD))
-    {
-        Setpoint = desiredTemp + deltaT;
-    }
+    auto delta = desiredTemp - currentTemp;
+    auto adjustment = math::map_to_range(delta, 0.0f, HEATING_THRESHOLD, 0.0f, deltaT);
 
-    // Плавно доходим до заданной температуры
-    else if (currentTemp >= (desiredTemp - HEATING_THRESHOLD) && currentTemp < (desiredTemp - OVERHEAT_THRESHOLD))
-    {
-        Setpoint = desiredTemp + (desiredTemp - currentTemp) / (HEATING_THRESHOLD - OVERHEAT_THRESHOLD) * deltaT;
-    }
-
-    // Мягкое поддержание температуры
-    else
-    {
-        Setpoint = desiredTemp; // Поддерживаем заданную температуру
-    }
+    Setpoint = desiredTemp + adjustment;
 
     if (Setpoint > TMP_MAX)
     {
@@ -1789,8 +1774,17 @@ void setPoint()
         Setpoint = 0;
     }
 
-    // Serial.printf("%5.2f", Setpoint);
-    Serial.printf("hello %5.2f", Setpoint);
+#ifdef KASYAK_FINDER
+    Serial.print(delta, 2);
+    Serial.print(' ');
+    Serial.print(adjustment, 2);
+    Serial.print(' ');
+    Serial.print(Setpoint, 2);
+    Serial.print(' ');
+    Serial.print(iDryer.data.ntcTemp, 2);
+    Serial.println();
+    Serial.flush();
+#endif
 }
 
 void autoPid()
@@ -1815,7 +1809,7 @@ void autoPid()
     unsigned long microseconds;
 
     fanON(iDryer.data.setFan);
-    
+
     tuner.startTuningLoop(micros());
     if (Servo.state != CLOSED)
         Servo.close();
@@ -1856,7 +1850,7 @@ void autoPid()
             snprintf(serviceString, sizeof(serviceString), "%2s %6u", printMenuItem(&menuTxt[DEF_PID_KD]), (uint16_t)(abs(tuner.getKd()) * 100));
             drawLine(serviceString, 4);
         } while (oled.nextPage());
-        DEBUG_PRINT(1006);
+        // DEBUG_PRINT(1006);
 
         while (micros() - microseconds < (unsigned long)iDryer.data.sampleTime * 1000)
         {
