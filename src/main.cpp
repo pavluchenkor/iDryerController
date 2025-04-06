@@ -369,7 +369,14 @@ public:
         data.bmeTemp = (bme.readTemperature() + data.bmeTemp) / 2.0f;
         data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2.0f;
 
-        data.bmeTempCorrected = math::map_to_range(data.bmeTemp, MIN_CALIB_TEMP, MAX_CALIB_TEMP, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX);
+        if (data.bmeTemp <= MIN_CALIB_TEMP)
+        {
+            data.bmeTempCorrected = data.bmeTemp;
+        }
+        else
+        {
+            data.bmeTempCorrected = math::map_to_range(data.bmeTemp, MIN_CALIB_TEMP, MAX_CALIB_TEMP, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX);
+        }
 
         if (data != oldData && data.timestamp - screenTime > SCREEN_UPADATE_TIME)
         {
@@ -1736,7 +1743,7 @@ void setPoint()
     float deltaT = iDryer.data.deltaT;               // Дополнительный коэффициент для агрессивного нагрева
 
     auto delta = desiredTemp - currentTemp;
-    auto adjustment = math::map_to_range(delta, 0.0f, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);
+    auto adjustment = math::map_to_range(delta, HEATER_AIR_DELTA, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);
 
     Setpoint = desiredTemp + adjustment;
 
