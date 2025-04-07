@@ -15,6 +15,7 @@
 #include "menu/def.h"
 #include "math/math_extensions.h"
 #include "servo/servo.h"
+#include "buzzer/buzzer.h"
 #include "HX711.h"
 #include <EncButton.h>
 #include <avr/io.h>
@@ -405,44 +406,6 @@ public:
 } iDryer;
 
 servo Servo(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
-
-class BuzzerController
-{
-public:
-    BuzzerController(uint8_t buzzerPin) : buzzerPin(buzzerPin), isBuzzing(false), endTime(0) {}
-
-    void buzz(uint16_t duration)
-    {
-        if (!isBuzzing)
-        {
-            isBuzzing = true;
-            endTime = millis() + duration;
-            digitalWrite(buzzerPin, HIGH);
-        }
-    }
-
-    void update()
-    {
-        if (isBuzzing && millis() >= endTime)
-        {
-            stop();
-        }
-    }
-
-    void stop()
-    {
-        if (isBuzzing)
-        {
-            isBuzzing = false;
-            digitalWrite(buzzerPin, LOW);
-        }
-    }
-
-private:
-    const uint8_t buzzerPin;
-    bool isBuzzing;
-    unsigned long endTime;
-};
 
 BuzzerController buzzer(BUZZER_PIN);
 
