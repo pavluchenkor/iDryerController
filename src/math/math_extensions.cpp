@@ -4,7 +4,7 @@ namespace math
 {
   float map_to_range(float value, float inputLowerBound, float inputUpperBound, float outputLowerBound, float outputUpperBound)
   {
-    auto slope = 1.0f * (outputUpperBound - outputLowerBound) / (inputUpperBound - inputLowerBound);
+    auto slope = (outputUpperBound - outputLowerBound) / (inputUpperBound - inputLowerBound);
 
     return outputLowerBound + slope * (math::clamp(value, inputLowerBound, inputUpperBound) - inputLowerBound);
   }
