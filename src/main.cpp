@@ -21,7 +21,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#define KASYAK_FINDER
+// #define KASYAK_FINDER
 #ifdef KASYAK_FINDER
 #define DEBUG_PRINT(x) Serial.println(x)
 #else
@@ -987,6 +987,9 @@ void loop()
 #endif
 #endif
         break;
+
+    default:
+        break;
     }
 }
 
@@ -1210,28 +1213,6 @@ void storageStart()
 
 void autoPidM()
 {
-    WDT(WDTO_500MS, 12);
-#if SCALES_MODULE_NUM == 0 || AUTOPID_RUN == 1
-#ifndef PWM_TEST
-
-    heaterON();
-
-#ifdef DEBUG
-    WDT_DISABLE();
-#endif
-    // piii(100);
-
-    state = AUTOPID;
-    iDryer.data.flag = true;
-    iDryer.data.flagTimeCounter = false;
-    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AVTOPID_TEMPERATURE]);
-    fanON(iDryer.data.setFan);
-    WDT_DISABLE();
-#else
-    state = MENU;
-    WDT_DISABLE();
-#endif
-#endif
 }
 
 void updateIDyerData()
@@ -1598,124 +1579,6 @@ void setPoint()
 
 void autoPid()
 {
-    PIDAutotuner tuner = PIDAutotuner();
-    tuner.setTargetInputValue((float)iDryer.data.setTemp);
-    tuner.setLoopInterval(long(iDryer.data.sampleTime) * 1000);
-    tuner.setOutputRange(HEATER_MIN, HEATER_MAX);
-    tuner.setTuningCycles(AUTOPID_ATTEMPT);
-    tuner.setZNMode(PIDAutotuner::ZNModeBasicPID); // ZNModeNoOvershoot - Defaults,   ZNModeBasicPID
-
-    oled.clear();
-    oled.firstPage();
-    do
-    {
-        drawLine("", 1, true);
-        drawLine("", 2, true);
-        drawLine(printMenuItem(&menuTxt[DEF_PID_AVTOPID]), 3, true);
-        drawLine("", 4, true);
-    } while (oled.nextPage());
-
-    unsigned long microseconds;
-
-    fanON(iDryer.data.setFan);
-
-    tuner.startTuningLoop(micros());
-    if (Servo.state != CLOSED)
-        Servo.close();
-    delay(3000);
-    WDT_DISABLE();
-    dimmer = HEATER_MIN;
-    while (!tuner.isFinished())
-    {
-        iDryer.getData();
-        WDT(WDTO_4S, 18);
-        microseconds = micros();
-        float output = tuner.tunePID((float)iDryer.data.ntcTemp, microseconds);
-        heater((uint16_t)output, dimmer);
-        // heater((uint16_t)(tuner.tunePID(float(iDryer.data.ntcTemp), microseconds)), dimmer);
-
-        oled.firstPage();
-        do
-        {
-            // 20/20 100С 9500
-            memset(serviceString, 0, sizeof(serviceString));
-            snprintf(serviceString, sizeof(serviceString), "%2d/%2d  %d%s  %3d", tuner.getCycle(), AUTOPID_ATTEMPT, (int)ntc.analog2temp(),
-                     printMenuItem(&serviceTxt[DEF_T_CELSIUS]),
-#ifdef v220V
-                     (uint8_t)map(dimmer, HEATER_MAX, HEATER_MIN, 0, 100)
-#endif
-#ifdef v24V
-                         (uint8_t) map(dimmer, HEATER_MIN, HEATER_MAX, 0, 100)
-#endif
-            );
-            drawLine(serviceString, 1);
-
-            snprintf(serviceString, sizeof(serviceString), "%2s %6hu", printMenuItem(&menuTxt[DEF_PID_KP]), (uint16_t)(abs(tuner.getKp()) * 100));
-            drawLine(serviceString, 2);
-
-            snprintf(serviceString, sizeof(serviceString), "%2s %6hu", printMenuItem(&menuTxt[DEF_PID_KI]), (uint16_t)(abs(tuner.getKi()) * 100));
-            drawLine(serviceString, 3);
-
-            snprintf(serviceString, sizeof(serviceString), "%2s %6u", printMenuItem(&menuTxt[DEF_PID_KD]), (uint16_t)(abs(tuner.getKd()) * 100));
-            drawLine(serviceString, 4);
-        } while (oled.nextPage());
-        // DEBUG_PRINT(1006);
-
-        while (micros() - microseconds < (unsigned long)iDryer.data.sampleTime * 1000)
-        {
-            delayMicroseconds(1);
-        }
-    }
-
-    heaterOFF();
-    fanMAX();
-
-    eeprom_update_word(&menuVal[DEF_PID_KP], (uint16_t)(abs(tuner.getKp()) * 100));
-    eeprom_update_word(&menuVal[DEF_PID_KI], (uint16_t)(abs(tuner.getKi()) * 100));
-    eeprom_update_word(&menuVal[DEF_PID_KD], (uint16_t)(abs(tuner.getKd()) * 100));
-    if (iDryer.data.ntcTemp - iDryer.data.bmeTempCorrected < 15)
-    {
-        iDryer.data.deltaT = iDryer.data.ntcTemp - iDryer.data.bmeTempCorrected;
-    }
-    else
-    {
-        iDryer.data.deltaT = 15;
-    }
-    eeprom_update_word(&menuVal[DEF_SETTINGS_DELTA], (uint16_t)iDryer.data.deltaT);
-    delay(5000);
-    updateIDyerData();
-
-    oled.clear();
-    do
-    {
-        drawLine(printMenuItem(&menuTxt[DEF_SETTINGS_PID]), 2);
-        drawLine(printMenuItem(&serviceTxt[DEF_T_SAVED]), 3);
-    } while (oled.nextPage());
-
-    uint8_t time_delay = 40;
-    while (time_delay)
-    {
-        char val[4];
-        oled.firstPage();
-        do
-        {
-            snprintf(val, sizeof(val), "%3d", time_delay);
-            snprintf(serviceString, sizeof(serviceString), "%12s", printMenuItem(&serviceTxt[4]));
-            drawLine(printMenuItem(&serviceTxt[DEF_T_COOLING]), 2);
-            drawLine(val, 3);
-        } while (oled.nextPage());
-        time_delay--;
-        delay(1000);
-    }
-
-    oled.clear();
-
-    subMenuM.levelUpdate = DOWN;
-    subMenuM.pointerUpdate = 1;
-    subMenuM.parentID = 0;
-    subMenuM.position = 0;
-    memset(subMenuM.membersID, 0, sizeof(subMenuM.membersID) / sizeof(subMenuM.membersID[0]));
-    state = MENU;
 }
 
 #if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
