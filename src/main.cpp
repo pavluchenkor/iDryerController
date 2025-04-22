@@ -26,10 +26,9 @@
 #endif
 
 // Пороговые значения для температурных фаз
-#define HEATING_THRESHOLD 1.5         // Порог для агрессивного нагрева (°C)
-#define OVERHEAT_THRESHOLD 0.5        // Порог перегрева (°C) для активации защиты от перегрева
-#define CRITICAL_OVERHEAT 1         // Критическая температура (°C)
-
+#define HEATING_THRESHOLD 1.5  // Порог для агрессивного нагрева (°C)
+#define OVERHEAT_THRESHOLD 0.5 // Порог перегрева (°C) для активации защиты от перегрева
+#define CRITICAL_OVERHEAT 1    // Критическая температура (°C)
 
 // #define DEBUG
 #ifdef DEBUG
@@ -44,7 +43,6 @@ uint8_t isrFlag = 0;
 #endif
 
 uint32_t ERROR_CODE EEMEM = 0x0;
-uint32_t WDT_ERROR = 0;
 
 #if REV == 0
 #define ERROR
@@ -170,7 +168,6 @@ stateS state = MENU;
 uint8_t ERROR_COUNTER = 0;
 
 uint8_t globalErrorFuncUUID = 0;
-uint8_t errorTmpArray[32] = {0};
 
 const byte CLK = A1;
 const byte DT = A2;
@@ -334,21 +331,22 @@ struct Data
 /* 01 */ void heaterOFF();
 /* 02 */ void heater(uint16_t Output, uint16_t &dimmer);
 /* 03 */ void heaterON();
+void fanMAX();
+void fanOFF();
+void fanON(int percent);
 /* 04 */ void updateIDyerData();
 /* 05 */
 /* 06 */ void screen(struct subMenu *subMenu);
 /* 07 */ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu);
 /* 08 */ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu);
 /* 09 */ void piii(uint16_t time_ms);
+void async_piii(uint16_t time_ms);
 /* 10 */ void dryStart();
 /* 11 */ void storageStart();
 /* 12 */ void autoPidM();
 /* 13 */
-uint32_t printError(uint32_t error);
-/* 14 */
-uint32_t readError();
-/* 15 */
-bool setError(uint8_t errorCode);
+/* 14 */ uint32_t readError();
+/* 15 */ void setError(uint8_t errorCode);
 /* 16 */ void displayPrint(struct subMenu *subMenu);
 /* 17 */ void displayPrintMode();
 void pwm_test();
@@ -358,18 +356,18 @@ void setSpool1();
 void setSpool2();
 void setSpool3();
 void setSpool4();
-void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, uint16_t spoolMassArray[]);
+void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint16_t spoolMassArray[]);
 /* 18 */ // PID TUNING;
 /* 20 */ void scaleShow();
 // /* 21 */ void getdataAndSetpoint();
 void getData();
 void setPoint();
 void screenUpdate();
+void drawLine(const char *text, int lineIndex, bool background = false, bool center = true, int x = 0, int backgroundX = 0);
 /* 22 */ // CASE MENU
 /* 23 */ // CASE DRY
 /* 24 */ // CASE STORAGE
-/* 25 */
-void autoPid();
+/* 25 */ void autoPid();
 /* 26 */ // NTC MIN
 /* 27 */ // NTC MAX
 /* 28 */ // BME MIN
@@ -397,7 +395,6 @@ public:
 
         float slope = (float)(REAL_CALIB_TEMP_MAX - REAL_CALIB_TEMP_MIN) / (float)(MAX_CALIB_TEMP - MIN_CALIB_TEMP);
         float offset = (float)REAL_CALIB_TEMP_MIN - (slope * (float)MIN_CALIB_TEMP);
-
 
         data.bmeTemp = slope * data.bmeTemp + offset;
 
@@ -726,9 +723,8 @@ void displayPrint(struct subMenu *subMenu)
     oled.firstPage();
     do
     {
-        oled.setFont(u8g2_font);
         uint8_t maxPos = SCREEN_LINES - MENU_HEADER < subMenu->membersQuantity ? SCREEN_LINES - MENU_HEADER : subMenu->membersQuantity;
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[subMenuM.parentID]))) / 2 - 10, 16, printMenuItem(&menuTxt[subMenuM.parentID]));
+        drawLine(printMenuItem(&menuTxt[subMenuM.parentID]), 1, false, true, -10);
         if (subMenuM.parentID == 0)
         {
             char val[6];
@@ -736,38 +732,27 @@ void displayPrint(struct subMenu *subMenu)
 #ifdef DEBUG
             snprintf(val, sizeof(val), "%4d", oldTime1 - oldTime2);
 #endif
-            oled.drawUTF8(88, 16, val);
+            drawLine(val, 1, false, false, 88);
             snprintf(val, sizeof(val), "%2hu", (uint16_t)iDryer.data.ntcTemp);
 #ifdef DEBUG
             snprintf(val, sizeof(val), "%3hu", dimmer);
 #endif
-            oled.drawUTF8(0, 16, val);
+            drawLine(val, 1, false, false);
         }
         oled.drawLine(0, LINE_HIGHT + 2, 128, LINE_HIGHT + 2);
         for (uint8_t i = 0; i < maxPos; i++)
         {
-            oled.drawUTF8(0, (i + 2) * LINE_HIGHT, printMenuItem(&menuTxt[subMenuM.membersID[subMenuM.linesToScreen[i]]]));
+            drawLine(printMenuItem(&menuTxt[subMenuM.membersID[subMenuM.linesToScreen[i]]]), i + 2, false, false);
 
+            char val[6] = {};
             if (pgm_read_word(&menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]].min) ||
                 pgm_read_word(&menuPGM[subMenuM.membersID[subMenuM.linesToScreen[i]]].max) ||
                 eeprom_read_word(&menuVal[subMenuM.membersID[subMenuM.linesToScreen[i]]]))
             {
-                char val[6];
                 snprintf(val, sizeof(val), "%5u", eeprom_read_word(&menuVal[subMenuM.membersID[subMenuM.linesToScreen[i]]]));
-                oled.drawUTF8(88, (i + 2) * LINE_HIGHT, val);
             }
 
-            if (subMenuM.pointerPos == i)
-            {
-                if (!subMenu->changeVal)
-                {
-                    oled.drawButtonUTF8(0, LINE_HIGHT * (i + 2) - PADDING_OFFSET, U8G2_BTN_INV, 128, 0, PADDING_V, "");
-                }
-                else
-                {
-                    oled.drawButtonUTF8(96, LINE_HIGHT * (i + 2) - PADDING_OFFSET, U8G2_BTN_INV, 128, 0, PADDING_V, "");
-                }
-            }
+            drawLine(val, i + 2, subMenuM.pointerPos == i, false, 88, subMenu->changeVal ? 96 : 0);
         }
     } while (oled.nextPage());
     iDryer.data.flagScreenUpdate = false;
@@ -781,8 +766,6 @@ void displayPrintMode()
     oled.firstPage();
     do
     {
-        oled.setFont(u8g2_font);
-
         uint8_t text = 0;
         if (state == DRY)
         {
@@ -794,19 +777,17 @@ void displayPrintMode()
         }
 
         char val[4];
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[text]))) / 2, LINE_HIGHT, printMenuItem(&menuTxt[text]));
+        drawLine(printMenuItem(&menuTxt[text]), 1);
 
         snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
         // snprintf(val, sizeof(val), "%2hu", (uint8_t)Setpoint);
-        oled.drawUTF8(0, LINE_HIGHT, val);
+        drawLine(val, 1, false, false);
         text == DEF_MENU_DRYING ? snprintf(val, sizeof(val), "%3hu", iDryer.data.setTime) : snprintf(val, sizeof(val), "%3hu", iDryer.data.setHumidity);
-        oled.drawUTF8(100, LINE_HIGHT, val);
-
-        oled.drawButtonUTF8(0, LINE_HIGHT - 1, U8G2_BTN_INV, 128, 1, 1, "");
+        drawLine(val, 1, true, false, 100);
 
         for (uint8_t i = 0; i < 3; i++)
         {
-            oled.drawUTF8(0, (i + 2) * LINE_HIGHT, printMenuItem(&serviceTxt[i + 6]));
+            drawLine(printMenuItem(&serviceTxt[i + 6]), i + 2, false, false, 0);
             text = i;
             uint8_t data = 0;
             switch (i)
@@ -824,7 +805,7 @@ void displayPrintMode()
                 break;
             }
             snprintf(val, sizeof(val), "%3hu", data);
-            oled.drawUTF8(100, (i + 2) * LINE_HIGHT, val);
+            drawLine(val, i + 2, false, false, 100);
         }
     } while (oled.nextPage());
     iDryer.data.flagScreenUpdate = false;
@@ -833,6 +814,8 @@ void displayPrintMode()
 
 void setup()
 {
+    WDT_DISABLE();
+
 #ifdef KASYAK_FINDER
     Serial.begin(9600);
 #endif
@@ -876,46 +859,63 @@ void setup()
     oled.enableUTF8Print();
     oled.setFont(u8g2_font);
 
+    oled.firstPage();
+    do
+    {
+        drawLine(printMenuItem(&serviceTxt[DEF_T_AYRA]), 1);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_VERSION]), 2);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_VER]), 3);
+    } while (oled.nextPage());
+
+    delay(3000);
+
+    fanOFF();
+
     menuSize = sizeof(menuTxt) / sizeof(menuTxt[0]);
+
+    uint16_t test = eeprom_read_word(&menuVal[0]);
+
+    if (test != EEPROM_VALIDATION_VALUE)
+    {
+        setError(31);
+    }
+
     uint32_t errorCode = readError();
 
     if (errorCode)
     {
+        fanON(100);
+        
+        oled.clear();
+
         do
         {
-            oled.setFont(u8g2_font);
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_ERROR]))) / 2, LINE_HIGHT, printMenuItem(&serviceTxt[DEF_T_ERROR]));
+            drawLine(printMenuItem(&serviceTxt[DEF_T_ERROR]), 1, true);
+
             uint8_t charCounter = 0;
-            for (uint8_t i = 0; i < 32; i++)
+            for (uint8_t i = 0; i < sizeof(errorCode) * 8; i++)
             {
-                if (errorTmpArray[i])
+                if (errorCode & (1U << i))
                 {
                     snprintf(serviceString, sizeof(serviceString), "%2d", i);
-                    oled.drawUTF8((charCounter * 32) % 128 + 4, LINE_HIGHT * (charCounter / 4 + 2), serviceString);
+                    drawLine(serviceString, charCounter / 4 + 2, true, false, (charCounter * 32) % 128 + 4);
                     if (charCounter % 5 == 0)
                         snprintf(serviceString, sizeof(serviceString), "%s", "");
                     charCounter++;
                 }
             }
-            oled.drawButtonUTF8(0, 1 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 1, "");
-            oled.drawButtonUTF8(0, 2 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 1, "");
-            oled.drawButtonUTF8(0, 3 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 1, "");
-            oled.drawButtonUTF8(0, 4 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 1, "");
         } while (oled.nextPage());
-        MCUSR = 0;
-        analogWrite(FAN, 255);
+
         while (digitalRead(encBut))
         {
             piii(500);
-            delay(500);
         }
-        eeprom_write_dword(&ERROR_CODE, 0UL);
-    }
 
-    uint16_t test;
-    test = eeprom_read_word(&menuVal[0]);
-    while (test != 123)
-        ;
+        WDT(WDTO_15MS, 0);
+        while (true)
+        {
+        }
+    }
 
 #if OVERWRITE_PID == 1
     eeprom_update_word(&menuVal[DEF_PID_KP], K_PROPRTIONAL);
@@ -925,16 +925,6 @@ void setup()
 #endif
 
     updateIDyerData();
-
-    oled.firstPage();
-    do
-    {
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_AYRA]))) / 2, LINE_HIGHT, printMenuItem(&serviceTxt[DEF_T_AYRA]));
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_VERSION]))) / 2, LINE_HIGHT * 2, printMenuItem(&serviceTxt[DEF_T_VERSION]));
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_VER]))) / 2, LINE_HIGHT * 3, printMenuItem(&serviceTxt[DEF_T_VER]));
-    } while (oled.nextPage());
-
-    delay(3000);
 
     enc.setEncISR(true);
     enc.setEncType(MY_ENCODER_TYPE);
@@ -947,18 +937,12 @@ void setup()
 
     while (!bme.begin(0x76))
     {
-        digitalWrite(BUZZER_PIN, HIGH);
-        delay(300);
-        digitalWrite(BUZZER_PIN, LOW);
-        delay(300);
+        piii(300);
     }
 
     while (analogRead(NTC_PIN) < ADC_MIN || analogRead(NTC_PIN) > ADC_MAX)
     {
-        digitalWrite(BUZZER_PIN, HIGH);
-        delay(1000);
-        digitalWrite(BUZZER_PIN, LOW);
-        delay(1000);
+        piii(1000);
     }
 
     // Для первоначального обновления меню
@@ -993,8 +977,8 @@ void setup()
     oled.firstPage();
     do
     {
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_BURN]))) / 2, LINE_HIGHT * 2, printMenuItem(&serviceTxt[DEF_T_BURN]));
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_PART]))) / 2, LINE_HIGHT * 3, printMenuItem(&serviceTxt[DEF_T_PART]));
+        drawLine(printMenuItem(&serviceTxt[DEF_T_BURN]), 2);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_PART]), 3);
     } while (oled.nextPage());
     delay(300000);
 #endif
@@ -1030,13 +1014,12 @@ void loop()
 
     if (enc.hold())
     {
-
         if (state == DRY || state == STORAGE)
         {
             WDT_DISABLE();
             state = MENU;
             heaterOFF();
-            piii(500);
+            async_piii(500);
             subMenuM.levelUpdate = UP;
             subMenuM.parentID = 0;
             subMenuM.pointerPos = 0;
@@ -1050,27 +1033,22 @@ void loop()
     {
     case NTC_ERROR:
 
-        analogWrite(FAN, 255);
+        fanMAX();
         heaterOFF();
 
         oled.clear();
         oled.firstPage();
         do
         {
-            oled.setFont(u8g2_font);
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_ERROR]))) / 2, LINE_HIGHT, printMenuItem(&serviceTxt[DEF_T_ERROR]));
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_CHECK]))) / 2, LINE_HIGHT * 2, printMenuItem(&serviceTxt[DEF_T_CHECK]));
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_THERMISTOR]))) / 2, LINE_HIGHT * 3, printMenuItem(&serviceTxt[DEF_T_THERMISTOR]));
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_OVERLOAD]))) / 2, LINE_HIGHT * 4, printMenuItem(&serviceTxt[DEF_T_OVERLOAD]));
-            oled.drawButtonUTF8(0, 1 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
-            oled.drawButtonUTF8(0, 2 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
-            oled.drawButtonUTF8(0, 3 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
-            oled.drawButtonUTF8(0, 4 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
+            drawLine(printMenuItem(&serviceTxt[DEF_T_ERROR]), 2, true);
+            drawLine(printMenuItem(&serviceTxt[DEF_T_CHECK]), 2, true);
+            drawLine(printMenuItem(&serviceTxt[DEF_T_THERMISTOR]), 2, true);
+            drawLine(printMenuItem(&serviceTxt[DEF_T_OVERLOAD]), 2, true);
         } while (oled.nextPage());
 
         while (digitalRead(encBut))
         {
-            piii(500);
+            async_piii(500);
             delay(500);
         }
         break;
@@ -1085,9 +1063,9 @@ void loop()
         if (iDryer.getData())
         {
             if (iDryer.data.ntcTemp > 45)
-                analogWrite(FAN, 255);
+                fanMAX();
             else if (iDryer.data.ntcTemp < 40)
-                analogWrite(FAN, 0);
+                fanOFF();
         }
 
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
@@ -1132,7 +1110,7 @@ void loop()
         getData();
         setPoint();
         screenUpdate();
-        iDryer.data.flagTimeCounter ? analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)) : analogWrite(FAN, 255);
+        iDryer.data.flagTimeCounter ? fanON(iDryer.data.setFan) : fanMAX();
         Input = iDryer.data.ntcTemp;
         pid.Compute();
         heater(Output, dimmer);
@@ -1146,7 +1124,7 @@ void loop()
 
         if (iDryer.data.setTime == 0)
         {
-            piii(1000);
+            async_piii(1000);
             DEBUG_PRINT(5);
             subMenuM.parentID = 5; // ID пункта хранение
             heaterOFF();
@@ -1171,7 +1149,7 @@ void loop()
 
         if (iDryer.data.flag)
         {
-            iDryer.data.flagTimeCounter ? analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255)) : analogWrite(FAN, 255);
+            iDryer.data.flagTimeCounter ? fanON(iDryer.data.setFan) : fanMAX();
             Input = iDryer.data.ntcTemp;
             pid.Compute();
             heater(Output, dimmer);
@@ -1196,7 +1174,7 @@ void loop()
 
             if (iDryer.data.ntcTemp <= iDryer.data.bmeTemp + TEMP_HYSTERESIS)
             {
-                analogWrite(FAN, 0);
+                fanOFF();
             }
 #if ACTIVATION_HYSTERESIS_MODE == 1
             if ((iDryer.data.bmeHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag) || (iDryer.data.bmeTemp <= iDryer.data.setHumidity - TEMP_HYSTERESIS && !iDryer.data.flag))
@@ -1205,7 +1183,7 @@ void loop()
 #endif
             {
                 iDryer.data.flag = true;
-                analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
+                fanON(iDryer.data.setFan);
                 heaterON();
             }
         }
@@ -1460,7 +1438,7 @@ void autoPidM()
     iDryer.data.flag = true;
     iDryer.data.flagTimeCounter = false;
     iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AVTOPID_TEMPERATURE]);
-    analogWrite(FAN, map(iDryer.data.setFan, 0, 100, 0, 255));
+    fanON((iDryer.data.setFan);
     WDT_DISABLE();
 #else
     state = MENU;
@@ -1498,7 +1476,7 @@ void saveAll()
     oled.firstPage();
     do
     {
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_AYRA]))) / 2, LINE_HIGHT * 3, printMenuItem(&serviceTxt[DEF_T_AYRA]));
+        drawLine(printMenuItem(&serviceTxt[DEF_T_AYRA]), 3);
     } while (oled.nextPage());
     delay(500);
     subMenuM.pointerUpdate = 1;
@@ -1518,52 +1496,58 @@ void WDT(uint16_t time, uint8_t current_function_uuid)
 ISR(WDT_vect)
 {
     setError(globalErrorFuncUUID);
-    // wdt_reset();
 }
 
 void WDT_DISABLE()
 {
+    MCUSR = 0;
     wdt_reset();
     wdt_disable();
 }
 
-bool setError(uint8_t errorCode)
+void setError(uint8_t errorCode)
 {
-    WDT_ERROR |= (1UL << errorCode);
-    eeprom_write_dword(&ERROR_CODE, WDT_ERROR);
-    return true;
+    auto wdtError = readError();
+
+    if (errorCode != 0)
+    {
+        wdtError |= (1U << errorCode);
+    }
+    else
+    {
+        wdtError = 0;
+    }
+
+    eeprom_write_dword(&ERROR_CODE, wdtError);
 }
 
 uint32_t readError()
 {
-    uint32_t wdt_error = eeprom_read_dword(&ERROR_CODE);
-    return printError(wdt_error);
-}
-
-uint32_t printError(uint32_t error)
-{
-    uint32_t errorCounter = 0;
-    for (uint8_t i = 0; i < 32; i++)
-    {
-        if (error & (1UL << i))
-        {
-            errorTmpArray[i] = 1;
-            errorCounter++;
-        }
-    }
-    return errorCounter;
+    return eeprom_read_dword(&ERROR_CODE);
 }
 
 void piii(uint16_t time_ms)
 {
-    // WDT(WDTO_8S, 9);
-    // time_ms = time_ms < 10 ? 10 : time_ms;
-    // digitalWrite(BUZZER_PIN, HIGH);
-    // delay(time_ms);
-    // digitalWrite(BUZZER_PIN, LOW);
-    // WDT_DISABLE();
-    if (state != AUTOPID)
-        buzzer.buzz(time_ms);
+    if (state == AUTOPID)
+    {
+        return;
+    }
+
+    time_ms = max(10u, time_ms);
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(time_ms);
+    digitalWrite(BUZZER_PIN, LOW);
+    delay(time_ms);
+}
+
+void async_piii(uint16_t time_ms)
+{
+    if (state == AUTOPID)
+    {
+        return;
+    }
+
+    buzzer.buzz(time_ms);
 }
 
 void heater(uint16_t Output, uint16_t &dimmer)
@@ -1592,6 +1576,21 @@ void heaterON()
     piii(100);
 #endif
     WDT_DISABLE();
+}
+
+void fanMAX()
+{
+    fanON(100);
+}
+
+void fanOFF()
+{
+    fanON(0);
+}
+
+void fanON(int percent)
+{
+    analogWrite(FAN, map(percent, 0, 100, 0, 255));
 }
 
 void heaterOFF()
@@ -1677,18 +1676,17 @@ void pwm_test()
         uint8_t k = 100;
         while (k > 0)
         {
-            analogWrite(FAN, 0);
+            fanOFF();
             delay(2000);
-            analogWrite(FAN, 255 / 100 * k);
+            fanON(k);
             oled.clear();
             oled.firstPage();
             do
             {
-                oled.setFont(u8g2_font);
                 snprintf(serviceString, sizeof(serviceString), "%s %6hu", printMenuItem(&serviceTxt[DEF_T_FREQUENCY]), frequency);
-                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 2, serviceString);
+                drawLine(serviceString, 2);
                 snprintf(serviceString, sizeof(serviceString), "%4s %6hu", printMenuItem(&menuTxt[DEF_SETTINGS_BLOWING]), k);
-                oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
+                drawLine(serviceString, 3);
             } while (oled.nextPage());
             delay(3000);
             k -= 10;
@@ -1718,6 +1716,23 @@ void screenUpdate()
         }
     }
 #endif
+}
+
+void drawLine(const char *text, int lineIndex, bool background, bool center, int x, int backgroundX)
+{
+    auto y = LINE_HIGHT * lineIndex;
+
+    if (center)
+    {
+        x += (128 - oled.getUTF8Width(text)) / 2;
+    }
+
+    oled.drawUTF8(x, y, text);
+
+    if (background)
+    {
+        oled.drawButtonUTF8(backgroundX, y, U8G2_BTN_INV, 128, 0, PADDING_V, "");
+    }
 }
 
 void getData()
@@ -1751,46 +1766,54 @@ void getData()
 
 void setPoint()
 {
-    float currentTemp = iDryer.data.bmeTemp;                    // Текущая температура
-    float desiredTemp = (float)iDryer.data.setTemp - 0.5f;      // Заданная температура
-    float deltaT = iDryer.data.deltaT;                        // Дополнительный коэффициент для агрессивного нагрева
+    float currentTemp = iDryer.data.bmeTemp;               // Текущая температура
+    float desiredTemp = (float)iDryer.data.setTemp - 0.5f; // Заданная температура
+    float deltaT = iDryer.data.deltaT;                     // Дополнительный коэффициент для агрессивного нагрева
 
     float slope = (float)(REAL_CALIB_TEMP_MAX - REAL_CALIB_TEMP_MIN) / (float)(MAX_CALIB_TEMP - MIN_CALIB_TEMP);
     float offset = (float)REAL_CALIB_TEMP_MIN - (slope * (float)MIN_CALIB_TEMP);
     float raw_bme_temp = (currentTemp - REAL_CALIB_TEMP_MIN) / slope + MIN_CALIB_TEMP;
 
     // Отключение при критическом перегреве
-    if (currentTemp >= desiredTemp + CRITICAL_OVERHEAT) {
+    if (currentTemp >= desiredTemp + CRITICAL_OVERHEAT)
+    {
         Setpoint = 0;
         return;
     }
-        
+
     // Защита от перегрева
-    if (currentTemp >= (desiredTemp + OVERHEAT_THRESHOLD)) {
+    if (currentTemp >= (desiredTemp + OVERHEAT_THRESHOLD))
+    {
         Setpoint = (slope * raw_bme_temp + offset) * 0.9f;
     }
 
     // Агрессивный нагрев
-    else if (currentTemp <= (desiredTemp - HEATING_THRESHOLD)) {
+    else if (currentTemp <= (desiredTemp - HEATING_THRESHOLD))
+    {
         Setpoint = desiredTemp + deltaT;
     }
 
     // Мягкое поддержание температуры
-    else {
+    else
+    {
         // Плавное изменение температуры
         float temperatureDifference = currentTemp - desiredTemp;
-        if (temperatureDifference > OVERHEAT_THRESHOLD) {
+        if (temperatureDifference > OVERHEAT_THRESHOLD)
+        {
             Setpoint = desiredTemp - (temperatureDifference * 0.1f);
-        } else if (temperatureDifference < -HEATING_THRESHOLD) {
+        }
+        else if (temperatureDifference < -HEATING_THRESHOLD)
+        {
             Setpoint = desiredTemp + deltaT;
-        } else {
+        }
+        else
+        {
             Setpoint = desiredTemp; // Поддерживаем заданную температуру
         }
     }
 
     if (Setpoint > TMP_MAX)
-    Setpoint = TMP_MAX;
-
+        Setpoint = TMP_MAX;
 }
 
 void autoPid()
@@ -1806,18 +1829,15 @@ void autoPid()
     oled.firstPage();
     do
     {
-        oled.setFont(u8g2_font);
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[DEF_PID_AVTOPID]))) / 2, LINE_HIGHT * 3, printMenuItem(&menuTxt[DEF_PID_AVTOPID]));
-        oled.drawButtonUTF8(0, 1 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
-        oled.drawButtonUTF8(0, 2 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
-        oled.drawButtonUTF8(0, 3 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
-        oled.drawButtonUTF8(0, 4 * LINE_HIGHT, U8G2_BTN_INV, 128, 0, 0, "");
+        drawLine("", 1, true);
+        drawLine("", 2, true);
+        drawLine(printMenuItem(&menuTxt[DEF_PID_AVTOPID]), 3, true);
+        drawLine("", 4, true);
     } while (oled.nextPage());
-    // piii(500);
 
     unsigned long microseconds;
 
-    analogWrite(FAN, 255);
+    fanMAX();
 
     tuner.startTuningLoop(micros());
     if (Servo.state != CLOSED)
@@ -1838,7 +1858,6 @@ void autoPid()
         do
         {
             // 20/20 100С 9500
-            oled.setFont(u8g2_font);
             memset(serviceString, 0, sizeof(serviceString));
             snprintf(serviceString, sizeof(serviceString), "%2d/%2d  %d%s  %3d", tuner.getCycle(), AUTOPID_ATTEMPT, (int)ntc.analog2temp(),
                      printMenuItem(&serviceTxt[DEF_T_CELSIUS]),
@@ -1849,17 +1868,16 @@ void autoPid()
                          (uint8_t) map(dimmer, HEATER_MIN, HEATER_MAX, 0, 100)
 #endif
             );
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 1, serviceString);
+            drawLine(serviceString, 1);
 
             snprintf(serviceString, sizeof(serviceString), "%2s %6hu", printMenuItem(&menuTxt[DEF_PID_KP]), (uint16_t)(abs(tuner.getKp()) * 100));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 2, serviceString);
+            drawLine(serviceString, 2);
 
             snprintf(serviceString, sizeof(serviceString), "%2s %6hu", printMenuItem(&menuTxt[DEF_PID_KI]), (uint16_t)(abs(tuner.getKi()) * 100));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
+            drawLine(serviceString, 3);
 
             snprintf(serviceString, sizeof(serviceString), "%2s %6u", printMenuItem(&menuTxt[DEF_PID_KD]), (uint16_t)(abs(tuner.getKd()) * 100));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 4, serviceString);
-
+            drawLine(serviceString, 4);
         } while (oled.nextPage());
         DEBUG_PRINT(1006);
 
@@ -1870,7 +1888,7 @@ void autoPid()
     }
 
     heaterOFF();
-    analogWrite(FAN, 255);
+    fanMAX();
 
     eeprom_update_word(&menuVal[DEF_PID_KP], (uint16_t)(abs(tuner.getKp()) * 100));
     eeprom_update_word(&menuVal[DEF_PID_KI], (uint16_t)(abs(tuner.getKi()) * 100));
@@ -1890,9 +1908,8 @@ void autoPid()
     oled.clear();
     do
     {
-        oled.setFont(u8g2_font);
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&menuTxt[DEF_SETTINGS_PID]))) / 2, LINE_HIGHT * 2, printMenuItem(&menuTxt[DEF_SETTINGS_PID]));
-        oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_SAVED]))) / 2, LINE_HIGHT * 3, printMenuItem(&serviceTxt[DEF_T_SAVED]));
+        drawLine(printMenuItem(&menuTxt[DEF_SETTINGS_PID]), 2);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_SAVED]), 3);
     } while (oled.nextPage());
 
     uint8_t time_delay = 40;
@@ -1903,11 +1920,9 @@ void autoPid()
         do
         {
             snprintf(val, sizeof(val), "%3d", time_delay);
-            oled.setFont(u8g2_font);
             snprintf(serviceString, sizeof(serviceString), "%12s", printMenuItem(&serviceTxt[4]));
-            oled.drawUTF8((128 - oled.getUTF8Width(printMenuItem(&serviceTxt[DEF_T_COOLING]))) / 2, LINE_HIGHT * 2, printMenuItem(&serviceTxt[DEF_T_COOLING]));
-
-            oled.drawUTF8((128 - oled.getUTF8Width(val)) / 2, LINE_HIGHT * 3, val);
+            drawLine(printMenuItem(&serviceTxt[DEF_T_COOLING]), 2);
+            drawLine(val, 3);
         } while (oled.nextPage());
         time_delay--;
         delay(1000);
@@ -1943,14 +1958,15 @@ void setSpool(uint8_t spool)
         oled.firstPage();
         do
         {
-            oled.setFont(u8g2_font);
             snprintf(serviceString, sizeof(serviceString), "%s %1d", printMenuItem(&serviceTxt[DEF_T_SPOOL]), spool + 1);
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 2, serviceString);
+            drawLine(serviceString, 2);
+
             snprintf(serviceString, sizeof(serviceString), "%s", printMenuItem(&serviceTxt[DEF_T_REMOVE]));
             snprintf(serviceString, sizeof(serviceString), "%s %s", serviceString, printMenuItem(&serviceTxt[DEF_T_WEIGHT]));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
+            drawLine(serviceString, 3);
+
             snprintf(serviceString, sizeof(serviceString), "%2d ", 5 - i);
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 4, serviceString);
+            drawLine(serviceString, 4);
         } while (oled.nextPage());
         delay(800);
     }
@@ -1958,11 +1974,10 @@ void setSpool(uint8_t spool)
     oled.firstPage();
     do
     {
-        oled.setFont(u8g2_font);
         snprintf(serviceString, sizeof(serviceString), "%s %1d", printMenuItem(&serviceTxt[DEF_T_SPOOL]), spool + 1);
-        oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 2, serviceString);
+        drawLine(serviceString, 2);
         snprintf(serviceString, sizeof(serviceString), "%s", printMenuItem(&serviceTxt[DEF_T_SETUP]));
-        oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
+        drawLine(serviceString, 3);
     } while (oled.nextPage());
     delay(1000);
 
@@ -1973,16 +1988,15 @@ void setSpool(uint8_t spool)
         oled.firstPage();
         do
         {
-            oled.setFont(u8g2_font);
             snprintf(serviceString, sizeof(serviceString), "%s %1d", printMenuItem(&serviceTxt[DEF_T_SPOOL]), spool + 1);
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 1, serviceString);
+            drawLine(serviceString, 1);
             snprintf(serviceString, sizeof(serviceString), "%s", printMenuItem(&serviceTxt[DEF_T_PUT]));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 2, serviceString);
+            drawLine(serviceString, 2);
             snprintf(serviceString, sizeof(serviceString), "%s %4d", printMenuItem(&serviceTxt[DEF_T_WEIGHT]), 1000);
             snprintf(serviceString, sizeof(serviceString), "%s %s", serviceString, printMenuItem(&serviceTxt[DEF_T_GRAM]));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
+            drawLine(serviceString, 3);
             snprintf(serviceString, sizeof(serviceString), "%2d ", 10 - i);
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 4, serviceString);
+            drawLine(serviceString, 4);
         } while (oled.nextPage());
         delay(800);
     }
@@ -1990,11 +2004,10 @@ void setSpool(uint8_t spool)
     oled.firstPage();
     do
     {
-        oled.setFont(u8g2_font);
         snprintf(serviceString, sizeof(serviceString), "%s", printMenuItem(&serviceTxt[DEF_T_SETUP]));
-        oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 2, serviceString);
+        drawLine(serviceString, 2);
         snprintf(serviceString, sizeof(serviceString), "%s %1d", printMenuItem(&serviceTxt[DEF_T_SPOOL]), spool + 1);
-        oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * 3, serviceString);
+        drawLine(serviceString, 3);
     } while (oled.nextPage());
     delay(800);
 
@@ -2040,21 +2053,16 @@ void scaleShow()
     oled.firstPage();
     do
     {
-        oled.setFont(u8g2_font);
         for (uint8_t i = 0; i < SCALES_MODULE_NUM; i++)
         {
             snprintf(serviceString, sizeof(serviceString), "%10s %5d", printMenuItem(&menuTxt[stringNum + i * 3]), (uint16_t)hx711Multi.getMassMulti(i));
-            oled.drawUTF8((128 - oled.getUTF8Width(serviceString)) / 2, LINE_HIGHT * (i + 2) - 16, serviceString);
-            if (hx711Multi.getMassMulti(i) < FILAMENT_SENSOR_MASS)
-            {
-                oled.drawButtonUTF8(96, LINE_HIGHT * (i + 2) - PADDING_OFFSET - 16, U8G2_BTN_INV, 128, 0, PADDING_V, "");
-            }
+            drawLine(serviceString, i + 1, hx711Multi.getMassMulti(i) < FILAMENT_SENSOR_MASS, true, 0, 96);
         }
     } while (oled.nextPage());
     WDT_DISABLE();
 }
 
-void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, uint16_t spoolMassArray[])
+void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint16_t spoolMassArray[])
 {
 #ifdef FILAMENT_SENSOR_ON
 
@@ -2081,7 +2089,7 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, uint16_t spool
         filamentExpenseFlag[sensorNum] = START;
         break;
     case START:
-        if ((int16_t)eeprom_read_word(&spoolMassArray[sensorNum]) - mass >= FILAMENT_REFERENCE_FLOW_RATE_MASS)
+        if (eeprom_read_word((const uint16_t *)&spoolMassArray[sensorNum]) - mass >= FILAMENT_REFERENCE_FLOW_RATE_MASS)
         {
             filamentExpenseFlag[sensorNum] = WAIT_ALERT_MASS_1;
         }
@@ -2089,7 +2097,7 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, uint16_t spool
     case WAIT_ALERT_MASS_1:
         if (mass < ALERT_MASS && mass > FILAMENT_SENSOR_MASS)
         {
-            piii(ALERT_MASS_PIII_TIME * 1000);
+            async_piii(ALERT_MASS_PIII_TIME * 1000);
             filamentExpenseFlag[sensorNum] = WAIT_ALERT_MASS_2;
         }
         break;
@@ -2097,7 +2105,7 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, uint16_t spool
         if (mass < FILAMENT_SENSOR_MASS)
         {
             digitalWrite(FILAMENT_SENSOR, 1);
-            piii(FILAMENT_SENSOR_MASS_PIII_TIME * 1000);
+            async_piii(FILAMENT_SENSOR_MASS_PIII_TIME * 1000);
             filamentExpenseFlag[sensorNum] = WAIT_RESET;
         }
         break;

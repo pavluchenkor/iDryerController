@@ -4,39 +4,40 @@
 // При старте висит на заставке и пищит коротко(0,3с) - ошибка инициализации BME
 // При старте висит на заставке и пищит продолжительно(1с) - ошибка температуры с термистора
 
-/* !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-// /* 01 */ void heaterOFF();
-// /* 02 */ void heater(uint16_t Output, uint16_t &dimmer);
-// /* 03 */ void heaterON();
-// /* 04 */ void updateIDyerData();
-// /* 05 */
-// /* 06 */ void screen(struct subMenu *subMenu);
-// /* 07 */ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu);
-// /* 08 */ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu);
-// /* 09 */ void piii(uint16_t time_ms);
-// /* 10 */ void dryStart();
-// /* 11 */ void storageStart();
-// /* 12 */ void autoPidM();
-// /* 13 */ uint32_t printError(uint32_t error);
-// /* 14 */ uint32_t readError();
-// /* 15 */ bool setError(uint8_t errorCode);
-// /* 16 */ void displayPrint(struct subMenu *subMenu);
-// /* 17 */ void displayPrintMode();
-// /* 18 */ // PID TUNING;
-// /* 20 */ void scaleShow();
-// /* 21 */ void getdataAndSetpoint();
-// /* 22 */ // CASE MENU
-// /* 23 */ // CASE DRY
-// /* 24 */ // CASE STORAGE
-// /* 25 */ void autoPid();
-// /* 26 */ // NTC MIN
-// /* 27 */ // NTC MAX
-// /* 28 */ // BME MIN
-// /* 29 */ // BME MAX
-// /* 30 */ // ADC ERROR
-// /* 0 */  // ADC ACCUMULATED ERROR
-// /* 31 */ // iDryer.getData
-/* !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+/* !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+01 void heaterOFF();
+02 void heater(uint16_t Output, uint16_t &dimmer);
+03 void heaterON();
+04 void updateIDyerData();
+05
+06 void screen(struct subMenu *subMenu);
+07 void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu);
+08 void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu);
+09 void piii(uint16_t time_ms);
+10 void dryStart();
+11 void storageStart();
+12 void autoPidM();
+13
+14 uint32_t readError();
+15 void setError(uint8_t errorCode);
+16 void displayPrint(struct subMenu *subMenu);
+17 void displayPrintMode();
+18 // PID TUNING;
+20 void scaleShow();
+21
+22 // CASE MENU
+23 // CASE DRY
+24 // CASE STORAGE
+25 void autoPid();
+26 // NTC MIN
+27 // NTC MAX
+28 // BME MIN
+29 // BME MAX
+30 // ADC ERROR
+31 // iDryer.getData
+
+!!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 
 /******************************************************************************
 PCB - https://oshwlab.com/svet_team/idryer
