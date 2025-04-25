@@ -246,9 +246,9 @@ uint16_t menuVal[] EEMEM = {
     0,                          // id: 21
     0,                          // id: 22
     0,                          // id: 23
-    3800,                       // id: 24 Kp 500
-    200,                        // id: 25 Ki 1
-    17650,                      // id: 26 Kd 200
+    3800,                       // id: 24
+    200,                        // id: 25
+    17650,                      // id: 26
     0,                          // id: 27
     333,                        // id: 28 autopid sample time
     65,                         // id: 29

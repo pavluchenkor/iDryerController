@@ -102,6 +102,14 @@ buzzer beeps every time the heater comes on
 
 #define TEMP_SENSOR_0 5
 
+
+/***************************
+temperature  sensor choice
+1 BME280
+2 SHT31
+ ***************************/
+#define SENSOR_TYPE 2
+
 #define TMP_MIN 1
 #define TMP_MAX 130
 #define TMP_SAFETY_THRESHOLD 10

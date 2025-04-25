@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Configuration.h>
 #include <Wire.h>
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 1
 #include <EEPROM.h>
@@ -6,11 +7,27 @@
 #include <avr/wdt.h>
 #include <U8g2lib.h>
 #include <GyverTimers.h>
-#include <GyverBME280.h>
+
+#if SENSOR_TYPE == 0
+#define ERROR
+#elif SENSOR_TYPE == 1
+#define SENSOR_BME280
+#elif SENSOR_TYPE == 2
+#define SENSOR_SHT31
+#endif
+
+#ifdef SENSOR_BME280
+  #include <GyverBME280.h>
+#endif
+
+#ifdef SENSOR_SHT31
+  #include <SHT31.h>
+#endif
+
+
 #include <PID_v1.h>
 #include <pid/pidautotuner.h> //https://github.com/jackw01/arduino-pid-autotuner
 #include <thermistor/thermistor.h>
-#include <Configuration.h>
 #include "menu/menu.h"
 #include "menu/def.h"
 #include "math/math_extensions.h"
@@ -210,7 +227,16 @@ struct subMenu
 subMenu subMenuM;
 
 thermistor ntc(NTC_PIN, 0);
+
+
+#ifdef SENSOR_SHT31
+SHT31 sht;  
+#endif
+
+#ifdef SENSOR_BME280
 GyverBME280 bme;
+#endif
+
 
 #if SCREEN == 0
 #define ERROR
@@ -278,9 +304,9 @@ struct Data
 {
     unsigned long timestamp = 0;
     float ntcTemp = 0;
-    float bmeTemp = 0;
-    float bmeTempCorrected = 0;
-    float bmeHumidity = 0;
+    float airTemp = 0;
+    float airTempCorrected = 0;
+    float airHumidity = 0;
     bool optimalConditionsReachedFlag = false;
     unsigned long startTime = 0;
     unsigned long errorTime28 = 0;
@@ -299,7 +325,7 @@ struct Data
 
     bool operator!=(const Data &other) const
     {
-        return timestamp != other.timestamp || int(ntcTemp) != int(other.ntcTemp) || int(bmeTemp) != int(other.bmeTemp) || int(bmeHumidity) != int(other.bmeHumidity);
+        return timestamp != other.timestamp || int(ntcTemp) != int(other.ntcTemp) || int(airTemp) != int(other.airTemp) || int(airHumidity) != int(other.airHumidity);
     }
 };
 
@@ -362,16 +388,30 @@ public:
     {
         data.timestamp = millis();
         data.ntcTemp = (ntc.analog2temp() + data.ntcTemp) / 2.0f;
-        data.bmeTemp = (bme.readTemperature() + data.bmeTemp) / 2.0f;
-        data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2.0f;
-
-        if (data.bmeTemp <= MIN_CALIB_TEMP)
+        
+        #ifdef SENSOR_SHT31
+        if (sht.dataReady())
         {
-            data.bmeTempCorrected = data.bmeTemp;
+            sht.requestData(); 
+            sht.readData();
+            data.airTemp = (sht.getTemperature() + data.airTemp) / 2.0f;
+            data.airHumidity = (sht.getHumidity() + data.airHumidity) / 2.0f;
+        }
+        #endif
+
+        #ifdef SENSOR_BME280
+        data.airTemp = (bme.readTemperature() + data.airTemp) / 2.0f;
+        data.airHumidity = (bme.readHumidity() + data.airHumidity) / 2.0f;
+        #endif
+
+
+        if (data.airTemp <= MIN_CALIB_TEMP)
+        {
+            data.airTempCorrected = data.airTemp;
         }
         else
         {
-            data.bmeTempCorrected = math::map_to_range(data.bmeTemp, MIN_CALIB_TEMP, MAX_CALIB_TEMP, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX);
+            data.airTempCorrected = math::map_to_range(data.airTemp, MIN_CALIB_TEMP, MAX_CALIB_TEMP, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX);
         }
 
         if (data != oldData && data.timestamp - screenTime > SCREEN_UPADATE_TIME)
@@ -385,7 +425,7 @@ public:
             data.flagScreenUpdate = false;
         }
 
-        if (uint8_t(ceil(data.bmeTempCorrected)) >= data.setTemp && !data.flagTimeCounter)
+        if (uint8_t(ceil(data.airTempCorrected)) >= data.setTemp && !data.flagTimeCounter)
             data.flagTimeCounter = true;
 
         if (data.ntcTemp < TMP_MIN)
@@ -394,10 +434,10 @@ public:
         if (data.ntcTemp > TMP_MAX + TMP_SAFETY_THRESHOLD)
             return false;
 
-        if (data.bmeTempCorrected < TMP_MIN)
+        if (data.airTempCorrected < TMP_MIN)
             return false;
 
-        if (data.bmeTempCorrected > TMP_MAX + TMP_SAFETY_THRESHOLD)
+        if (data.airTempCorrected > TMP_MAX + TMP_SAFETY_THRESHOLD)
             return false;
 
         return true;
@@ -522,7 +562,7 @@ void displayPrint(struct subMenu *subMenu)
         if (isTopLevelItem)
         {
             char val[6];
-            snprintf(val, sizeof(val), "%2hu/%2hu", (uint16_t)iDryer.data.bmeHumidity, (uint16_t)iDryer.data.bmeTempCorrected);
+            snprintf(val, sizeof(val), "%2hu/%2hu", (uint16_t)iDryer.data.airHumidity, (uint16_t)iDryer.data.airTempCorrected);
 #ifdef DEBUG
             snprintf(val, sizeof(val), "%4d", oldTime1 - oldTime2);
 #endif
@@ -579,7 +619,7 @@ void displayPrintMode()
         drawLine(val, 1, true, false, 104);
 
         drawLine(printMenuItem(&serviceTxt[6]), 2, false, false, 0);
-        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(iDryer.data.bmeTempCorrected), uint8_t(iDryer.data.bmeTemp));
+        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(iDryer.data.airTempCorrected), uint8_t(iDryer.data.airTemp));
         drawLine(val, 2, false, false, 72);
 
         drawLine(printMenuItem(&serviceTxt[7]), 3, false, false, 0);
@@ -587,7 +627,7 @@ void displayPrintMode()
         drawLine(val, 3, false, false, 72);
 
         drawLine(printMenuItem(&serviceTxt[8]), 4, false, false, 0);
-        snprintf(val, sizeof(val), "%3hu", uint8_t(iDryer.data.bmeHumidity));
+        snprintf(val, sizeof(val), "%3hu", uint8_t(iDryer.data.airHumidity));
         drawLine(val, 4, false, false, 104);
     } while (oled.nextPage());
     iDryer.data.flagScreenUpdate = false;
@@ -717,10 +757,22 @@ void setup()
     // bme.setFilter(FILTER_COEF_16);
     // bme.setStandbyTime(STANDBY_250MS);
 
+    #ifdef SENSOR_SHT31
+    while (!sht.begin())
+    {
+        piii(300);
+    }
+    #endif
+    
+    #ifdef SENSOR_BME280
     while (!bme.begin(0x76))
     {
         piii(300);
     }
+    #endif
+
+
+
 
     while (analogRead(NTC_PIN) < ADC_MIN || analogRead(NTC_PIN) > ADC_MAX)
     {
@@ -929,7 +981,6 @@ void loop()
     case STORAGE:
 
         WDT(WDTO_4S, 24);
-
         getData();
         setPoint();
         screenUpdate();
@@ -942,7 +993,7 @@ void loop()
             heater(Output, dimmer);
             Servo.check();
 
-            if (iDryer.data.setTemp <= iDryer.data.bmeTempCorrected && iDryer.data.bmeHumidity <= iDryer.data.setHumidity)
+            if (iDryer.data.setTemp <= iDryer.data.airTempCorrected && iDryer.data.airHumidity <= iDryer.data.setHumidity)
             {
                 if (Servo.state == OPEN)
                     Servo.toggle();
@@ -959,14 +1010,14 @@ void loop()
                 heaterOFF();
             }
 
-            if (iDryer.data.ntcTemp <= iDryer.data.bmeTempCorrected + TEMP_HYSTERESIS)
+            if (iDryer.data.ntcTemp <= iDryer.data.airTempCorrected + TEMP_HYSTERESIS)
             {
                 fanOFF();
             }
 #if ACTIVATION_HYSTERESIS_MODE == 1
-            if ((iDryer.data.bmeHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag) || (iDryer.data.bmeTemp <= iDryer.data.setTemp - TEMP_HYSTERESIS && !iDryer.data.flag))
+            if ((iDryer.data.airHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag) || (iDryer.data.airTemp <= iDryer.data.setTemp - TEMP_HYSTERESIS && !iDryer.data.flag))
 #else
-            if (iDryer.data.bmeHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag)
+            if (iDryer.data.airHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag)
 #endif
             {
                 iDryer.data.flag = true;
@@ -1517,10 +1568,10 @@ void getData()
             if (iDryer.data.ntcTemp > TMP_MAX + 10)
                 setError(27);
 
-            if (iDryer.data.bmeTempCorrected < TMP_MIN)
+            if (iDryer.data.airTempCorrected < TMP_MIN)
                 setError(28);
 
-            if (iDryer.data.bmeTempCorrected > TMP_MAX + 10)
+            if (iDryer.data.airTempCorrected > TMP_MAX + 10)
                 setError(29);
 
             setError(0);
@@ -1535,7 +1586,7 @@ void getData()
 
 void setPoint()
 {
-    auto currentTemp = iDryer.data.bmeTempCorrected; // Текущая температура
+    auto currentTemp = iDryer.data.airTempCorrected; // Текущая температура
     float desiredTemp = iDryer.data.setTemp;         // Заданная температура
     float deltaT = iDryer.data.deltaT;               // Дополнительный коэффициент для агрессивного нагрева
 

@@ -5,3 +5,4 @@ GyverLibs/GyverTimers
 GyverLibs/GyverNTC
 https://github.com/adafruit/Adafruit_BME280_Library
 GyverLibs/GyverPID
+https://github.com/RobTillaart/SHT31
