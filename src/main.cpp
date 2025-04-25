@@ -21,7 +21,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-// #define KASYAK_FINDER
+#define KASYAK_FINDER
 #ifdef KASYAK_FINDER
 #define DEBUG_PRINT(x) Serial.println(x)
 #else
@@ -1218,9 +1218,9 @@ void autoPidM()
 void updateIDyerData()
 {
     WDT(WDTO_250MS, 4);
-    iDryer.data.Kp = (float)eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.0f;
-    iDryer.data.Ki = (float)eeprom_read_word(&menuVal[DEF_PID_KI]) / 100.0f;
-    iDryer.data.Kd = (float)eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.0f;
+    iDryer.data.Kp = (float)eeprom_read_word(&menuVal[DEF_PID_KP]);
+    iDryer.data.Ki = (float)eeprom_read_word(&menuVal[DEF_PID_KI]);
+    iDryer.data.Kd = (float)eeprom_read_word(&menuVal[DEF_PID_KD]);
     iDryer.data.sampleTime = eeprom_read_word(&menuVal[DEF_AVTOPID_TIME_MS]);
     iDryer.data.deltaT = eeprom_read_word(&menuVal[DEF_SETTINGS_DELTA]);
     iDryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
