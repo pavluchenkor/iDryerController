@@ -392,8 +392,7 @@ public:
         #ifdef SENSOR_SHT31
         if (sht.dataReady())
         {
-            sht.requestData(); 
-            sht.readData();
+            sht.read();
             data.airTemp = (sht.getTemperature() + data.airTemp) / 2.0f;
             data.airHumidity = (sht.getHumidity() + data.airHumidity) / 2.0f;
         }
