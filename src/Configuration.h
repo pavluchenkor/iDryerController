@@ -104,6 +104,7 @@ buzzer beeps every time the heater comes on
 
 #define TMP_MIN 1
 #define TMP_MAX 130
+#define TMP_SAFETY_THRESHOLD 10
 #define HUMIDITY_HYSTERESIS 5
 #define TEMP_HYSTERESIS 5
 
@@ -112,14 +113,14 @@ buzzer beeps every time the heater comes on
 100 or 110
  ********************/
  
- #define CE 110 //*
+#define CE 110 //*
 
 
-// Linear Temperature Calibration for BME280
-#define MIN_CALIB_TEMP 25           // Regular ambient temperature
-#define MAX_CALIB_TEMP CE           //!! Do not edit 
-#define REAL_CALIB_TEMP_MIN 27      // BME280 readings at regular air temperature
-#define REAL_CALIB_TEMP_MAX 120     // BME280 readings during thermocouple calibration
+// Калибровка показаний BME280 | Linear Temperature Calibration for BME280
+#define MIN_CALIB_TEMP 70         // Температура воздуха в комнате по показниям BME280 | Air temperature in room by BME280 measurements
+#define MAX_CALIB_TEMP CE         // Температура воздуха в камере предельная по показниям BME280 (!! Не трогать) | Air MAX temperature in chamber by BME280 measurements (!! DO NOT TOUCH)
+#define REAL_CALIB_TEMP_MIN 70    // Температура воздуха в комнате по показаниям термопары | Air temperature in room by thermocouple measurements
+#define REAL_CALIB_TEMP_MAX 120   // Температура воздуха в камере по показниям термопары при достижении заданной температуры по показаниям BME280 | Air temperature in chamber by thermocouple measurements at BME280 setpoint temperature reached
 
 // Polynomial Temperature Calibration for BME280
 // #define COEFF_A 0.0
@@ -251,7 +252,7 @@ if your SCALES_MODULE_NUM not 0 do this:
    6 pio run -e EEP -t fullclean -t upload
  ********************/
 #define AUTOPID_RUN 0
-#define SCALES_MODULE_NUM 2
+#define SCALES_MODULE_NUM 0
 
 #define FILAMENT_SENSOR_ON                   //
 #define ALERT_MASS 100                       // Beep by buzzer when less than this amount of filament left

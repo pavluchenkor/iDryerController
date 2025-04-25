@@ -13,6 +13,9 @@
 #include <Configuration.h>
 #include "menu/menu.h"
 #include "menu/def.h"
+#include "math/math_extensions.h"
+#include "servo/servo.h"
+#include "buzzer/buzzer.h"
 #include "HX711.h"
 #include <EncButton.h>
 #include <avr/io.h>
@@ -26,9 +29,9 @@
 #endif
 
 // Пороговые значения для температурных фаз
-#define HEATING_THRESHOLD 1.5  // Порог для агрессивного нагрева (°C)
-#define OVERHEAT_THRESHOLD 0.5 // Порог перегрева (°C) для активации защиты от перегрева
-#define CRITICAL_OVERHEAT 1    // Критическая температура (°C)
+#define HEATING_THRESHOLD 10.0f // Порог для агрессивного нагрева (°C)
+#define HEATER_AIR_DELTA 0.5f   // Компенсация теплопотерь (°C)
+#define CRITICAL_OVERHEAT 5.0f  // Критическая температура (°C)
 
 // #define DEBUG
 #ifdef DEBUG
@@ -101,7 +104,8 @@ uint32_t ERROR_CODE EEMEM = 0x0;
  * меняй это на свой страх и риск
  ********************/
 #define HEATER_MIN 500
-#define HEATER_MAX 9500
+#define HEATER_MAX 2000
+#define HEATER_OFF 9500
 #endif
 
 #ifdef v24V
@@ -142,13 +146,6 @@ enum stateS
     STORAGE,
     AUTOPID,
     NTC_ERROR,
-};
-
-enum stateServo
-{
-    CLOSED,
-    MOVE,
-    OPEN,
 };
 
 #define MAX_ERROR 30
@@ -274,18 +271,15 @@ filamentExpense filamentExpenseFlag[SCALES_MODULE_NUM] = {UPDATE_DATA};
 
 #endif
 
-double Setpoint, Input, Output;
-
-#ifdef v24v
+float Setpoint, Input, Output;
 PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
-#else
-PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
-#endif
 
 struct Data
 {
-    double ntcTemp = 0;
+    unsigned long timestamp = 0;
+    float ntcTemp = 0;
     float bmeTemp = 0;
+    float bmeTempCorrected = 0;
     float bmeHumidity = 0;
     bool optimalConditionsReachedFlag = false;
     unsigned long startTime = 0;
@@ -297,35 +291,16 @@ struct Data
     bool flagScreenUpdate = false;
     bool flagTimeCounter = false;
     uint8_t setFan = 0;
-    double Kp = 0.0;
-    double Ki = 0.0;
-    double Kd = 0.0;
+    float Kp = 0.0f;
+    float Ki = 0.0f;
+    float Kd = 0.0f;
     uint16_t sampleTime = 0;
     uint8_t deltaT = 0;
 
     bool operator!=(const Data &other) const
     {
-        if (int(this->ntcTemp) != int(other.ntcTemp) || int(this->bmeTemp) != int(other.bmeTemp) || int(this->bmeHumidity) != int(other.bmeHumidity)
-            // || int(this->startTime) == int(other.startTime)
-            // || int(this->setTemp) == int(other.setTemp)
-            // || int(this->setHumidity) == int(other.setHumidity)
-            // || int(this->setTime) == int(other.setTime)
-            // || int(this->setFan) == int(other.setFan)
-            // || int(this->Kp) == int(other.Kp)
-            // || int(this->Ki) == int(other.Ki)
-            // || int(this->Kd) == int(other.Kd)
-        )
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        return timestamp != other.timestamp || int(ntcTemp) != int(other.ntcTemp) || int(bmeTemp) != int(other.bmeTemp) || int(bmeHumidity) != int(other.bmeHumidity);
     }
-    //   bool operator!=(const Data &other) const {
-    //     return !(*this == other);
-    //   }
 };
 
 /* 01 */ void heaterOFF();
@@ -385,23 +360,23 @@ public:
     Data oldData;
     bool getData()
     {
-        data.ntcTemp = (ntc.analog2temp() + data.ntcTemp) / 2.0;
-        data.bmeTemp = bme.readTemperature();
-        // data.bmeTemp =  data.bmeTemp +
-        //                 COEFF_A * (data.bmeTemp * data.bmeTemp * data.bmeTemp) +
-        //                 COEFF_B * (data.bmeTemp * data.bmeTemp) +
-        //                 COEFF_C * data.bmeTemp +
-        //                 COEFF_D;
+        data.timestamp = millis();
+        data.ntcTemp = (ntc.analog2temp() + data.ntcTemp) / 2.0f;
+        data.bmeTemp = (bme.readTemperature() + data.bmeTemp) / 2.0f;
+        data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2.0f;
 
-        float slope = (float)(REAL_CALIB_TEMP_MAX - REAL_CALIB_TEMP_MIN) / (float)(MAX_CALIB_TEMP - MIN_CALIB_TEMP);
-        float offset = (float)REAL_CALIB_TEMP_MIN - (slope * (float)MIN_CALIB_TEMP);
-
-        data.bmeTemp = slope * data.bmeTemp + offset;
-
-        data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2.0;
-        if (data != oldData && millis() - screenTime > SCREEN_UPADATE_TIME)
+        if (data.bmeTemp <= MIN_CALIB_TEMP)
         {
-            screenTime = millis();
+            data.bmeTempCorrected = data.bmeTemp;
+        }
+        else
+        {
+            data.bmeTempCorrected = math::map_to_range(data.bmeTemp, MIN_CALIB_TEMP, MAX_CALIB_TEMP, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX);
+        }
+
+        if (data != oldData && data.timestamp - screenTime > SCREEN_UPADATE_TIME)
+        {
+            screenTime = data.timestamp;
             data.flagScreenUpdate = true;
             oldData = data;
         }
@@ -410,19 +385,19 @@ public:
             data.flagScreenUpdate = false;
         }
 
-        if (uint8_t(ceil(data.bmeTemp)) >= uint8_t(data.setTemp) && !data.flagTimeCounter)
+        if (uint8_t(ceil(data.bmeTempCorrected)) >= data.setTemp && !data.flagTimeCounter)
             data.flagTimeCounter = true;
 
         if (data.ntcTemp < TMP_MIN)
             return false;
 
-        if (data.ntcTemp > TMP_MAX + 10)
+        if (data.ntcTemp > TMP_MAX + TMP_SAFETY_THRESHOLD)
             return false;
 
-        if (data.bmeTemp < TMP_MIN)
+        if (data.bmeTempCorrected < TMP_MIN)
             return false;
 
-        if (data.bmeTemp > TMP_MAX + 10)
+        if (data.bmeTempCorrected > TMP_MAX + TMP_SAFETY_THRESHOLD)
             return false;
 
         return true;
@@ -430,192 +405,7 @@ public:
 
 } iDryer;
 
-class servo
-{
-public:
-    uint8_t pin = 0;
-    unsigned long servoOldTime = 0;
-
-    uint16_t openTime = 0;
-    uint16_t closedTime = 0;
-
-    uint8_t angleMultiplier = 1;
-    uint16_t closedAngle = 90 * angleMultiplier;
-    uint16_t angle = 90;
-    uint16_t currentAngle = 90;
-
-    uint8_t changeState = 0;
-    uint8_t servoPin = 0;
-    uint16_t pulseWidth = 0;
-    stateServo prevState = OPEN;
-    stateServo state = CLOSED;
-
-    servo(uint8_t _srvPin, uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
-    {
-        pin = _srvPin;
-        closedTime = _closedTime;
-        openTime = _openTime;
-        angle = _angle * angleMultiplier;
-    }
-
-    void set(uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
-    {
-        closedTime = _closedTime;
-        openTime = _openTime;
-        angle = _angle * angleMultiplier;
-    }
-
-    void updateServo()
-    {
-        // if (setAngle(currentAngle, angle))
-        if (setAngle())
-        {
-            if (changeState)
-            {
-
-                if (currentAngle == closedAngle)
-                {
-                    state = CLOSED;
-                }
-                else
-                {
-                    state = OPEN;
-                }
-                changeState = 0;
-            }
-        }
-        else
-        {
-            if (servoPin)
-            {
-                PORTD &= ~(1 << pin);
-                Timer1.setPeriod(SERVO_PERIOD_MS * 1000 - pulseWidth);
-                servoPin = LOW;
-            }
-            else
-            {
-                pulseWidth = map(currentAngle, 0, 180 * angleMultiplier, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
-                PORTD |= (1 << pin);
-                Timer1.setPeriod(pulseWidth);
-                servoPin = HIGH;
-            }
-        }
-    }
-
-    // bool setAngle(uint16_t &currentAngle, uint16_t &angle)
-    bool setAngle()
-    {
-        if (currentAngle != angle)
-        {
-            if (state != MOVE)
-            {
-                prevState = state;
-                state = MOVE;
-                PORTD &= ~(1 << pin);
-                Timer1.enableISR(CHANNEL_A);
-            }
-            if (currentAngle < angle)
-            {
-                currentAngle++;
-            }
-            else
-            {
-                currentAngle--;
-            }
-            return 0;
-        }
-        else
-        {
-            return 1;
-        }
-    }
-
-    void close()
-    {
-        state = OPEN;
-        currentAngle = 130;
-        changeState = 1;
-        angle = closedAngle;
-        updateServo();
-    }
-
-    void toggle()
-    {
-        if (state == CLOSED)
-        {
-            changeState = 1;
-            angle = closedAngle + angle;
-        }
-        if (state == OPEN)
-        {
-            changeState = 1;
-            angle = closedAngle;
-        }
-        updateServo();
-    }
-
-    void check()
-    {
-        if (state == CLOSED)
-        {
-            if (servoOldTime < millis() && openTime)
-            {
-                toggle();
-                servoOldTime = millis() + (unsigned long)openTime * 1000UL * 60UL;
-            }
-            updateServo();
-        }
-        if (state == OPEN)
-        {
-            if (servoOldTime < millis() && closedTime)
-            {
-                toggle();
-                servoOldTime = millis() + (unsigned long)closedTime * 1000UL * 60UL;
-            }
-            updateServo();
-        }
-    }
-};
-
 servo Servo(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
-
-class BuzzerController
-{
-public:
-    BuzzerController(uint8_t buzzerPin) : buzzerPin(buzzerPin), isBuzzing(false), endTime(0) {}
-
-    void buzz(uint16_t duration)
-    {
-        if (!isBuzzing)
-        {
-            isBuzzing = true;
-            endTime = millis() + duration;
-            digitalWrite(buzzerPin, HIGH);
-        }
-    }
-
-    void update()
-    {
-        if (isBuzzing && millis() >= endTime)
-        {
-            stop();
-        }
-    }
-
-    void stop()
-    {
-        if (isBuzzing)
-        {
-            isBuzzing = false;
-            digitalWrite(buzzerPin, LOW);
-        }
-    }
-
-private:
-    const uint8_t buzzerPin;
-    bool isBuzzing;
-    unsigned long endTime;
-};
 
 BuzzerController buzzer(BUZZER_PIN);
 
@@ -723,12 +513,16 @@ void displayPrint(struct subMenu *subMenu)
     oled.firstPage();
     do
     {
+        auto isTopLevelItem = subMenuM.parentID == 0;
+
         uint8_t maxPos = SCREEN_LINES - MENU_HEADER < subMenu->membersQuantity ? SCREEN_LINES - MENU_HEADER : subMenu->membersQuantity;
-        drawLine(printMenuItem(&menuTxt[subMenuM.parentID]), 1, false, true, -10);
-        if (subMenuM.parentID == 0)
+
+        drawLine(printMenuItem(&menuTxt[subMenuM.parentID]), 1, false, true, isTopLevelItem ? -10 : 0);
+
+        if (isTopLevelItem)
         {
             char val[6];
-            snprintf(val, sizeof(val), "%2hu/%2hu", (uint16_t)iDryer.data.bmeHumidity, (uint16_t)iDryer.data.bmeTemp);
+            snprintf(val, sizeof(val), "%2hu/%2hu", (uint16_t)iDryer.data.bmeHumidity, (uint16_t)iDryer.data.bmeTempCorrected);
 #ifdef DEBUG
             snprintf(val, sizeof(val), "%4d", oldTime1 - oldTime2);
 #endif
@@ -776,37 +570,25 @@ void displayPrintMode()
             text = DEF_MENU_STORAGE;
         }
 
-        char val[4];
+        char val[8];
         drawLine(printMenuItem(&menuTxt[text]), 1);
 
         snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
-        // snprintf(val, sizeof(val), "%2hu", (uint8_t)Setpoint);
         drawLine(val, 1, false, false);
-        text == DEF_MENU_DRYING ? snprintf(val, sizeof(val), "%3hu", iDryer.data.setTime) : snprintf(val, sizeof(val), "%3hu", iDryer.data.setHumidity);
-        drawLine(val, 1, true, false, 100);
+        snprintf(val, sizeof(val), "%3hu", text == DEF_MENU_DRYING ? iDryer.data.setTime : iDryer.data.setHumidity);
+        drawLine(val, 1, true, false, 104);
 
-        for (uint8_t i = 0; i < 3; i++)
-        {
-            drawLine(printMenuItem(&serviceTxt[i + 6]), i + 2, false, false, 0);
-            text = i;
-            uint8_t data = 0;
-            switch (i)
-            {
-            case 0: // Воздух
-                data = trunc((double)iDryer.data.bmeTemp);
-                break;
-            case 1: // Нагреватель
-                data = iDryer.data.ntcTemp;
-                break;
-            case 2: // Влажность
-                data = iDryer.data.bmeHumidity;
-                break;
-            default:
-                break;
-            }
-            snprintf(val, sizeof(val), "%3hu", data);
-            drawLine(val, i + 2, false, false, 100);
-        }
+        drawLine(printMenuItem(&serviceTxt[6]), 2, false, false, 0);
+        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(iDryer.data.bmeTempCorrected), uint8_t(iDryer.data.bmeTemp));
+        drawLine(val, 2, false, false, 72);
+
+        drawLine(printMenuItem(&serviceTxt[7]), 3, false, false, 0);
+        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(iDryer.data.ntcTemp), uint8_t(Setpoint));
+        drawLine(val, 3, false, false, 72);
+
+        drawLine(printMenuItem(&serviceTxt[8]), 4, false, false, 0);
+        snprintf(val, sizeof(val), "%3hu", uint8_t(iDryer.data.bmeHumidity));
+        drawLine(val, 4, false, false, 104);
     } while (oled.nextPage());
     iDryer.data.flagScreenUpdate = false;
     WDT_DISABLE();
@@ -885,7 +667,7 @@ void setup()
     if (errorCode)
     {
         fanON(100);
-        
+
         oled.clear();
 
         do
@@ -1110,31 +892,36 @@ void loop()
         getData();
         setPoint();
         screenUpdate();
-        iDryer.data.flagTimeCounter ? fanON(iDryer.data.setFan) : fanMAX();
+        fanON(iDryer.data.setFan);
         Input = iDryer.data.ntcTemp;
         pid.Compute();
         heater(Output, dimmer);
 
-        if (millis() - oldTimer >= 60000 && iDryer.data.flagTimeCounter)
+        if (Setpoint == 0)
         {
-            DEBUG_PRINT(4);
-            oldTimer = millis();
+            dimmer = HEATER_OFF;
+        }
+
+        if (iDryer.data.timestamp - oldTimer >= 60000 && iDryer.data.flagTimeCounter)
+        {
+            // DEBUG_PRINT(4);
+            oldTimer = iDryer.data.timestamp;
             iDryer.data.setTime--;
         }
 
         if (iDryer.data.setTime == 0)
         {
             async_piii(1000);
-            DEBUG_PRINT(5);
+            // DEBUG_PRINT(5);
             subMenuM.parentID = 5; // ID пункта хранение
             heaterOFF();
             WDT_DISABLE();
             storageStart();
-            DEBUG_PRINT(6);
+            // DEBUG_PRINT(6);
         }
 
         Servo.check();
-        DEBUG_PRINT(7);
+        // DEBUG_PRINT(7);
         WDT_DISABLE();
 
         break;
@@ -1155,7 +942,7 @@ void loop()
             heater(Output, dimmer);
             Servo.check();
 
-            if (iDryer.data.setTemp <= iDryer.data.bmeTemp && iDryer.data.bmeHumidity <= iDryer.data.setHumidity)
+            if (iDryer.data.setTemp <= iDryer.data.bmeTempCorrected && iDryer.data.bmeHumidity <= iDryer.data.setHumidity)
             {
                 if (Servo.state == OPEN)
                     Servo.toggle();
@@ -1172,12 +959,12 @@ void loop()
                 heaterOFF();
             }
 
-            if (iDryer.data.ntcTemp <= iDryer.data.bmeTemp + TEMP_HYSTERESIS)
+            if (iDryer.data.ntcTemp <= iDryer.data.bmeTempCorrected + TEMP_HYSTERESIS)
             {
                 fanOFF();
             }
 #if ACTIVATION_HYSTERESIS_MODE == 1
-            if ((iDryer.data.bmeHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag) || (iDryer.data.bmeTemp <= iDryer.data.setHumidity - TEMP_HYSTERESIS && !iDryer.data.flag))
+            if ((iDryer.data.bmeHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag) || (iDryer.data.bmeTemp <= iDryer.data.setTemp - TEMP_HYSTERESIS && !iDryer.data.flag))
 #else
             if (iDryer.data.bmeHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag)
 #endif
@@ -1199,6 +986,9 @@ void loop()
         autoPid();
 #endif
 #endif
+        break;
+
+    default:
         break;
     }
 }
@@ -1423,37 +1213,14 @@ void storageStart()
 
 void autoPidM()
 {
-    WDT(WDTO_500MS, 12);
-#if SCALES_MODULE_NUM == 0 || AUTOPID_RUN == 1
-#ifndef PWM_TEST
-
-    heaterON();
-
-#ifdef DEBUG
-    WDT_DISABLE();
-#endif
-    // piii(100);
-
-    state = AUTOPID;
-    iDryer.data.flag = true;
-    iDryer.data.flagTimeCounter = false;
-    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AVTOPID_TEMPERATURE]);
-    fanON((iDryer.data.setFan);
-    WDT_DISABLE();
-#else
-    state = MENU;
-    WDT_DISABLE();
-#endif
-#endif
 }
 
 void updateIDyerData()
 {
     WDT(WDTO_250MS, 4);
-    iDryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
-    iDryer.data.Kp = (double)eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.00;
-    iDryer.data.Ki = (double)eeprom_read_word(&menuVal[DEF_PID_KI]) / 100.00;
-    iDryer.data.Kd = (double)eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.00;
+    iDryer.data.Kp = (float)eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.0f;
+    iDryer.data.Ki = (float)eeprom_read_word(&menuVal[DEF_PID_KI]) / 100.0f;
+    iDryer.data.Kd = (float)eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.0f;
     iDryer.data.sampleTime = eeprom_read_word(&menuVal[DEF_AVTOPID_TIME_MS]);
     iDryer.data.deltaT = eeprom_read_word(&menuVal[DEF_SETTINGS_DELTA]);
     iDryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
@@ -1461,7 +1228,7 @@ void updateIDyerData()
 
     pid.SetMode(AUTOMATIC);             // MANUAL AUTOMATIC
     pid.SetControllerDirection(DIRECT); // REVERSE
-    pid.SetOutputLimits((double)HEATER_MIN, (double)HEATER_MAX);
+    pid.SetOutputLimits((float)HEATER_MIN, (float)HEATER_MAX);
     pid.SetTunings(iDryer.data.Kp, iDryer.data.Ki, iDryer.data.Kd, PID_TYPE);
     pid.SetSampleTime((int)iDryer.data.sampleTime);
 
@@ -1706,14 +1473,16 @@ void screenUpdate()
         scaleTimer = millis();
         isScaleShow = !isScaleShow;
 
-        if (isScaleShow)
-        {
-            scaleShow();
-        }
-        else
-        {
-            displayPrintMode();
-        }
+        displayPrintMode();
+
+        // if (isScaleShow)
+        // {
+        //     scaleShow();
+        // }
+        // else
+        // {
+        //     displayPrintMode();
+        // }
     }
 #endif
 }
@@ -1748,10 +1517,10 @@ void getData()
             if (iDryer.data.ntcTemp > TMP_MAX + 10)
                 setError(27);
 
-            if (iDryer.data.bmeTemp < TMP_MIN)
+            if (iDryer.data.bmeTempCorrected < TMP_MIN)
                 setError(28);
 
-            if (iDryer.data.bmeTemp > TMP_MAX + 10)
+            if (iDryer.data.bmeTempCorrected > TMP_MAX + 10)
                 setError(29);
 
             setError(0);
@@ -1766,176 +1535,50 @@ void getData()
 
 void setPoint()
 {
-    float currentTemp = iDryer.data.bmeTemp;               // Текущая температура
-    float desiredTemp = (float)iDryer.data.setTemp - 0.5f; // Заданная температура
-    float deltaT = iDryer.data.deltaT;                     // Дополнительный коэффициент для агрессивного нагрева
+    auto currentTemp = iDryer.data.bmeTempCorrected; // Текущая температура
+    float desiredTemp = iDryer.data.setTemp;         // Заданная температура
+    float deltaT = iDryer.data.deltaT;               // Дополнительный коэффициент для агрессивного нагрева
 
-    float slope = (float)(REAL_CALIB_TEMP_MAX - REAL_CALIB_TEMP_MIN) / (float)(MAX_CALIB_TEMP - MIN_CALIB_TEMP);
-    float offset = (float)REAL_CALIB_TEMP_MIN - (slope * (float)MIN_CALIB_TEMP);
-    float raw_bme_temp = (currentTemp - REAL_CALIB_TEMP_MIN) / slope + MIN_CALIB_TEMP;
+    auto delta = desiredTemp - currentTemp;
+    auto adjustment = math::map_to_range(delta, HEATER_AIR_DELTA, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);
+
+    Setpoint = desiredTemp + adjustment;
+
+    if (Setpoint > TMP_MAX)
+    {
+        Setpoint = TMP_MAX;
+    }
 
     // Отключение при критическом перегреве
     if (currentTemp >= desiredTemp + CRITICAL_OVERHEAT)
     {
         Setpoint = 0;
-        return;
     }
 
-    // Защита от перегрева
-    if (currentTemp >= (desiredTemp + OVERHEAT_THRESHOLD))
-    {
-        Setpoint = (slope * raw_bme_temp + offset) * 0.9f;
-    }
-
-    // Агрессивный нагрев
-    else if (currentTemp <= (desiredTemp - HEATING_THRESHOLD))
-    {
-        Setpoint = desiredTemp + deltaT;
-    }
-
-    // Мягкое поддержание температуры
-    else
-    {
-        // Плавное изменение температуры
-        float temperatureDifference = currentTemp - desiredTemp;
-        if (temperatureDifference > OVERHEAT_THRESHOLD)
-        {
-            Setpoint = desiredTemp - (temperatureDifference * 0.1f);
-        }
-        else if (temperatureDifference < -HEATING_THRESHOLD)
-        {
-            Setpoint = desiredTemp + deltaT;
-        }
-        else
-        {
-            Setpoint = desiredTemp; // Поддерживаем заданную температуру
-        }
-    }
-
-    if (Setpoint > TMP_MAX)
-        Setpoint = TMP_MAX;
+#ifdef KASYAK_FINDER
+    Serial.print(" t: ");
+    Serial.print(iDryer.data.timestamp);
+    Serial.print(" d: ");
+    Serial.print(delta, 2);
+    Serial.print(" a: ");
+    Serial.print(adjustment, 2);
+    Serial.print(" t: ");
+    Serial.print(currentTemp, 2);
+    Serial.print(" s: ");
+    Serial.print(Setpoint, 2);
+    Serial.print(" n: ");
+    Serial.print(iDryer.data.ntcTemp, 2);
+    Serial.print(" o: ");
+    Serial.print(Output, 2);
+    Serial.print(" d: ");
+    Serial.print(dimmer);
+    Serial.println();
+    Serial.flush();
+#endif
 }
 
 void autoPid()
 {
-    PIDAutotuner tuner = PIDAutotuner();
-    tuner.setTargetInputValue((float)iDryer.data.setTemp);
-    tuner.setLoopInterval(long(iDryer.data.sampleTime) * 1000);
-    tuner.setOutputRange(HEATER_MIN, HEATER_MAX);
-    tuner.setTuningCycles(AUTOPID_ATTEMPT);
-    tuner.setZNMode(PIDAutotuner::ZNModeBasicPID); // ZNModeNoOvershoot - Defaults,   ZNModeBasicPID
-
-    oled.clear();
-    oled.firstPage();
-    do
-    {
-        drawLine("", 1, true);
-        drawLine("", 2, true);
-        drawLine(printMenuItem(&menuTxt[DEF_PID_AVTOPID]), 3, true);
-        drawLine("", 4, true);
-    } while (oled.nextPage());
-
-    unsigned long microseconds;
-
-    fanMAX();
-
-    tuner.startTuningLoop(micros());
-    if (Servo.state != CLOSED)
-        Servo.close();
-    delay(3000);
-    WDT_DISABLE();
-    dimmer = HEATER_MIN;
-    while (!tuner.isFinished())
-    {
-        iDryer.getData();
-        WDT(WDTO_4S, 18);
-        microseconds = micros();
-        double output = tuner.tunePID((double)iDryer.data.ntcTemp, microseconds);
-        heater((uint16_t)output, dimmer);
-        // heater((uint16_t)(tuner.tunePID(double(iDryer.data.ntcTemp), microseconds)), dimmer);
-
-        oled.firstPage();
-        do
-        {
-            // 20/20 100С 9500
-            memset(serviceString, 0, sizeof(serviceString));
-            snprintf(serviceString, sizeof(serviceString), "%2d/%2d  %d%s  %3d", tuner.getCycle(), AUTOPID_ATTEMPT, (int)ntc.analog2temp(),
-                     printMenuItem(&serviceTxt[DEF_T_CELSIUS]),
-#ifdef v220V
-                     (uint8_t)map(dimmer, HEATER_MAX, HEATER_MIN, 0, 100)
-#endif
-#ifdef v24V
-                         (uint8_t) map(dimmer, HEATER_MIN, HEATER_MAX, 0, 100)
-#endif
-            );
-            drawLine(serviceString, 1);
-
-            snprintf(serviceString, sizeof(serviceString), "%2s %6hu", printMenuItem(&menuTxt[DEF_PID_KP]), (uint16_t)(abs(tuner.getKp()) * 100));
-            drawLine(serviceString, 2);
-
-            snprintf(serviceString, sizeof(serviceString), "%2s %6hu", printMenuItem(&menuTxt[DEF_PID_KI]), (uint16_t)(abs(tuner.getKi()) * 100));
-            drawLine(serviceString, 3);
-
-            snprintf(serviceString, sizeof(serviceString), "%2s %6u", printMenuItem(&menuTxt[DEF_PID_KD]), (uint16_t)(abs(tuner.getKd()) * 100));
-            drawLine(serviceString, 4);
-        } while (oled.nextPage());
-        DEBUG_PRINT(1006);
-
-        while (micros() - microseconds < (unsigned long)iDryer.data.sampleTime * 1000)
-        {
-            delayMicroseconds(1);
-        }
-    }
-
-    heaterOFF();
-    fanMAX();
-
-    eeprom_update_word(&menuVal[DEF_PID_KP], (uint16_t)(abs(tuner.getKp()) * 100));
-    eeprom_update_word(&menuVal[DEF_PID_KI], (uint16_t)(abs(tuner.getKi()) * 100));
-    eeprom_update_word(&menuVal[DEF_PID_KD], (uint16_t)(abs(tuner.getKd()) * 100));
-    if (iDryer.data.ntcTemp - iDryer.data.bmeTemp < 15)
-    {
-        iDryer.data.deltaT = iDryer.data.ntcTemp - iDryer.data.bmeTemp;
-    }
-    else
-    {
-        iDryer.data.deltaT = 15;
-    }
-    eeprom_update_word(&menuVal[DEF_SETTINGS_DELTA], (uint16_t)iDryer.data.deltaT);
-    delay(5000);
-    updateIDyerData();
-
-    oled.clear();
-    do
-    {
-        drawLine(printMenuItem(&menuTxt[DEF_SETTINGS_PID]), 2);
-        drawLine(printMenuItem(&serviceTxt[DEF_T_SAVED]), 3);
-    } while (oled.nextPage());
-
-    uint8_t time_delay = 40;
-    while (time_delay)
-    {
-        char val[4];
-        oled.firstPage();
-        do
-        {
-            snprintf(val, sizeof(val), "%3d", time_delay);
-            snprintf(serviceString, sizeof(serviceString), "%12s", printMenuItem(&serviceTxt[4]));
-            drawLine(printMenuItem(&serviceTxt[DEF_T_COOLING]), 2);
-            drawLine(val, 3);
-        } while (oled.nextPage());
-        time_delay--;
-        delay(1000);
-    }
-
-    oled.clear();
-
-    subMenuM.levelUpdate = DOWN;
-    subMenuM.pointerUpdate = 1;
-    subMenuM.parentID = 0;
-    subMenuM.position = 0;
-    memset(subMenuM.membersID, 0, sizeof(subMenuM.membersID) / sizeof(subMenuM.membersID[0]));
-    state = MENU;
 }
 
 #if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
