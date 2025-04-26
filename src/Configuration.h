@@ -102,6 +102,14 @@ buzzer beeps every time the heater comes on
 
 #define TEMP_SENSOR_0 5
 
+
+/***************************
+temperature  sensor choice
+1 BME280
+2 SHT31
+ ***************************/
+#define SENSOR_TYPE 2
+
 #define TMP_MIN 1
 #define TMP_MAX 130
 #define TMP_SAFETY_THRESHOLD 10
@@ -252,7 +260,7 @@ if your SCALES_MODULE_NUM not 0 do this:
    6 pio run -e EEP -t fullclean -t upload
  ********************/
 #define AUTOPID_RUN 0
-#define SCALES_MODULE_NUM 0
+#define SCALES_MODULE_NUM 2
 
 #define FILAMENT_SENSOR_ON                   //
 #define ALERT_MASS 100                       // Beep by buzzer when less than this amount of filament left
