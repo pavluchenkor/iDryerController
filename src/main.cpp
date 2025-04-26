@@ -356,7 +356,6 @@ void isr()
 {
 #ifdef DEBUG
 #endif
-    testTIMER_COUNT++;
     PORTD &= ~(1 << DIMMER_PIN);
     if ((state == DRY || state == STORAGE || state == AUTOPID) && servo.state != MOVE && dimmer >= HEATER_MIN && dimmer < HEATER_MAX)
     {
@@ -401,6 +400,8 @@ ISR(TIMER1_A)
     }
     else if (servo.state == MOVE)
     {
+        testTIMER_COUNT++;
+
         servo.updateServo();
     }
 }
@@ -1185,7 +1186,6 @@ void updateIDryerData()
 
 void saveAll()
 {
-
     Timer1.pause();
     updateIDryerData();
     Timer1.resume();

@@ -17,12 +17,10 @@ void Servo::set(uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
 
 void Servo::updateServo()
 {
-  // if (setAngle(currentAngle, angle))
   if (setAngle())
   {
     if (changeState)
     {
-
       if (currentAngle == closedAngle)
       {
         state = CLOSED;
