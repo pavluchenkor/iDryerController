@@ -22,7 +22,7 @@ enum State
 
 struct Data
 {
-  unsigned long timestamp = 0;
+  unsigned long timestamp = 0; // timestamp in ms
   float ntcTemp = 0;
   float airTemp = 0;
   float airTempCorrected = 0;
@@ -37,10 +37,11 @@ struct Data
   bool flagScreenUpdate = false;
   bool flagTimeCounter = false;
   uint8_t setFan = 0;
-  float Kp = 0.0f;
-  float Ki = 0.0f;
-  float Kd = 0.0f;
-  uint16_t sampleTime = 0;
+  float Kp = 0;
+  float Ki = 0;
+  float Kd = 0;
+  float Kf = 0;
+  uint16_t minDeltaTime = 0;
   uint8_t deltaT = 0;
 
   bool operator!=(const Data &other) const;

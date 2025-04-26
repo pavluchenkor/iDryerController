@@ -16,11 +16,11 @@
 #include <SHT31.h>
 #endif
 
-#include <PID_v1.h>
-#include <pid/pidautotuner.h> //https://github.com/jackw01/arduino-pid-autotuner
-#include <thermistor/thermistor.h>
+#include "pidautotuner/pidautotuner.h" //https://github.com/jackw01/arduino-pid-autotuner
+#include "thermistor/thermistor.h"
 #include "menu/menu.h"
 #include "menu/def.h"
+#include "math/algorithms/pid/pid.h"
 #include "math/math_extensions.h"
 #include "iDryer/iDryer.h"
 #include "servo/servo.h"
@@ -281,8 +281,10 @@ filamentExpense filamentExpenseFlag[SCALES_MODULE_NUM] = {UPDATE_DATA};
 
 #endif
 
-float Setpoint, Input, Output;
-PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
+float Setpoint = 0;
+float Input = 0;
+float Output = 0;
+math::algorithms::PIDController pid;
 
 /* 01 */ void heaterOFF();
 /* 02 */ void heater(uint16_t Output, uint16_t &dimmer);
@@ -626,7 +628,7 @@ void setup()
     eeprom_update_word(&menuVal[DEF_PID_KP], K_PROPRTIONAL);
     eeprom_update_word(&menuVal[DEF_PID_KI], K_INTEGRAL);
     eeprom_update_word(&menuVal[DEF_PID_KD], K_DERIVATIVE);
-    eeprom_update_word(&menuVal[DEF_AVTOPID_TIME_MS], K_SAMPLE_TIME);
+    eeprom_update_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS], K_SAMPLE_TIME);
 #endif
 
     updateIDryerData();
@@ -827,9 +829,15 @@ void loop()
         setPoint();
         screenUpdate();
         fanON(dryer.data.setFan);
+
         Input = dryer.data.ntcTemp;
-        pid.Compute();
-        heater(Output, dimmer);
+
+        auto timeInSeconds = dryer.data.timestamp / math::msCountInSec;
+        auto heaterTempError = Setpoint - Input;
+        pid.Process(timeInSeconds, heaterTempError);
+
+        Output = pid.GetOutput();
+        dimmer = static_cast<uint16_t>(math::map_to_range(Output, -1.0, 1.0, HEATER_MAX, HEATER_MIN));
 
         if (Setpoint == 0)
         {
@@ -1151,21 +1159,22 @@ void autoPidM()
 void updateIDryerData()
 {
     WDT(WDTO_250MS, 4);
-    dryer.data.Kp = (float)eeprom_read_word(&menuVal[DEF_PID_KP]);
-    dryer.data.Ki = (float)eeprom_read_word(&menuVal[DEF_PID_KI]);
-    dryer.data.Kd = (float)eeprom_read_word(&menuVal[DEF_PID_KD]);
-    dryer.data.sampleTime = eeprom_read_word(&menuVal[DEF_AVTOPID_TIME_MS]);
+    dryer.data.Kp = eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.0f;
+    dryer.data.Ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / 100.0f;
+    dryer.data.Kd = eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.0f;
+    dryer.data.Kf = eeprom_read_word(&menuVal[DEF_PID_KF]) / 100.0f;
+    dryer.data.minDeltaTime = eeprom_read_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS]) / 100.0f;
     dryer.data.deltaT = eeprom_read_word(&menuVal[DEF_SETTINGS_DELTA]);
     dryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
     dryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
 
-    pid.SetMode(AUTOMATIC);             // MANUAL AUTOMATIC
-    pid.SetControllerDirection(DIRECT); // REVERSE
-    pid.SetOutputLimits((float)HEATER_MIN, (float)HEATER_MAX);
-    pid.SetTunings(dryer.data.Kp, dryer.data.Ki, dryer.data.Kd, PID_TYPE);
-    pid.SetSampleTime((int)dryer.data.sampleTime);
+    pid.SetMinDeltaTime(dryer.data.minDeltaTime);
+    pid.SetProportionalGain(dryer.data.Kp);
+    pid.SetIntegralGain(dryer.data.Ki);
+    pid.SetDerivativeGain(dryer.data.Kd);
+    pid.SetFilterGain(dryer.data.Kf);
 
-    servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
+    // servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
     // servo.toggle();
     WDT_DISABLE();
 }
