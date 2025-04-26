@@ -1287,9 +1287,19 @@ void updateIDyerData()
     WDT_DISABLE();
 }
 
+
 void saveAll()
 {
+    bool prev_timer1_dimmerFlag = timer1_dimmerFlag;
+    Timer1.stop();
     updateIDyerData();
+
+    if (prev_timer1_dimmerFlag)
+    {
+        Timer1.setPeriod(dimmer);
+        timer1_dimmerFlag = true;
+    }
+
     oled.firstPage();
     do
     {
