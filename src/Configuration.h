@@ -35,7 +35,7 @@
 28 // BME MIN
 29 // BME MAX
 30 // ADC ERROR
-31 // iDryer.getData
+31 // dryer.getData
 
 !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 
