@@ -273,6 +273,12 @@ uint32_t offset_eep[] EEMEM{
     0,
     0,
 };
+uint32_t scale_temp_offset_table_eep[4][6] EEMEM = {
+    { 60, 70, 80, 90, 100, 110 },
+    { 60, 70, 80, 90, 100, 110 },
+    { 60, 70, 80, 90, 100, 110 },
+    { 60, 70, 80, 90, 100, 110 },
+  };
 #endif
 
 #if SCALES_MODULE_NUM != 0
@@ -378,6 +384,7 @@ void drawLine(const char *text, int lineIndex, bool background = false, bool cen
 /* 31 */ // iDryer.getData
 void WDT(uint16_t time, uint8_t current_function_uuid);
 void WDT_DISABLE();
+void calibration();
 
 class iDryer
 {
@@ -822,6 +829,8 @@ void setup()
 
 void loop()
 {
+
+    // calibration();
     enc.tick();
     buzzer.update();
 
@@ -1290,15 +1299,12 @@ void updateIDyerData()
 
 void saveAll()
 {
-    bool prev_timer1_dimmerFlag = timer1_dimmerFlag;
-    Timer1.stop();
-    updateIDyerData();
+    detachInterrupt(INT_NUM);
+    timer1_dimmerFlag = false;
+    dimmer = HEATER_OFF;
+    digitalWrite(DIMMER_PIN, 0);
 
-    if (prev_timer1_dimmerFlag)
-    {
-        Timer1.setPeriod(dimmer);
-        timer1_dimmerFlag = true;
-    }
+    updateIDyerData();
 
     oled.firstPage();
     do
@@ -1426,7 +1432,7 @@ void heaterOFF()
 #ifdef v220V
     detachInterrupt(INT_NUM);
     timer1_dimmerFlag = false;
-    dimmer = HEATER_MAX;
+    dimmer = HEATER_OFF;
     digitalWrite(DIMMER_PIN, 0);
 #else
     digitalWrite(DIMMER_PIN, 0);
@@ -1823,3 +1829,62 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint1
 }
 
 #endif
+
+extern uint8_t sensor_temp_offset_table_eep[6]EEMEM {
+    60,
+    70,
+    80,
+    90,
+    100,
+    110,
+};
+
+
+void calibration()
+{
+    //Start
+    for (size_t i = 0; i < SCALES_MODULE_NUM; i++)
+    {
+        hx711Multi.tempOffsetSetMulti(i, 0, 100);
+    }
+
+    PORTD |= (1 << DIMMER_PIN);
+    fanMAX();
+
+    // Греем
+    while (iDryer.data.ntcTemp < 115 && iDryer.data.airTemp < 110)
+    {
+        WDT(WDTO_250MS, 32);
+        iDryer.getData();
+        WDT_DISABLE();
+    }
+
+    PORTD &= ~(1 << DIMMER_PIN);
+
+    // Калибруем
+    while(iDryer.data.airTemp > 45)
+    {
+        WDT(WDTO_8S, 33);
+     
+        iDryer.getData();
+        uint8_t temp = (uint8_t)iDryer.data.ntcTemp;
+        uint8_t air_temp = (uint8_t)iDryer.data.airTemp;
+        uint8_t offset = 0;
+    
+        if (temp >= 60 && temp <= 110 && (temp % 10 == 0))
+        {
+            uint8_t idx = (temp - 60) / 10 + 1;
+            uint8_t target = 60 + (idx - 1) * 10;
+            int8_t offset = temp - air_temp;
+            eeprom_write_byte(&sensor_temp_offset_table_eep[idx - 1], static_cast<uint8_t>(offset));
+            
+            for (size_t i = 0; i < SCALES_MODULE_NUM; i++)
+            {
+                hx711Multi.tempOffsetSetMulti(i, idx, 100);
+            }
+        }
+        
+        WDT_DISABLE();
+    }
+    fanOFF();
+}
