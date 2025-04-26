@@ -383,20 +383,6 @@ ISR(TIMER1_A)
         PORTD |= (1 << DIMMER_PIN);
         timer1_dimmerFlag = false;
         Timer1.stop();
-        // if (timer1_dimmerFlag)
-        // {
-        //     if (dimmer)
-        //         // digitalWrite(DIMMER_PIN, 1);
-        //         PORTD |= (1 << DIMMER_PIN);
-        //     timer1_dimmerFlag = 0;
-        //     // Timer1.setPeriod(50);
-        //     Timer1.stop();
-        // }
-        // else
-        // {
-        //     // digitalWrite(DIMMER_PIN, 0);
-        //     // PORTD &= ~(1 << DIMMER_PIN);
-        // }
     }
     else if (servo.state == MOVE)
     {
