@@ -628,7 +628,8 @@ void setup()
     eeprom_update_word(&menuVal[DEF_PID_KP], K_PROPRTIONAL);
     eeprom_update_word(&menuVal[DEF_PID_KI], K_INTEGRAL);
     eeprom_update_word(&menuVal[DEF_PID_KD], K_DERIVATIVE);
-    eeprom_update_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS], K_SAMPLE_TIME);
+    eeprom_update_word(&menuVal[DEF_PID_KF], K_FILTER);
+    eeprom_update_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS], K_MIN_DELTA_TIME);
 #endif
 
     updateIDryerData();
