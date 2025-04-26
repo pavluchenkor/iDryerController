@@ -1828,8 +1828,6 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint1
 #endif
 }
 
-#endif
-
 extern uint8_t sensor_temp_offset_table_eep[6]EEMEM {
     60,
     70,
@@ -1888,3 +1886,5 @@ void calibration()
     }
     fanOFF();
 }
+
+#endif
