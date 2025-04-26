@@ -309,7 +309,7 @@ struct Data
 void fanMAX();
 void fanOFF();
 void fanON(int percent);
-/* 04 */ void updateIDyerData();
+/* 04 */ void updateIDryerData();
 /* 05 */
 /* 06 */ void screen(struct subMenu *subMenu);
 /* 07 */ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu);
@@ -411,7 +411,7 @@ BuzzerController buzzer(BUZZER_PIN);
 
 void servoTest()
 {
-    updateIDyerData();
+    updateIDryerData();
     Servo.toggle();
 }
 
@@ -706,7 +706,7 @@ void setup()
     eeprom_update_word(&menuVal[DEF_AVTOPID_TIME_MS], K_SAMPLE_TIME);
 #endif
 
-    updateIDyerData();
+    updateIDryerData();
 
     enc.setEncISR(true);
     enc.setEncType(MY_ENCODER_TYPE);
@@ -1215,7 +1215,7 @@ void autoPidM()
 {
 }
 
-void updateIDyerData()
+void updateIDryerData()
 {
     WDT(WDTO_250MS, 4);
     iDryer.data.Kp = (float)eeprom_read_word(&menuVal[DEF_PID_KP]);
@@ -1239,7 +1239,17 @@ void updateIDyerData()
 
 void saveAll()
 {
-    updateIDyerData();
+    bool prev_timer1_dimmerFlag = timer1_dimmerFlag;
+    Timer1.stop();
+    updateIDryerData();
+
+    if (prev_timer1_dimmerFlag)
+    {
+        Timer1.setPeriod(dimmer);
+        timer1_dimmerFlag = true;
+    }
+
+    updateIDryerData();
     oled.firstPage();
     do
     {

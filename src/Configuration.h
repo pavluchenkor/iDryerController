@@ -9,7 +9,7 @@
 01 void heaterOFF();
 02 void heater(uint16_t Output, uint16_t &dimmer);
 03 void heaterON();
-04 void updateIDyerData();
+04 void updateIDryerData();
 05
 06 void screen(struct subMenu *subMenu);
 07 void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu);
