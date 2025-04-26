@@ -8,22 +8,13 @@
 #include <U8g2lib.h>
 #include <GyverTimers.h>
 
-#if SENSOR_TYPE == 0
-#define ERROR
-#elif SENSOR_TYPE == 1
-#define SENSOR_BME280
-#elif SENSOR_TYPE == 2
-#define SENSOR_SHT31
-#endif
-
 #ifdef SENSOR_BME280
-  #include <GyverBME280.h>
+#include <GyverBME280.h>
 #endif
 
 #ifdef SENSOR_SHT31
-  #include <SHT31.h>
+#include <SHT31.h>
 #endif
-
 
 #include <PID_v1.h>
 #include <pid/pidautotuner.h> //https://github.com/jackw01/arduino-pid-autotuner
@@ -52,9 +43,9 @@
 #define CRITICAL_OVERHEAT 5.0f  // Критическая температура (°C)
 
 // #define DEBUG
+uint32_t testTIMER_COUNT = 0;
 #ifdef DEBUG
 uint8_t testPWM = 0;
-uint32_t testTIMER_COUNT = 0;
 uint16_t testTIMER_STATE = 0;
 unsigned long oldTime1 = 0;
 unsigned long oldTime2 = 0;
@@ -217,15 +208,13 @@ subMenu subMenuM;
 
 thermistor ntc(NTC_PIN, 0);
 
-
 #ifdef SENSOR_SHT31
-SHT31 sht;  
+SHT31 sht;
 #endif
 
 #ifdef SENSOR_BME280
 GyverBME280 bme;
 #endif
-
 
 #if SCREEN == 0
 #define ERROR
@@ -263,11 +252,11 @@ uint32_t offset_eep[] EEMEM{
     0,
 };
 uint32_t scale_temp_offset_table_eep[4][6] EEMEM = {
-    { 60, 70, 80, 90, 100, 110 },
-    { 60, 70, 80, 90, 100, 110 },
-    { 60, 70, 80, 90, 100, 110 },
-    { 60, 70, 80, 90, 100, 110 },
-  };
+    {60, 70, 80, 90, 100, 110},
+    {60, 70, 80, 90, 100, 110},
+    {60, 70, 80, 90, 100, 110},
+    {60, 70, 80, 90, 100, 110},
+};
 #endif
 
 #if SCALES_MODULE_NUM != 0
@@ -294,7 +283,6 @@ filamentExpense filamentExpenseFlag[SCALES_MODULE_NUM] = {UPDATE_DATA};
 
 float Setpoint, Input, Output;
 PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
-
 
 /* 01 */ void heaterOFF();
 /* 02 */ void heater(uint16_t Output, uint16_t &dimmer);
@@ -347,7 +335,11 @@ void WDT(uint16_t time, uint8_t current_function_uuid);
 void WDT_DISABLE();
 void calibration();
 
-iDryer dryer(ntc);
+#ifdef SENSOR_BME280
+iDryer dryer(ntc, bme);
+#elif SENSOR_SHT31
+iDryer dryer(ntc, sht);
+#endif
 
 Servo servo(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
 
@@ -363,8 +355,8 @@ void servoTest()
 void isr()
 {
 #ifdef DEBUG
-    testTIMER_COUNT++;
 #endif
+    testTIMER_COUNT++;
     PORTD &= ~(1 << DIMMER_PIN);
     if ((state == DRY || state == STORAGE || state == AUTOPID) && servo.state != MOVE && dimmer >= HEATER_MIN && dimmer < HEATER_MAX)
     {
@@ -661,19 +653,19 @@ void setup()
     // bme.setFilter(FILTER_COEF_16);
     // bme.setStandbyTime(STANDBY_250MS);
 
-    #ifdef SENSOR_SHT31
+#ifdef SENSOR_SHT31
     while (!sht.begin())
     {
         piii(300);
     }
-    #endif
-    
-    #ifdef SENSOR_BME280
+#endif
+
+#ifdef SENSOR_BME280
     while (!bme.begin(0x76))
     {
         piii(300);
     }
-    #endif
+#endif
 
     while (analogRead(NTC_PIN) < ADC_MIN || analogRead(NTC_PIN) > ADC_MAX)
     {
@@ -1191,7 +1183,6 @@ void updateIDryerData()
     WDT_DISABLE();
 }
 
-
 void saveAll()
 {
 
@@ -1531,6 +1522,8 @@ void setPoint()
     Serial.print(Output, 2);
     Serial.print(" d: ");
     Serial.print(dimmer);
+    Serial.print(" c: ");
+    Serial.print(testTIMER_COUNT);
     Serial.println();
     Serial.flush();
 #endif
@@ -1721,7 +1714,7 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, State state, volatile uint16
 #endif
 }
 
-extern uint8_t sensor_temp_offset_table_eep[6]EEMEM {
+extern uint8_t sensor_temp_offset_table_eep[6] EEMEM{
     60,
     70,
     80,
@@ -1730,10 +1723,9 @@ extern uint8_t sensor_temp_offset_table_eep[6]EEMEM {
     110,
 };
 
-
 void calibration()
 {
-    //Start
+    // Start
     for (size_t i = 0; i < SCALES_MODULE_NUM; i++)
     {
         hx711Multi.tempOffsetSetMulti(i, 0, 100);
@@ -1753,22 +1745,22 @@ void calibration()
     PORTD &= ~(1 << DIMMER_PIN);
 
     // Калибруем
-    while(dryer.data.airTemp > 45)
+    while (dryer.data.airTemp > 45)
     {
         WDT(WDTO_8S, 33);
-     
+
         dryer.getData();
         uint8_t temp = (uint8_t)dryer.data.ntcTemp;
         uint8_t air_temp = (uint8_t)dryer.data.airTemp;
         uint8_t offset = 0;
-    
+
         if (temp >= 60 && temp <= 110 && (temp % 10 == 0))
         {
             uint8_t idx = (temp - 60) / 10 + 1;
             uint8_t target = 60 + (idx - 1) * 10;
             int8_t offset = temp - air_temp;
             eeprom_write_byte(&sensor_temp_offset_table_eep[idx - 1], static_cast<uint8_t>(offset));
-            
+
             for (size_t i = 0; i < SCALES_MODULE_NUM; i++)
             {
                 hx711Multi.tempOffsetSetMulti(i, idx, 100);

@@ -5,9 +5,15 @@ bool Data::operator!=(const Data &other) const
   return timestamp != other.timestamp || int(ntcTemp) != int(other.ntcTemp) || int(airTemp) != int(other.airTemp) || int(airHumidity) != int(other.airHumidity);
 }
 
-iDryer::iDryer(thermistor &ntc) : ntc(ntc)
+#ifdef SENSOR_BME280
+iDryer::iDryer(thermistor &ntc, GyverBME280 &bme) : ntc(ntc), bme(bme)
 {
 }
+#elif SENSOR_SHT31
+iDryer::iDryer(thermistor &ntc, SHT31 &sht) : ntc(ntc), sht(sht)
+{
+}
+#endif
 
 bool iDryer::getData()
 {

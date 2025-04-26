@@ -6,16 +6,18 @@
 #include "Configuration.h"
 #include "math/math_extensions.h"
 #include "thermistor/thermistor.h"
+#include "GyverBME280.h"
+#include "SHT31.h"
 
 enum State
 {
-    OFF,
-    ON,
-    MENU,
-    DRY,
-    STORAGE,
-    AUTOPID,
-    NTC_ERROR,
+  OFF,
+  ON,
+  MENU,
+  DRY,
+  STORAGE,
+  AUTOPID,
+  NTC_ERROR,
 };
 
 struct Data
@@ -52,7 +54,17 @@ public:
   unsigned long screenTime = 0;
   thermistor &ntc;
 
-  iDryer(thermistor &ntc);
+#ifdef SENSOR_BME280
+  GyverBME280 &bme;
+#elif SENSOR_SHT31
+  SHT31 &sht;
+#endif
+
+#ifdef SENSOR_BME280
+  iDryer(thermistor &ntc, GyverBME280 &bme);
+#elif SENSOR_SHT31
+  iDryer(thermistor &ntc, SHT31 &sht);
+#endif
 
   bool getData();
 };

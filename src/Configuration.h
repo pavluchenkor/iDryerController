@@ -291,4 +291,12 @@ language, will not be displayed
 #define PRESET_NAME_3 "PA6"
 #endif
 
+#if SENSOR_TYPE == 0
+#define ERROR
+#elif SENSOR_TYPE == 1
+#define SENSOR_BME280
+#elif SENSOR_TYPE == 2
+#define SENSOR_SHT31
+#endif
+
 #endif
