@@ -675,9 +675,6 @@ void setup()
     }
     #endif
 
-
-
-
     while (analogRead(NTC_PIN) < ADC_MIN || analogRead(NTC_PIN) > ADC_MAX)
     {
         piii(1000);
@@ -1197,12 +1194,10 @@ void updateIDryerData()
 
 void saveAll()
 {
-    detachInterrupt(INT_NUM);
-    timer1_dimmerFlag = false;
-    dimmer = HEATER_OFF;
-    digitalWrite(DIMMER_PIN, 0);
 
+    Timer1.pause();
     updateIDryerData();
+    Timer1.resume();
 
     oled.firstPage();
     do
@@ -1779,10 +1774,16 @@ void calibration()
                 hx711Multi.tempOffsetSetMulti(i, idx, 100);
             }
         }
-        
+
         WDT_DISABLE();
     }
     fanOFF();
+}
+
+uint8_t temp_idx_rerurn(uint8_t temp)
+{
+    uint8_t idx = (temp - 60) / 10;
+    return idx;
 }
 
 #endif
