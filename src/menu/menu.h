@@ -102,7 +102,7 @@ PGM_P const menuTxt[] PROGMEM = {
     i25, // id: 25
     i26, // id: 26
     i27, // id: 27
-    i29, // id: 28
+    i28, // id: 28
     i2,  // id: 29
     i4,  // id: 30
     i31, // id: 31
