@@ -1883,8 +1883,14 @@ void calibration()
                 hx711Multi.tempOffsetSetMulti(i, idx, 100);
             }
         }
-        
+
         WDT_DISABLE();
     }
     fanOFF();
+}
+
+uint8_t temp_idx_rerurn(uint8_t temp)
+{
+    uint8_t idx = (temp - 60) / 10;
+    return idx;
 }
