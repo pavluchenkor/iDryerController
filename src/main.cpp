@@ -155,17 +155,6 @@ uint32_t ERROR_CODE EEMEM = 0x0;
 #define SCREEN_LINES 4
 #define MENU_HEADER 1
 
-enum stateS
-{
-    OFF,
-    ON,
-    MENU,
-    DRY,
-    STORAGE,
-    AUTOPID,
-    NTC_ERROR,
-};
-
 #define MAX_ERROR 30
 
 #define ADC_MIN 200
@@ -179,7 +168,7 @@ uint16_t dimmer = 0;
 uint16_t lastDim;
 #endif
 
-stateS state = MENU;
+State state = MENU;
 uint8_t ERROR_COUNTER = 0;
 
 uint8_t globalErrorFuncUUID = 0;
@@ -335,7 +324,7 @@ void setSpool1();
 void setSpool2();
 void setSpool3();
 void setSpool4();
-void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint16_t spoolMassArray[]);
+void filamentCheck(uint8_t sensorNum, int16_t mass, State state, volatile uint16_t spoolMassArray[]);
 /* 18 */ // PID TUNING;
 /* 20 */ void scaleShow();
 // /* 21 */ void getdataAndSetpoint();
@@ -360,14 +349,14 @@ void calibration();
 
 iDryer dryer(ntc);
 
-servo Servo(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
+Servo servo(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
 
 BuzzerController buzzer(BUZZER_PIN);
 
 void servoTest()
 {
     updateIDryerData();
-    Servo.toggle();
+    servo.toggle();
 }
 
 #ifdef v220V
@@ -377,7 +366,7 @@ void isr()
     testTIMER_COUNT++;
 #endif
     PORTD &= ~(1 << DIMMER_PIN);
-    if ((state == DRY || state == STORAGE || state == AUTOPID) && Servo.state != MOVE && dimmer >= HEATER_MIN && dimmer < HEATER_MAX)
+    if ((state == DRY || state == STORAGE || state == AUTOPID) && servo.state != MOVE && dimmer >= HEATER_MIN && dimmer < HEATER_MAX)
     {
         // if (lastDim != dimmer)
         // {
@@ -398,7 +387,7 @@ void isr()
 
 ISR(TIMER1_A)
 {
-    if (Servo.state != MOVE && timer1_dimmerFlag)
+    if (servo.state != MOVE && timer1_dimmerFlag)
     {
         PORTD |= (1 << DIMMER_PIN);
         timer1_dimmerFlag = false;
@@ -418,9 +407,9 @@ ISR(TIMER1_A)
         //     // PORTD &= ~(1 << DIMMER_PIN);
         // }
     }
-    else if (Servo.state == MOVE)
+    else if (servo.state == MOVE)
     {
-        Servo.updateServo();
+        servo.updateServo();
     }
 }
 #endif
@@ -708,7 +697,7 @@ void setup()
         i--;
     }
 
-    Servo.close();
+    servo.close();
 
 #ifdef PWM_TEST
     pwm_test();
@@ -889,7 +878,7 @@ void loop()
             // DEBUG_PRINT(6);
         }
 
-        Servo.check();
+        servo.check();
         // DEBUG_PRINT(7);
         WDT_DISABLE();
 
@@ -908,12 +897,12 @@ void loop()
             Input = dryer.data.ntcTemp;
             pid.Compute();
             heater(Output, dimmer);
-            Servo.check();
+            servo.check();
 
             if (dryer.data.setTemp <= dryer.data.airTempCorrected && dryer.data.airHumidity <= dryer.data.setHumidity)
             {
-                if (Servo.state == OPEN)
-                    Servo.toggle();
+                if (servo.state == OPEN)
+                    servo.toggle();
 
                 dryer.data.optimalConditionsReachedFlag = true;
                 dryer.data.flag = false;
@@ -921,7 +910,7 @@ void loop()
         }
         else
         {
-            if (Servo.state == CLOSED && dryer.data.optimalConditionsReachedFlag == true)
+            if (servo.state == CLOSED && dryer.data.optimalConditionsReachedFlag == true)
             {
                 dryer.data.optimalConditionsReachedFlag = false;
                 heaterOFF();
@@ -1200,8 +1189,8 @@ void updateIDryerData()
     pid.SetTunings(dryer.data.Kp, dryer.data.Ki, dryer.data.Kd, PID_TYPE);
     pid.SetSampleTime((int)dryer.data.sampleTime);
 
-    Servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
-    // Servo.toggle();
+    servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
+    // servo.toggle();
     WDT_DISABLE();
 }
 
@@ -1680,7 +1669,7 @@ void scaleShow()
     WDT_DISABLE();
 }
 
-void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint16_t spoolMassArray[])
+void filamentCheck(uint8_t sensorNum, int16_t mass, State state, volatile uint16_t spoolMassArray[])
 {
 #ifdef FILAMENT_SENSOR_ON
 

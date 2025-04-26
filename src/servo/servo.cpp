@@ -1,6 +1,6 @@
 #include "servo.h"
 
-servo::servo(uint8_t _srvPin, uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
+Servo::Servo(uint8_t _srvPin, uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
 {
   pin = _srvPin;
   closedTime = _closedTime;
@@ -8,14 +8,14 @@ servo::servo(uint8_t _srvPin, uint16_t _closedTime, uint16_t _openTime, uint16_t
   angle = _angle * angleMultiplier;
 }
 
-void servo::set(uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
+void Servo::set(uint16_t _closedTime, uint16_t _openTime, uint16_t _angle)
 {
   closedTime = _closedTime;
   openTime = _openTime;
   angle = _angle * angleMultiplier;
 }
 
-void servo::updateServo()
+void Servo::updateServo()
 {
   // if (setAngle(currentAngle, angle))
   if (setAngle())
@@ -52,7 +52,7 @@ void servo::updateServo()
   }
 }
 
-bool servo::setAngle()
+bool Servo::setAngle()
 {
   if (currentAngle != angle)
   {
@@ -79,7 +79,7 @@ bool servo::setAngle()
   }
 }
 
-void servo::close()
+void Servo::close()
 {
   state = OPEN;
   currentAngle = 130;
@@ -88,7 +88,7 @@ void servo::close()
   updateServo();
 }
 
-void servo::toggle()
+void Servo::toggle()
 {
   if (state == CLOSED)
   {
@@ -103,7 +103,7 @@ void servo::toggle()
   updateServo();
 }
 
-void servo::check()
+void Servo::check()
 {
   if (state == CLOSED)
   {

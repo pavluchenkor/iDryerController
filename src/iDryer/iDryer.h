@@ -7,6 +7,17 @@
 #include "math/math_extensions.h"
 #include "thermistor/thermistor.h"
 
+enum State
+{
+    OFF,
+    ON,
+    MENU,
+    DRY,
+    STORAGE,
+    AUTOPID,
+    NTC_ERROR,
+};
+
 struct Data
 {
   unsigned long timestamp = 0;
