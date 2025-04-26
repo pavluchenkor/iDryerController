@@ -1,4 +1,5 @@
-﻿#ifndef CONFIGURATION_H
+#ifndef CONFIGURATION_H
+
 #define CONFIGURATION_H
 
 // При старте висит на заставке и пищит коротко(0,3с) - ошибка инициализации BME
@@ -274,13 +275,13 @@ language, will not be displayed
  *********************/
 
 #if LANG == 0
-#define PRESET_NAME_1 "ПЛА"
-#define PRESET_NAME_2 "ПЭТГ"
-#define PRESET_NAME_3 "РА6"
+  #define PRESET_NAME_1 "ПЛА"
+  #define PRESET_NAME_2 "ПЭТГ"
+  #define PRESET_NAME_3 "РА6"
 #elif LANG == 1
-#define PRESET_NAME_1 "PLA"
-#define PRESET_NAME_2 "PETG"
-#define PRESET_NAME_3 "PA6"
+  #define PRESET_NAME_1 "PLA"
+  #define PRESET_NAME_2 "PETG"
+  #define PRESET_NAME_3 "PA6"
 #endif
 
-#endif
+#endif // for #ifndef
