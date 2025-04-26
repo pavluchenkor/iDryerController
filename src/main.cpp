@@ -777,9 +777,6 @@ void setup()
     }
     #endif
 
-
-
-
     while (analogRead(NTC_PIN) < ADC_MIN || analogRead(NTC_PIN) > ADC_MAX)
     {
         piii(1000);
