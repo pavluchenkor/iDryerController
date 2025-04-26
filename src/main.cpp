@@ -43,9 +43,9 @@
 #define CRITICAL_OVERHEAT 5.0f  // Критическая температура (°C)
 
 // #define DEBUG
-uint32_t testTIMER_COUNT = 0;
 #ifdef DEBUG
 uint8_t testPWM = 0;
+uint32_t testTIMER_COUNT = 0;
 uint16_t testTIMER_STATE = 0;
 unsigned long oldTime1 = 0;
 unsigned long oldTime2 = 0;
@@ -388,8 +388,6 @@ ISR(TIMER1_A)
     }
     else if (servo.state == MOVE)
     {
-        testTIMER_COUNT++;
-
         servo.updateServo();
     }
 }
@@ -1513,13 +1511,21 @@ void setPoint()
     Serial.print(" s: ");
     Serial.print(Setpoint, 2);
     Serial.print(" n: ");
-    Serial.print(dryer.data.ntcTemp, 2);
+    Serial.print(Input, 2);
+    Serial.print(" dt: ");
+    Serial.print(pid.GetDeltaTime(), 3);
+    Serial.print(" pt: ");
+    Serial.print(pid.GetProportionalTerm(), 3);
+    Serial.print(" it: ");
+    Serial.print(pid.GetIntegralTerm(), 3);
+    Serial.print(" dt: ");
+    Serial.print(pid.GetDerivativeTerm(), 3);
+    Serial.print(" ft: ");
+    Serial.print(pid.GetFilterTerm(), 3);
     Serial.print(" o: ");
     Serial.print(Output, 2);
     Serial.print(" d: ");
     Serial.print(dimmer);
-    Serial.print(" c: ");
-    Serial.print(testTIMER_COUNT);
     Serial.println();
     Serial.flush();
 #endif

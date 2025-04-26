@@ -29,6 +29,11 @@ namespace math::algorithms
     PIDController();
 
     // getters
+    float GetDeltaTime() const;
+    float GetProportionalTerm() const;
+    float GetIntegralTerm() const;
+    float GetDerivativeTerm() const;
+    float GetFilterTerm() const;
     float GetOutput() const;
 
     // setters

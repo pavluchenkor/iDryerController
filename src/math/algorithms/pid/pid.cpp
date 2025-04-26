@@ -6,6 +6,31 @@ namespace math::algorithms
   {
   }
 
+  float PIDController::GetDeltaTime() const
+  {
+    return _deltaTime;
+  }
+
+  float PIDController::GetProportionalTerm() const
+  {
+    return _proportionalTerm;
+  }
+
+  float PIDController::GetIntegralTerm() const
+  {
+    return _integralTerm;
+  }
+
+  float PIDController::GetDerivativeTerm() const
+  {
+    return _derivativeTerm;
+  }
+
+  float PIDController::GetFilterTerm() const
+  {
+    return _filterTerm;
+  }
+
   float PIDController::GetOutput() const
   {
     return _output;
