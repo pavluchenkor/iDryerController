@@ -468,7 +468,9 @@ void isr()
     testTIMER_COUNT++;
 #endif
     PORTD &= ~(1 << DIMMER_PIN);
-    if ((state == DRY || state == STORAGE || state == AUTOPID) && Servo.state != MOVE && dimmer >= HEATER_MIN && dimmer < HEATER_MAX)
+    if ((state == DRY || state == STORAGE 
+        || state == AUTOPID) && Servo.state != MOVE 
+        && dimmer >= HEATER_MIN && dimmer < HEATER_MAX)
     {
         // if (lastDim != dimmer)
         // {
@@ -1296,12 +1298,10 @@ void updateIDyerData()
 
 void saveAll()
 {
-    detachInterrupt(INT_NUM);
-    timer1_dimmerFlag = false;
-    dimmer = HEATER_OFF;
-    digitalWrite(DIMMER_PIN, 0);
 
+    Timer1.pause();
     updateIDyerData();
+    Timer1.resume();
 
     oled.firstPage();
     do
