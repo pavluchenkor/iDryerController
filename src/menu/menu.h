@@ -115,24 +115,24 @@ PGM_P const menuTxt[] PROGMEM = {
     i38, // id: 38
 #if SCALES_MODULE_NUM > 0
     i39, // id: 39
-    i40, // id: 41
-    i41, // id: 42
-    i42, // id: 43
+    i40, // id: 40
+    i41, // id: 41
+    i42, // id: 42
 #endif
 #if SCALES_MODULE_NUM > 1
-    i43, // id: 44
-    i41, // id: 45
-    i42, // id: 46
+    i43, // id: 43
+    i41, // id: 44
+    i42, // id: 45
 #endif
 #if SCALES_MODULE_NUM > 2
-    i46, // id: 47
-    i41, // id: 48
-    i42, // id: 49
+    i46, // id: 46
+    i41, // id: 47
+    i42, // id: 48
 #endif
 #if SCALES_MODULE_NUM > 3
-    i49, // id: 50
-    i41, // id: 51
-    i42, // id: 52
+    i49, // id: 49
+    i41, // id: 50
+    i42, // id: 51
 #endif
 };
 
@@ -249,37 +249,36 @@ uint16_t menuVal[] EEMEM = {
     0,                       // id: 26 Kd
     10,                      // id: 27 Kf
     5,                       // id: 28 min pid delta time
-    0,                       // id: 29
-    65,                      // id: 30
-    0,                       // id: 31
-    100,                     // id: 32 airflow
-    0,                       // id: 33 delta
-    0,                       // id: 34
-    30,                      // id: 35
-    1,                       // id: 36
-    55,                      // id: 37
+    65,                      // id: 29
+    0,                       // id: 30
+    100,                     // id: 31 airflow
+    0,                       // id: 32 delta
+    0,                       // id: 33
+    30,                      // id: 34
+    1,                       // id: 35
+    55,                      // id: 36
+    0,                       // id: 37
     0,                       // id: 38
-    0,                       // id: 39
 #if SCALES_MODULE_NUM > 0
+    0, // id: 39
     0, // id: 40
     0, // id: 41
     0, // id: 42
-    0, // id: 43
 #endif
 #if SCALES_MODULE_NUM > 1
+    0, // id: 43
     0, // id: 44
     0, // id: 45
-    0, // id: 46
 #endif
 #if SCALES_MODULE_NUM > 2
+    0, // id: 46
     0, // id: 47
     0, // id: 48
-    0, // id: 49
 #endif
 #if SCALES_MODULE_NUM > 3
+    0, // id: 49
     0, // id: 50
     0, // id: 51
-    0, // id: 52
 #endif
 };
 
