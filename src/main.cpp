@@ -1521,7 +1521,7 @@ void setPoint()
     Serial.print(" dt: ");
     Serial.print(pid.GetDerivativeTerm(), 3);
     Serial.print(" ft: ");
-    Serial.print(0.0f, 2);
+    Serial.print(pid.GetFilterTerm(), 2);
     Serial.print(" o: ");
     Serial.print(Output, 2);
     Serial.print(" d: ");
