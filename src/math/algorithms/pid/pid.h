@@ -22,7 +22,6 @@ namespace math::algorithms
     float _proportionalTerm = 0;
     float _integralTerm = 0;
     float _derivativeTerm = 0;
-    float _filterTerm = 0;
     float _output = 0;
 
   public:
@@ -33,7 +32,6 @@ namespace math::algorithms
     float GetProportionalTerm() const;
     float GetIntegralTerm() const;
     float GetDerivativeTerm() const;
-    float GetFilterTerm() const;
     float GetOutput() const;
 
     // setters

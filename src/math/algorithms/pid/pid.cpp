@@ -26,11 +26,6 @@ namespace math::algorithms
     return _derivativeTerm;
   }
 
-  float PIDController::GetFilterTerm() const
-  {
-    return _filterTerm;
-  }
-
   float PIDController::GetOutput() const
   {
     return _output;
@@ -72,8 +67,13 @@ namespace math::algorithms
 
     _proportionalTerm = value * _proportionalGain;
     _integralTerm += value * _integralGain * _deltaTime;
-    _filterTerm += _filterTerm * _filterGain * _deltaTime;
-    _derivativeTerm = value * _derivativeGain - _filterTerm;
+
+    auto a = 1.0f + 2.0f * _filterGain / _deltaTime;
+    auto aPrev = 1.0f - 2.0f * _filterGain / _deltaTime;
+    auto b = 2.0f / _deltaTime;
+    auto bPrev = -2.0f / _deltaTime;
+
+    _derivativeTerm = (value * b + _previousValue * bPrev - _derivativeTerm * aPrev) / a;
 
     _previousTime = time;
     _previousValue = value;

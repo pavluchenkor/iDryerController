@@ -829,15 +829,6 @@ void loop()
         screenUpdate();
         fanON(dryer.data.setFan);
 
-        Input = dryer.data.ntcTemp;
-
-        auto timeInSeconds = dryer.data.timestamp / math::msCountInSec;
-        auto heaterTempError = Setpoint - Input;
-        pid.Process(timeInSeconds, heaterTempError);
-
-        Output = pid.GetOutput();
-        dimmer = static_cast<uint16_t>(math::map_to_range(Output, -1.0, 1.0, HEATER_MAX, HEATER_MIN));
-
         if (Setpoint == 0)
         {
             dimmer = HEATER_OFF;
@@ -1159,7 +1150,7 @@ void updateIDryerData()
 {
     WDT(WDTO_250MS, 4);
     dryer.data.Kp = eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.0f;
-    dryer.data.Ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / 100.0f;
+    dryer.data.Ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / 1000.0f;
     dryer.data.Kd = eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.0f;
     dryer.data.Kf = eeprom_read_word(&menuVal[DEF_PID_KF]) / 100.0f;
     dryer.data.minDeltaTime = eeprom_read_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS]) / 100.0f;
@@ -1499,6 +1490,15 @@ void setPoint()
         Setpoint = 0;
     }
 
+    Input = dryer.data.ntcTemp;
+
+    auto timeInSeconds = dryer.data.timestamp / math::msCountInSec;
+    auto heaterTempError = Setpoint - Input;
+    pid.Process(timeInSeconds, heaterTempError);
+
+    Output = pid.GetOutput();
+    dimmer = static_cast<uint16_t>(math::map_to_range(Output, -1.0, 1.0, HEATER_MAX, HEATER_MIN));
+
 #ifdef KASYAK_FINDER
     Serial.print(" t: ");
     Serial.print(dryer.data.timestamp);
@@ -1521,7 +1521,7 @@ void setPoint()
     Serial.print(" dt: ");
     Serial.print(pid.GetDerivativeTerm(), 3);
     Serial.print(" ft: ");
-    Serial.print(pid.GetFilterTerm(), 3);
+    Serial.print(0.0f, 2);
     Serial.print(" o: ");
     Serial.print(Output, 2);
     Serial.print(" d: ");
