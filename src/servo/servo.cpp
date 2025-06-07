@@ -22,7 +22,6 @@ void servo::updateServo()
   {
     if (changeState)
     {
-
       if (currentAngle == closedAngle)
       {
         state = CLOSED;
