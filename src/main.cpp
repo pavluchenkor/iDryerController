@@ -39,7 +39,7 @@
 
 // Пороговые значения для температурных фаз
 #define HEATING_THRESHOLD 10.0f // Порог для агрессивного нагрева (°C)
-#define HEATER_AIR_DELTA 0.5f   // Компенсация теплопотерь (°C)
+#define HEATER_AIR_DELTA 0.0f   // Компенсация теплопотерь (°C)
 #define CRITICAL_OVERHEAT 5.0f  // Критическая температура (°C)
 
 // #define DEBUG
@@ -1497,7 +1497,7 @@ void setPoint()
     pid.Process(timeInSeconds, heaterTempError);
 
     Output = pid.GetOutput();
-    dimmer = static_cast<uint16_t>(math::map_to_range(Output, -1.0, 1.0, HEATER_MAX, HEATER_MIN));
+    dimmer = static_cast<uint16_t>(math::map_to_range(Output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MAX, HEATER_MIN));
 
 #ifdef KASYAK_FINDER
     Serial.print(" t: ");

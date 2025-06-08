@@ -12,6 +12,8 @@ namespace math::algorithms
     float _integralGain = 0;
     float _derivativeGain = 0;
     float _filterGain = 0;
+    float _minOutput = -1;
+    float _maxOutput = 1;
 
     // state
     float _previousTime = 0;
@@ -35,6 +37,8 @@ namespace math::algorithms
     float GetDerivativeTerm() const;
     float GetFilterTerm() const;
     float GetOutput() const;
+    float GetMinOutput() const;
+    float GetMaxOutput() const;
 
     // setters
     void SetMinDeltaTime(float value);

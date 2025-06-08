@@ -1,4 +1,5 @@
 #include "pid.h"
+#include "math/math_extensions.h"
 
 namespace math::algorithms
 {
@@ -34,6 +35,16 @@ namespace math::algorithms
   float PIDController::GetOutput() const
   {
     return _output;
+  }
+
+  float PIDController::GetMinOutput() const
+  {
+    return _minOutput;
+  }
+
+  float PIDController::GetMaxOutput() const
+  {
+    return _maxOutput;
   }
 
   void PIDController::SetMinDeltaTime(float value)
@@ -72,6 +83,7 @@ namespace math::algorithms
 
     _proportionalTerm = value * _proportionalGain;
     _integralTerm += value * _integralGain * _deltaTime;
+    _integralTerm = math::clamp(_integralTerm, _minOutput, _maxOutput);
 
     auto a = 1.0f + 2.0f * _filterGain / _deltaTime;
     auto aPrev = 1.0f - 2.0f * _filterGain / _deltaTime;
