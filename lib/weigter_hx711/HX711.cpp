@@ -16,6 +16,13 @@ uint32_t offset_eep[] EEMEM{
     0,
 };
 
+uint32_t scale_temp_offset_table_eep[4][6] EEMEM = {
+  { 60, 70, 80, 90, 100, 110 },
+  { 60, 70, 80, 90, 100, 110 },
+  { 60, 70, 80, 90, 100, 110 },
+  { 60, 70, 80, 90, 100, 110 },
+};
+
 float calibration_mass = CALIBRATION_MASS;
 
 HX711Multi::HX711Multi(uint8_t numSensors, uint8_t dtPin, uint8_t sckPin, uint8_t aPin, uint8_t bPin)
@@ -204,6 +211,22 @@ void HX711Multi::offsetFirstSetMulti(uint8_t avg_size, uint8_t sensorNum)
   }
   offset /= int32_t(avg_size);
   eeprom_write_dword(&offset_eep[sensorNum], static_cast<uint32_t>(offset));
+}
+
+void HX711Multi::tempOffsetSetMulti(uint8_t sensorNum, uint8_t temp, uint8_t avg_size)
+{
+  while (!readyToSend(sensorNum))
+    ;
+
+  int32_t offset = 0;
+
+  for (int i = 0; i < int(avg_size); i++)
+  {
+    delay(20);
+    offset += readMulti(sensorNum);
+  }
+  offset /= int32_t(avg_size);
+  eeprom_write_dword(&scale_temp_offset_table_eep[sensorNum][temp], static_cast<uint32_t>(offset));
 }
 
 void HX711Multi::zeroSetMulti(uint8_t avg_size, uint8_t sensorNum)
