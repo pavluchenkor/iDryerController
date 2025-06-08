@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Configuration.h>
 #include <Wire.h>
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 1
 #include <EEPROM.h>
@@ -6,14 +7,22 @@
 #include <avr/wdt.h>
 #include <U8g2lib.h>
 #include <GyverTimers.h>
+
+#ifdef SENSOR_BME280
 #include <GyverBME280.h>
-#include <PID_v1.h>
-#include <pid/pidautotuner.h> //https://github.com/jackw01/arduino-pid-autotuner
-#include <thermistor/thermistor.h>
-#include <Configuration.h>
+#endif
+
+#ifdef SENSOR_SHT31
+#include <SHT31.h>
+#endif
+
+#include "pidautotuner/pidautotuner.h" //https://github.com/jackw01/arduino-pid-autotuner
+#include "thermistor/thermistor.h"
 #include "menu/menu.h"
 #include "menu/def.h"
+#include "math/algorithms/pid/pid.h"
 #include "math/math_extensions.h"
+#include "iDryer/iDryer.h"
 #include "servo/servo.h"
 #include "buzzer/buzzer.h"
 #include "HX711.h"
@@ -21,7 +30,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-// #define KASYAK_FINDER
+#define KASYAK_FINDER
 #ifdef KASYAK_FINDER
 #define DEBUG_PRINT(x) Serial.println(x)
 #else
@@ -30,7 +39,7 @@
 
 // Пороговые значения для температурных фаз
 #define HEATING_THRESHOLD 10.0f // Порог для агрессивного нагрева (°C)
-#define HEATER_AIR_DELTA 0.5f   // Компенсация теплопотерь (°C)
+#define HEATER_AIR_DELTA 0.0f   // Компенсация теплопотерь (°C)
 #define CRITICAL_OVERHEAT 5.0f  // Критическая температура (°C)
 
 // #define DEBUG
@@ -137,17 +146,6 @@ uint32_t ERROR_CODE EEMEM = 0x0;
 #define SCREEN_LINES 4
 #define MENU_HEADER 1
 
-enum stateS
-{
-    OFF,
-    ON,
-    MENU,
-    DRY,
-    STORAGE,
-    AUTOPID,
-    NTC_ERROR,
-};
-
 #define MAX_ERROR 30
 
 #define ADC_MIN 200
@@ -161,7 +159,7 @@ uint16_t dimmer = 0;
 uint16_t lastDim;
 #endif
 
-stateS state = MENU;
+State state = MENU;
 uint8_t ERROR_COUNTER = 0;
 
 uint8_t globalErrorFuncUUID = 0;
@@ -180,7 +178,6 @@ unsigned long oldTimer = 0;
 unsigned long scaleTimer = 0;
 boolean isScaleShow = true;
 
-unsigned long screenTime = 0;
 char serviceString[30];
 
 enum levelV
@@ -210,7 +207,14 @@ struct subMenu
 subMenu subMenuM;
 
 thermistor ntc(NTC_PIN, 0);
+
+#ifdef SENSOR_SHT31
+SHT31 sht;
+#endif
+
+#ifdef SENSOR_BME280
 GyverBME280 bme;
+#endif
 
 #if SCREEN == 0
 #define ERROR
@@ -247,6 +251,12 @@ uint32_t offset_eep[] EEMEM{
     0,
     0,
 };
+uint32_t scale_temp_offset_table_eep[4][6] EEMEM = {
+    {60, 70, 80, 90, 100, 110},
+    {60, 70, 80, 90, 100, 110},
+    {60, 70, 80, 90, 100, 110},
+    {60, 70, 80, 90, 100, 110},
+};
 #endif
 
 #if SCALES_MODULE_NUM != 0
@@ -271,37 +281,10 @@ filamentExpense filamentExpenseFlag[SCALES_MODULE_NUM] = {UPDATE_DATA};
 
 #endif
 
-float Setpoint, Input, Output;
-PID pid(&Input, &Output, &Setpoint, 2, 1, 5, DIRECT);
-
-struct Data
-{
-    unsigned long timestamp = 0;
-    float ntcTemp = 0;
-    float bmeTemp = 0;
-    float bmeTempCorrected = 0;
-    float bmeHumidity = 0;
-    bool optimalConditionsReachedFlag = false;
-    unsigned long startTime = 0;
-    unsigned long errorTime28 = 0;
-    uint8_t setTemp = 0;
-    uint8_t setHumidity = 0;
-    uint16_t setTime = 0;
-    bool flag = false;
-    bool flagScreenUpdate = false;
-    bool flagTimeCounter = false;
-    uint8_t setFan = 0;
-    float Kp = 0.0f;
-    float Ki = 0.0f;
-    float Kd = 0.0f;
-    uint16_t sampleTime = 0;
-    uint8_t deltaT = 0;
-
-    bool operator!=(const Data &other) const
-    {
-        return timestamp != other.timestamp || int(ntcTemp) != int(other.ntcTemp) || int(bmeTemp) != int(other.bmeTemp) || int(bmeHumidity) != int(other.bmeHumidity);
-    }
-};
+float Setpoint = 0;
+float Input = 0;
+float Output = 0;
+math::algorithms::PIDController pid;
 
 /* 01 */ void heaterOFF();
 /* 02 */ void heater(uint16_t Output, uint16_t &dimmer);
@@ -309,7 +292,7 @@ struct Data
 void fanMAX();
 void fanOFF();
 void fanON(int percent);
-/* 04 */ void updateIDyerData();
+/* 04 */ void updateIDryerData();
 /* 05 */
 /* 06 */ void screen(struct subMenu *subMenu);
 /* 07 */ void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu);
@@ -331,7 +314,7 @@ void setSpool1();
 void setSpool2();
 void setSpool3();
 void setSpool4();
-void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint16_t spoolMassArray[]);
+void filamentCheck(uint8_t sensorNum, int16_t mass, State state, volatile uint16_t spoolMassArray[]);
 /* 18 */ // PID TUNING;
 /* 20 */ void scaleShow();
 // /* 21 */ void getdataAndSetpoint();
@@ -349,80 +332,34 @@ void drawLine(const char *text, int lineIndex, bool background = false, bool cen
 /* 29 */ // BME MAX
 /* 30 */ // ADC ERROR
 /* 0 */  // ADC ACCUMULATED ERROR
-/* 31 */ // iDryer.getData
+/* 31 */ // dryer.getData
 void WDT(uint16_t time, uint8_t current_function_uuid);
 void WDT_DISABLE();
+void calibration();
 
-class iDryer
-{
-public:
-    Data data;
-    Data oldData;
-    bool getData()
-    {
-        data.timestamp = millis();
-        data.ntcTemp = (ntc.analog2temp() + data.ntcTemp) / 2.0f;
-        data.bmeTemp = (bme.readTemperature() + data.bmeTemp) / 2.0f;
-        data.bmeHumidity = (bme.readHumidity() + data.bmeHumidity) / 2.0f;
+#ifdef SENSOR_BME280
+iDryer dryer(ntc, bme);
+#elif SENSOR_SHT31
+iDryer dryer(ntc, sht);
+#endif
 
-        if (data.bmeTemp <= MIN_CALIB_TEMP)
-        {
-            data.bmeTempCorrected = data.bmeTemp;
-        }
-        else
-        {
-            data.bmeTempCorrected = math::map_to_range(data.bmeTemp, MIN_CALIB_TEMP, MAX_CALIB_TEMP, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX);
-        }
-
-        if (data != oldData && data.timestamp - screenTime > SCREEN_UPADATE_TIME)
-        {
-            screenTime = data.timestamp;
-            data.flagScreenUpdate = true;
-            oldData = data;
-        }
-        else
-        {
-            data.flagScreenUpdate = false;
-        }
-
-        if (uint8_t(ceil(data.bmeTempCorrected)) >= data.setTemp && !data.flagTimeCounter)
-            data.flagTimeCounter = true;
-
-        if (data.ntcTemp < TMP_MIN)
-            return false;
-
-        if (data.ntcTemp > TMP_MAX + TMP_SAFETY_THRESHOLD)
-            return false;
-
-        if (data.bmeTempCorrected < TMP_MIN)
-            return false;
-
-        if (data.bmeTempCorrected > TMP_MAX + TMP_SAFETY_THRESHOLD)
-            return false;
-
-        return true;
-    }
-
-} iDryer;
-
-servo Servo(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
+Servo servo(SERVO_1_PIN, eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
 
 BuzzerController buzzer(BUZZER_PIN);
 
 void servoTest()
 {
-    updateIDyerData();
-    Servo.toggle();
+    updateIDryerData();
+    servo.toggle();
 }
 
 #ifdef v220V
 void isr()
 {
 #ifdef DEBUG
-    testTIMER_COUNT++;
 #endif
     PORTD &= ~(1 << DIMMER_PIN);
-    if ((state == DRY || state == STORAGE || state == AUTOPID) && Servo.state != MOVE && dimmer >= HEATER_MIN && dimmer < HEATER_MAX)
+    if ((state == DRY || state == STORAGE || state == AUTOPID) && servo.state != MOVE && dimmer >= HEATER_MIN && dimmer < HEATER_MAX)
     {
         // if (lastDim != dimmer)
         // {
@@ -443,29 +380,15 @@ void isr()
 
 ISR(TIMER1_A)
 {
-    if (Servo.state != MOVE && timer1_dimmerFlag)
+    if (servo.state != MOVE && timer1_dimmerFlag)
     {
         PORTD |= (1 << DIMMER_PIN);
         timer1_dimmerFlag = false;
         Timer1.stop();
-        // if (timer1_dimmerFlag)
-        // {
-        //     if (dimmer)
-        //         // digitalWrite(DIMMER_PIN, 1);
-        //         PORTD |= (1 << DIMMER_PIN);
-        //     timer1_dimmerFlag = 0;
-        //     // Timer1.setPeriod(50);
-        //     Timer1.stop();
-        // }
-        // else
-        // {
-        //     // digitalWrite(DIMMER_PIN, 0);
-        //     // PORTD &= ~(1 << DIMMER_PIN);
-        // }
     }
-    else if (Servo.state == MOVE)
+    else if (servo.state == MOVE)
     {
-        Servo.updateServo();
+        servo.updateServo();
     }
 }
 #endif
@@ -522,12 +445,12 @@ void displayPrint(struct subMenu *subMenu)
         if (isTopLevelItem)
         {
             char val[6];
-            snprintf(val, sizeof(val), "%2hu/%2hu", (uint16_t)iDryer.data.bmeHumidity, (uint16_t)iDryer.data.bmeTempCorrected);
+            snprintf(val, sizeof(val), "%2hu/%2hu", (uint16_t)dryer.data.airHumidity, (uint16_t)dryer.data.airTempCorrected);
 #ifdef DEBUG
             snprintf(val, sizeof(val), "%4d", oldTime1 - oldTime2);
 #endif
             drawLine(val, 1, false, false, 88);
-            snprintf(val, sizeof(val), "%2hu", (uint16_t)iDryer.data.ntcTemp);
+            snprintf(val, sizeof(val), "%2hu", (uint16_t)dryer.data.ntcTemp);
 #ifdef DEBUG
             snprintf(val, sizeof(val), "%3hu", dimmer);
 #endif
@@ -549,7 +472,7 @@ void displayPrint(struct subMenu *subMenu)
             drawLine(val, i + 2, subMenuM.pointerPos == i, false, 88, subMenu->changeVal ? 96 : 0);
         }
     } while (oled.nextPage());
-    iDryer.data.flagScreenUpdate = false;
+    dryer.data.flagScreenUpdate = false;
     WDT_DISABLE();
 }
 
@@ -573,24 +496,24 @@ void displayPrintMode()
         char val[8];
         drawLine(printMenuItem(&menuTxt[text]), 1);
 
-        snprintf(val, sizeof(val), "%2hu", iDryer.data.setTemp);
+        snprintf(val, sizeof(val), "%2hu", dryer.data.setTemp);
         drawLine(val, 1, false, false);
-        snprintf(val, sizeof(val), "%3hu", text == DEF_MENU_DRYING ? iDryer.data.setTime : iDryer.data.setHumidity);
+        snprintf(val, sizeof(val), "%3hu", text == DEF_MENU_DRYING ? dryer.data.setTime : dryer.data.setHumidity);
         drawLine(val, 1, true, false, 104);
 
         drawLine(printMenuItem(&serviceTxt[6]), 2, false, false, 0);
-        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(iDryer.data.bmeTempCorrected), uint8_t(iDryer.data.bmeTemp));
+        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(dryer.data.airTempCorrected), uint8_t(dryer.data.airTemp));
         drawLine(val, 2, false, false, 72);
 
         drawLine(printMenuItem(&serviceTxt[7]), 3, false, false, 0);
-        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(iDryer.data.ntcTemp), uint8_t(Setpoint));
+        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(dryer.data.ntcTemp), uint8_t(Setpoint));
         drawLine(val, 3, false, false, 72);
 
         drawLine(printMenuItem(&serviceTxt[8]), 4, false, false, 0);
-        snprintf(val, sizeof(val), "%3hu", uint8_t(iDryer.data.bmeHumidity));
+        snprintf(val, sizeof(val), "%3hu", uint8_t(dryer.data.airHumidity));
         drawLine(val, 4, false, false, 104);
     } while (oled.nextPage());
-    iDryer.data.flagScreenUpdate = false;
+    dryer.data.flagScreenUpdate = false;
     WDT_DISABLE();
 }
 
@@ -703,10 +626,11 @@ void setup()
     eeprom_update_word(&menuVal[DEF_PID_KP], K_PROPRTIONAL);
     eeprom_update_word(&menuVal[DEF_PID_KI], K_INTEGRAL);
     eeprom_update_word(&menuVal[DEF_PID_KD], K_DERIVATIVE);
-    eeprom_update_word(&menuVal[DEF_AVTOPID_TIME_MS], K_SAMPLE_TIME);
+    eeprom_update_word(&menuVal[DEF_PID_KF], K_FILTER);
+    eeprom_update_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS], K_MIN_DELTA_TIME);
 #endif
 
-    updateIDyerData();
+    updateIDryerData();
 
     enc.setEncISR(true);
     enc.setEncType(MY_ENCODER_TYPE);
@@ -717,10 +641,19 @@ void setup()
     // bme.setFilter(FILTER_COEF_16);
     // bme.setStandbyTime(STANDBY_250MS);
 
+#ifdef SENSOR_SHT31
+    while (!sht.begin())
+    {
+        piii(300);
+    }
+#endif
+
+#ifdef SENSOR_BME280
     while (!bme.begin(0x76))
     {
         piii(300);
     }
+#endif
 
     while (analogRead(NTC_PIN) < ADC_MIN || analogRead(NTC_PIN) > ADC_MAX)
     {
@@ -737,11 +670,11 @@ void setup()
     uint8_t i = 10;
     while (i)
     {
-        iDryer.getData();
+        dryer.getData();
         i--;
     }
 
-    Servo.close();
+    servo.close();
 
 #ifdef PWM_TEST
     pwm_test();
@@ -771,6 +704,8 @@ void setup()
 
 void loop()
 {
+
+    // calibration();
     enc.tick();
     buzzer.update();
 
@@ -842,11 +777,11 @@ void loop()
         break;
     case MENU:
         WDT(WDTO_8S, 22);
-        if (iDryer.getData())
+        if (dryer.getData())
         {
-            if (iDryer.data.ntcTemp > 45)
+            if (dryer.data.ntcTemp > 45)
                 fanMAX();
-            else if (iDryer.data.ntcTemp < 40)
+            else if (dryer.data.ntcTemp < 40)
                 fanOFF();
         }
 
@@ -875,7 +810,7 @@ void loop()
                 displayPrint(&subMenuM);
             }
 
-            if (subMenuM.pointerUpdate || iDryer.data.flagScreenUpdate) // TODO: проверить
+            if (subMenuM.pointerUpdate || dryer.data.flagScreenUpdate) // TODO: проверить
             {
                 screen(&subMenuM);
                 displayPrint(&subMenuM);
@@ -892,24 +827,21 @@ void loop()
         getData();
         setPoint();
         screenUpdate();
-        fanON(iDryer.data.setFan);
-        Input = iDryer.data.ntcTemp;
-        pid.Compute();
-        heater(Output, dimmer);
+        fanON(dryer.data.setFan);
 
         if (Setpoint == 0)
         {
             dimmer = HEATER_OFF;
         }
 
-        if (iDryer.data.timestamp - oldTimer >= 60000 && iDryer.data.flagTimeCounter)
+        if (dryer.data.timestamp - oldTimer >= 60000 && dryer.data.flagTimeCounter)
         {
             // DEBUG_PRINT(4);
-            oldTimer = iDryer.data.timestamp;
-            iDryer.data.setTime--;
+            oldTimer = dryer.data.timestamp;
+            dryer.data.setTime--;
         }
 
-        if (iDryer.data.setTime == 0)
+        if (dryer.data.setTime == 0)
         {
             async_piii(1000);
             // DEBUG_PRINT(5);
@@ -920,7 +852,7 @@ void loop()
             // DEBUG_PRINT(6);
         }
 
-        Servo.check();
+        servo.check();
         // DEBUG_PRINT(7);
         WDT_DISABLE();
 
@@ -929,48 +861,47 @@ void loop()
     case STORAGE:
 
         WDT(WDTO_4S, 24);
-
         getData();
         setPoint();
         screenUpdate();
 
-        if (iDryer.data.flag)
+        if (dryer.data.flag)
         {
-            iDryer.data.flagTimeCounter ? fanON(iDryer.data.setFan) : fanMAX();
-            Input = iDryer.data.ntcTemp;
+            dryer.data.flagTimeCounter ? fanON(dryer.data.setFan) : fanMAX();
+            Input = dryer.data.ntcTemp;
             pid.Compute();
             heater(Output, dimmer);
-            Servo.check();
+            servo.check();
 
-            if (iDryer.data.setTemp <= iDryer.data.bmeTempCorrected && iDryer.data.bmeHumidity <= iDryer.data.setHumidity)
+            if (dryer.data.setTemp <= dryer.data.airTempCorrected && dryer.data.airHumidity <= dryer.data.setHumidity)
             {
-                if (Servo.state == OPEN)
-                    Servo.toggle();
+                if (servo.state == OPEN)
+                    servo.toggle();
 
-                iDryer.data.optimalConditionsReachedFlag = true;
-                iDryer.data.flag = false;
+                dryer.data.optimalConditionsReachedFlag = true;
+                dryer.data.flag = false;
             }
         }
         else
         {
-            if (Servo.state == CLOSED && iDryer.data.optimalConditionsReachedFlag == true)
+            if (servo.state == CLOSED && dryer.data.optimalConditionsReachedFlag == true)
             {
-                iDryer.data.optimalConditionsReachedFlag = false;
+                dryer.data.optimalConditionsReachedFlag = false;
                 heaterOFF();
             }
 
-            if (iDryer.data.ntcTemp <= iDryer.data.bmeTempCorrected + TEMP_HYSTERESIS)
+            if (dryer.data.ntcTemp <= dryer.data.airTempCorrected + TEMP_HYSTERESIS)
             {
                 fanOFF();
             }
 #if ACTIVATION_HYSTERESIS_MODE == 1
-            if ((iDryer.data.bmeHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag) || (iDryer.data.bmeTemp <= iDryer.data.setTemp - TEMP_HYSTERESIS && !iDryer.data.flag))
+            if ((dryer.data.airHumidity >= dryer.data.setHumidity + HUMIDITY_HYSTERESIS && !dryer.data.flag) || (dryer.data.airTemp <= dryer.data.setTemp - TEMP_HYSTERESIS && !dryer.data.flag))
 #else
-            if (iDryer.data.bmeHumidity >= iDryer.data.setHumidity + HUMIDITY_HYSTERESIS && !iDryer.data.flag)
+            if (dryer.data.airHumidity >= dryer.data.setHumidity + HUMIDITY_HYSTERESIS && !dryer.data.flag)
 #endif
             {
-                iDryer.data.flag = true;
-                fanON(iDryer.data.setFan);
+                dryer.data.flag = true;
+                fanON(dryer.data.setFan);
                 heaterON();
             }
         }
@@ -1149,29 +1080,29 @@ void screen(struct subMenu *subMenu)
 
 void mainDryStart()
 {
-    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_DRYING_TEMPERATURE]);
-    iDryer.data.setTime = eeprom_read_word(&menuVal[DEF_DRYING_TIME]);
+    dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_DRYING_TEMPERATURE]);
+    dryer.data.setTime = eeprom_read_word(&menuVal[DEF_DRYING_TIME]);
     dryStart();
 }
 
 void plaDryStart()
 {
-    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_PLA_TEMPERATURE]);
-    iDryer.data.setTime = eeprom_read_word(&menuVal[DEF_PLA_TIME]);
+    dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_PLA_TEMPERATURE]);
+    dryer.data.setTime = eeprom_read_word(&menuVal[DEF_PLA_TIME]);
     dryStart();
 }
 
 void petgDryStart()
 {
-    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_PETG_TEMPERATURE]);
-    iDryer.data.setTime = eeprom_read_word(&menuVal[DEF_PETG_TIME]);
+    dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_PETG_TEMPERATURE]);
+    dryer.data.setTime = eeprom_read_word(&menuVal[DEF_PETG_TIME]);
     dryStart();
 }
 
 void absDryStart()
 {
-    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_ABS_TEMPERATURE]);
-    iDryer.data.setTime = eeprom_read_word(&menuVal[DEF_ABS_TIME]);
+    dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_ABS_TEMPERATURE]);
+    dryer.data.setTime = eeprom_read_word(&menuVal[DEF_ABS_TIME]);
     dryStart();
 }
 
@@ -1184,11 +1115,11 @@ void dryStart()
 
     state = DRY;
 
-    iDryer.data.flag = true;
-    iDryer.data.flagTimeCounter = false;
-    iDryer.data.flagScreenUpdate = true;
+    dryer.data.flag = true;
+    dryer.data.flagTimeCounter = false;
+    dryer.data.flagScreenUpdate = true;
 
-    iDryer.data.startTime = millis();
+    dryer.data.startTime = millis();
 
     WDT_DISABLE();
 }
@@ -1202,11 +1133,11 @@ void storageStart()
 
     state = STORAGE;
 
-    iDryer.data.flag = true;
-    iDryer.data.flagTimeCounter = false;
-    iDryer.data.flagScreenUpdate = true;
-    iDryer.data.setTemp = eeprom_read_word(&menuVal[DEF_STORAGE_TEMPERATURE]);
-    iDryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
+    dryer.data.flag = true;
+    dryer.data.flagTimeCounter = false;
+    dryer.data.flagScreenUpdate = true;
+    dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_STORAGE_TEMPERATURE]);
+    dryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
 
     WDT_DISABLE();
 }
@@ -1215,31 +1146,35 @@ void autoPidM()
 {
 }
 
-void updateIDyerData()
+void updateIDryerData()
 {
     WDT(WDTO_250MS, 4);
-    iDryer.data.Kp = (float)eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.0f;
-    iDryer.data.Ki = (float)eeprom_read_word(&menuVal[DEF_PID_KI]) / 100.0f;
-    iDryer.data.Kd = (float)eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.0f;
-    iDryer.data.sampleTime = eeprom_read_word(&menuVal[DEF_AVTOPID_TIME_MS]);
-    iDryer.data.deltaT = eeprom_read_word(&menuVal[DEF_SETTINGS_DELTA]);
-    iDryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
-    iDryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
+    dryer.data.Kp = eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.0f;
+    dryer.data.Ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / 1000.0f;
+    dryer.data.Kd = eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.0f;
+    dryer.data.Kf = eeprom_read_word(&menuVal[DEF_PID_KF]) / 100.0f;
+    dryer.data.minDeltaTime = eeprom_read_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS]) / 100.0f;
+    dryer.data.deltaT = eeprom_read_word(&menuVal[DEF_SETTINGS_DELTA]);
+    dryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
+    dryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
 
-    pid.SetMode(AUTOMATIC);             // MANUAL AUTOMATIC
-    pid.SetControllerDirection(DIRECT); // REVERSE
-    pid.SetOutputLimits((float)HEATER_MIN, (float)HEATER_MAX);
-    pid.SetTunings(iDryer.data.Kp, iDryer.data.Ki, iDryer.data.Kd, PID_TYPE);
-    pid.SetSampleTime((int)iDryer.data.sampleTime);
+    pid.SetMinDeltaTime(dryer.data.minDeltaTime);
+    pid.SetProportionalGain(dryer.data.Kp);
+    pid.SetIntegralGain(dryer.data.Ki);
+    pid.SetDerivativeGain(dryer.data.Kd);
+    pid.SetFilterGain(dryer.data.Kf);
 
-    Servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
-    // Servo.toggle();
+    // servo.set(eeprom_read_word(&menuVal[DEF_SERVO_CLOSED]), eeprom_read_word(&menuVal[DEF_SERVO_OPEN]), eeprom_read_word(&menuVal[DEF_SERVO_CORNER]));
+    // servo.toggle();
     WDT_DISABLE();
 }
 
 void saveAll()
 {
-    updateIDyerData();
+    Timer1.pause();
+    updateIDryerData();
+    Timer1.resume();
+
     oled.firstPage();
     do
     {
@@ -1366,7 +1301,7 @@ void heaterOFF()
 #ifdef v220V
     detachInterrupt(INT_NUM);
     timer1_dimmerFlag = false;
-    dimmer = HEATER_MAX;
+    dimmer = HEATER_OFF;
     digitalWrite(DIMMER_PIN, 0);
 #else
     digitalWrite(DIMMER_PIN, 0);
@@ -1464,7 +1399,7 @@ void pwm_test()
 void screenUpdate()
 {
 #if SCALES_MODULE_NUM == 0 && AUTOPID_RUN == 0
-    if (iDryer.data.flagScreenUpdate)
+    if (dryer.data.flagScreenUpdate)
         displayPrintMode();
 #endif
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
@@ -1506,21 +1441,21 @@ void drawLine(const char *text, int lineIndex, bool background, bool center, int
 
 void getData()
 {
-    if (!iDryer.getData())
+    if (!dryer.getData())
     {
         ERROR_COUNTER++;
         if (ERROR_COUNTER > MAX_ERROR)
         {
-            if (iDryer.data.ntcTemp < TMP_MIN)
+            if (dryer.data.ntcTemp < TMP_MIN)
                 setError(26);
 
-            if (iDryer.data.ntcTemp > TMP_MAX + 10)
+            if (dryer.data.ntcTemp > TMP_MAX + 10)
                 setError(27);
 
-            if (iDryer.data.bmeTempCorrected < TMP_MIN)
+            if (dryer.data.airTempCorrected < TMP_MIN)
                 setError(28);
 
-            if (iDryer.data.bmeTempCorrected > TMP_MAX + 10)
+            if (dryer.data.airTempCorrected > TMP_MAX + 10)
                 setError(29);
 
             setError(0);
@@ -1535,9 +1470,9 @@ void getData()
 
 void setPoint()
 {
-    auto currentTemp = iDryer.data.bmeTempCorrected; // Текущая температура
-    float desiredTemp = iDryer.data.setTemp;         // Заданная температура
-    float deltaT = iDryer.data.deltaT;               // Дополнительный коэффициент для агрессивного нагрева
+    auto currentTemp = dryer.data.airTempCorrected; // Текущая температура
+    float desiredTemp = dryer.data.setTemp;         // Заданная температура
+    float deltaT = dryer.data.deltaT;               // Дополнительный коэффициент для агрессивного нагрева
 
     auto delta = desiredTemp - currentTemp;
     auto adjustment = math::map_to_range(delta, HEATER_AIR_DELTA, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);
@@ -1555,9 +1490,18 @@ void setPoint()
         Setpoint = 0;
     }
 
+    Input = dryer.data.ntcTemp;
+
+    auto timeInSeconds = dryer.data.timestamp / math::msCountInSec;
+    auto heaterTempError = Setpoint - Input;
+    pid.Process(timeInSeconds, heaterTempError);
+
+    Output = pid.GetOutput();
+    dimmer = static_cast<uint16_t>(math::map_to_range(Output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MAX, HEATER_MIN));
+
 #ifdef KASYAK_FINDER
     Serial.print(" t: ");
-    Serial.print(iDryer.data.timestamp);
+    Serial.print(dryer.data.timestamp);
     Serial.print(" d: ");
     Serial.print(delta, 2);
     Serial.print(" a: ");
@@ -1567,7 +1511,17 @@ void setPoint()
     Serial.print(" s: ");
     Serial.print(Setpoint, 2);
     Serial.print(" n: ");
-    Serial.print(iDryer.data.ntcTemp, 2);
+    Serial.print(Input, 2);
+    Serial.print(" dt: ");
+    Serial.print(pid.GetDeltaTime(), 3);
+    Serial.print(" pt: ");
+    Serial.print(pid.GetProportionalTerm(), 3);
+    Serial.print(" it: ");
+    Serial.print(pid.GetIntegralTerm(), 3);
+    Serial.print(" dt: ");
+    Serial.print(pid.GetDerivativeTerm(), 3);
+    Serial.print(" ft: ");
+    Serial.print(pid.GetFilterTerm(), 2);
     Serial.print(" o: ");
     Serial.print(Output, 2);
     Serial.print(" d: ");
@@ -1705,7 +1659,7 @@ void scaleShow()
     WDT_DISABLE();
 }
 
-void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint16_t spoolMassArray[])
+void filamentCheck(uint8_t sensorNum, int16_t mass, State state, volatile uint16_t spoolMassArray[])
 {
 #ifdef FILAMENT_SENSOR_ON
 
@@ -1760,6 +1714,70 @@ void filamentCheck(uint8_t sensorNum, int16_t mass, stateS state, volatile uint1
         break;
     }
 #endif
+}
+
+extern uint8_t sensor_temp_offset_table_eep[6] EEMEM{
+    60,
+    70,
+    80,
+    90,
+    100,
+    110,
+};
+
+void calibration()
+{
+    // Start
+    for (size_t i = 0; i < SCALES_MODULE_NUM; i++)
+    {
+        hx711Multi.tempOffsetSetMulti(i, 0, 100);
+    }
+
+    PORTD |= (1 << DIMMER_PIN);
+    fanMAX();
+
+    // Греем
+    while (dryer.data.ntcTemp < 115 && dryer.data.airTemp < 110)
+    {
+        WDT(WDTO_250MS, 32);
+        dryer.getData();
+        WDT_DISABLE();
+    }
+
+    PORTD &= ~(1 << DIMMER_PIN);
+
+    // Калибруем
+    while (dryer.data.airTemp > 45)
+    {
+        WDT(WDTO_8S, 33);
+
+        dryer.getData();
+        uint8_t temp = (uint8_t)dryer.data.ntcTemp;
+        uint8_t air_temp = (uint8_t)dryer.data.airTemp;
+        uint8_t offset = 0;
+
+        if (temp >= 60 && temp <= 110 && (temp % 10 == 0))
+        {
+            uint8_t idx = (temp - 60) / 10 + 1;
+            uint8_t target = 60 + (idx - 1) * 10;
+            int8_t offset = temp - air_temp;
+            eeprom_write_byte(&sensor_temp_offset_table_eep[idx - 1], static_cast<uint8_t>(offset));
+
+            for (size_t i = 0; i < SCALES_MODULE_NUM; i++)
+            {
+                hx711Multi.tempOffsetSetMulti(i, idx, 100);
+            }
+        }
+
+        WDT_DISABLE();
+    }
+    fanOFF();
+}
+
+uint8_t temp_idx_rerurn(uint8_t temp)
+{
+    uint8_t idx = (temp - 60) / 10;
+    return idx;
 }
 
 #endif

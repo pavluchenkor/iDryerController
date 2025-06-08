@@ -9,7 +9,7 @@
 01 void heaterOFF();
 02 void heater(uint16_t Output, uint16_t &dimmer);
 03 void heaterON();
-04 void updateIDyerData();
+04 void updateIDryerData();
 05
 06 void screen(struct subMenu *subMenu);
 07 void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu);
@@ -35,7 +35,7 @@
 28 // BME MIN
 29 // BME MAX
 30 // ADC ERROR
-31 // iDryer.getData
+31 // dryer.getData
 
 !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 
@@ -102,6 +102,13 @@ buzzer beeps every time the heater comes on
 
 #define TEMP_SENSOR_0 5
 
+/***************************
+temperature  sensor choice
+1 BME280
+2 SHT31
+ ***************************/
+#define SENSOR_TYPE 1
+
 #define TMP_MIN 1
 #define TMP_MAX 130
 #define TMP_SAFETY_THRESHOLD 10
@@ -112,15 +119,14 @@ buzzer beeps every time the heater comes on
 110 Celsius enabler
 100 or 110
  ********************/
- 
+
 #define CE 110 //*
 
-
 // Калибровка показаний BME280 | Linear Temperature Calibration for BME280
-#define MIN_CALIB_TEMP 70         // Температура воздуха в комнате по показниям BME280 | Air temperature in room by BME280 measurements
-#define MAX_CALIB_TEMP CE         // Температура воздуха в камере предельная по показниям BME280 (!! Не трогать) | Air MAX temperature in chamber by BME280 measurements (!! DO NOT TOUCH)
-#define REAL_CALIB_TEMP_MIN 70    // Температура воздуха в комнате по показаниям термопары | Air temperature in room by thermocouple measurements
-#define REAL_CALIB_TEMP_MAX 110   // Температура воздуха в камере по показниям термопары при достижении заданной температуры по показаниям BME280 | Air temperature in chamber by thermocouple measurements at BME280 setpoint temperature reached
+#define MIN_CALIB_TEMP 90       // Температура воздуха в комнате по показниям BME280 | Air temperature in room by BME280 measurements
+#define MAX_CALIB_TEMP CE       // Температура воздуха в камере предельная по показниям BME280 (!! Не трогать) | Air MAX temperature in chamber by BME280 measurements (!! DO NOT TOUCH)
+#define REAL_CALIB_TEMP_MIN 90  // Температура воздуха в комнате по показаниям термопары | Air temperature in room by thermocouple measurements
+#define REAL_CALIB_TEMP_MAX 110 // Температура воздуха в камере по показниям термопары при достижении заданной температуры по показаниям BME280 | Air temperature in chamber by thermocouple measurements at BME280 setpoint temperature reached
 
 // Polynomial Temperature Calibration for BME280
 // #define COEFF_A 0.0
@@ -132,7 +138,6 @@ buzzer beeps every time the heater comes on
 // #define COEFF_B -0.010865
 // #define COEFF_C 0.484942
 // #define COEFF_D -3.841228
-
 
 /**********************
 Select the power-on algorithm.
@@ -159,7 +164,8 @@ if OVERWRITE_PID - 0, pid, after burning, will be default
 #define K_PROPRTIONAL 20  //
 #define K_INTEGRAL 1      //
 #define K_DERIVATIVE 40   //
-#define K_SAMPLE_TIME 300 //
+#define K_FILTER 40       //
+#define K_MIN_DELTA_TIME 300 //
 /*********************
 Pid type
 P_ON_M specifies that Proportional on Measurement be used
@@ -281,6 +287,14 @@ language, will not be displayed
 #define PRESET_NAME_1 "PLA"
 #define PRESET_NAME_2 "PETG"
 #define PRESET_NAME_3 "PA6"
+#endif
+
+#if SENSOR_TYPE == 0
+#define ERROR
+#elif SENSOR_TYPE == 1
+#define SENSOR_BME280
+#elif SENSOR_TYPE == 2
+#define SENSOR_SHT31
 #endif
 
 #endif

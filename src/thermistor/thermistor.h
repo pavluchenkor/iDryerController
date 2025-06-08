@@ -1,6 +1,5 @@
-
 #ifndef THERMISTOR_H
-  #define THERMISTOR_H
+#define THERMISTOR_H
 
 
 class thermistor
@@ -13,7 +12,5 @@ class thermistor
     int _pin;
     int _sensorNumber;
 };
-
-
 
 #endif
