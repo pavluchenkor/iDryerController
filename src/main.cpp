@@ -30,7 +30,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#define KASYAK_FINDER
+// #define KASYAK_FINDER
 #ifdef KASYAK_FINDER
 #define DEBUG_PRINT(x) Serial.println(x)
 #else
