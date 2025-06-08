@@ -868,9 +868,7 @@ void loop()
         if (dryer.data.flag)
         {
             dryer.data.flagTimeCounter ? fanON(dryer.data.setFan) : fanMAX();
-            Input = dryer.data.ntcTemp;
-            pid.Compute();
-            heater(Output, dimmer);
+            setPoint();
             servo.check();
 
             if (dryer.data.setTemp <= dryer.data.airTempCorrected && dryer.data.airHumidity <= dryer.data.setHumidity)
