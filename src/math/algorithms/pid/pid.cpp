@@ -76,6 +76,21 @@ namespace math::algorithms
   {
     _deltaTime = time - _previousTime;
 
+    if (_deltaTime < 0.0f)
+    {
+      _previousTime = time;
+      _previousValue = value;
+
+      _proportionalTerm = 0.0f;
+      _integralTerm = 0.0f;
+      _filterTerm = 0.0f;
+      _derivativeTerm = 0.0f;
+
+      _output = 0.0f;
+
+      return;
+    }
+
     if (_deltaTime < _minDeltaTime)
     {
       return;

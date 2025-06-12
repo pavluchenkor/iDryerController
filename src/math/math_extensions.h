@@ -1,5 +1,6 @@
 #ifndef MATHEXTENSIONS_H
 #define MATHEXTENSIONS_H
+#include <stdlib.h>
 
 namespace math
 {
