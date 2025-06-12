@@ -248,7 +248,7 @@ uint16_t menuVal[] EEMEM = {
     10,                      // id: 25 Ki div1000
     200,                     // id: 26 Kd div100
     50,                      // id: 27 Kf div100
-    5,                       // id: 28 min pid delta time
+    5,                       // id: 28 min pid delta time div100
     65,                      // id: 29
     0,                       // id: 30
     100,                     // id: 31 airflow
