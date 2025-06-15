@@ -1141,12 +1141,14 @@ void autoPidStart()
 {
     WDT(WDTO_500MS, 12);
 
+    updateIDryerData();
+
     heaterON();
 
     state = AUTOPID;
     dryer.data.flag = true;
     dryer.data.flagTimeCounter = false;
-    dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AVTOPID_TEMPERATURE]);
+    dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AUTOPID_TEMPERATURE]);
     fanON(dryer.data.setFan);
 
     WDT_DISABLE();
@@ -1563,6 +1565,8 @@ void autoPid()
 
     tuner.startTuningLoop(microseconds);
 
+    oled.clear();
+
     while (!tuner.isFinished())
     {
         WDT(WDTO_4S, 18);
@@ -1574,12 +1578,11 @@ void autoPid()
 
         microseconds = micros();
 
-        oled.clear();
         oled.firstPage();
         do
         {
             char val[8];
-            // drawLine(printMenuItem(&menuTxt[DEF_PID_AVTOPID]), 1);
+            // drawLine(printMenuItem(&menuTxt[DEF_PID_AUTOPID]), 1);
 
             snprintf(val, sizeof(val), "%03hu/%03hu %1hu", uint8_t(Output > 0.0f), uint8_t(dryer.data.ntcTemp), dryer.data.setTemp);
             drawLine(val, 1, false, false);
@@ -1602,12 +1605,14 @@ void autoPid()
 #ifdef KASYAK_FINDER
         Serial.print(" t: ");
         Serial.print(dryer.data.timestamp);
+        Serial.print(" edt: ");
+        Serial.print(dryer.data.minDeltaTime);
+        Serial.print(" dt: ");
+        Serial.print(tuner.getDeltaTime());
         Serial.print(" n: ");
         Serial.print(dryer.data.ntcTemp, 2);
         Serial.print(" c: ");
         Serial.print(tuner.getCycle());
-        Serial.print(" dt: ");
-        Serial.print(tuner.getDeltaTime());
         Serial.print(" kp: ");
         Serial.print(tuner.getKp(), 3);
         Serial.print(" ki: ");

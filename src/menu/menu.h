@@ -182,7 +182,7 @@ const menuS menuPGM[] PROGMEM = {
     {25, 23, 0, 65535},  // id: 25
     {26, 23, 0, 65535},  // id: 26
     {27, 23, 0, 65535},  // id: 27
-    {28, 23, 50, 1000},  // id: 28
+    {28, 23, 5, 65535},  // id: 28
     {29, 23, 0, 0},      // id: 29
 #if CE == 100
     {30, 29, 30, 100}, // id: 30
@@ -250,7 +250,7 @@ uint16_t menuVal[] EEMEM = {
     10,                      // id: 25 Ki div1000 (DEF_PID_KI_DIV)
     200,                     // id: 26 Kd div100 (DEF_PID_KD_DIV)
     50,                      // id: 27 Kf div100 (DEF_PID_KF_DIV)
-    5,                       // id: 28 min pid delta time div100 (DEF_MIN_PID_DELTA_TIME_MS_DIV)
+    50,                      // id: 28 min pid delta time div100 (DEF_MIN_PID_DELTA_TIME_MS_DIV)
     0,                       // id: 29 autopid
     65,                      // id: 30 autopid temp
     0,                       // id: 31 autopid start
