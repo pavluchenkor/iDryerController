@@ -16,6 +16,7 @@ namespace math::algorithms
     float _maxOutput = 1;
 
     // state
+    bool _outputUpdated = false;
     float _previousTime = 0;
     float _previousValue = 0;
 
@@ -31,6 +32,7 @@ namespace math::algorithms
     PIDController();
 
     // getters
+    bool IsOutputUpdated() const;
     float GetDeltaTime() const;
     float GetProportionalTerm() const;
     float GetIntegralTerm() const;

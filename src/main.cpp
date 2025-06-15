@@ -333,6 +333,7 @@ void drawLine(const char *text, int lineIndex, bool background = false, bool cen
 /* 30 */ // ADC ERROR
 /* 0 */  // ADC ACCUMULATED ERROR
 /* 31 */ // dryer.getData
+void updateDimmer();
 void WDT(uint16_t time, uint8_t current_function_uuid);
 void WDT_DISABLE();
 void calibration();
@@ -1504,39 +1505,42 @@ void setPoint()
     auto heaterTempError = Setpoint - Input;
     pid.Process(timeInSeconds, heaterTempError);
 
-    Output = pid.GetOutput();
-    dimmer = static_cast<uint16_t>(math::map_to_range(Output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MAX, HEATER_MIN));
+    if (pid.IsOutputUpdated())
+    {
+        Output = pid.GetOutput();
+        updateDimmer();
 
 #ifdef KASYAK_FINDER
-    Serial.print(" t: ");
-    Serial.print(dryer.data.timestamp);
-    Serial.print(" d: ");
-    Serial.print(delta, 2);
-    Serial.print(" a: ");
-    Serial.print(adjustment, 2);
-    Serial.print(" t: ");
-    Serial.print(currentTemp, 2);
-    Serial.print(" s: ");
-    Serial.print(Setpoint, 2);
-    Serial.print(" n: ");
-    Serial.print(Input, 2);
-    Serial.print(" dt: ");
-    Serial.print(pid.GetDeltaTime(), 3);
-    Serial.print(" pt: ");
-    Serial.print(pid.GetProportionalTerm(), 3);
-    Serial.print(" it: ");
-    Serial.print(pid.GetIntegralTerm(), 3);
-    Serial.print(" dt: ");
-    Serial.print(pid.GetDerivativeTerm(), 3);
-    Serial.print(" ft: ");
-    Serial.print(pid.GetFilterTerm(), 2);
-    Serial.print(" o: ");
-    Serial.print(Output, 2);
-    Serial.print(" d: ");
-    Serial.print(dimmer);
-    Serial.println();
-    Serial.flush();
+        Serial.print(" t: ");
+        Serial.print(dryer.data.timestamp);
+        Serial.print(" d: ");
+        Serial.print(delta, 2);
+        Serial.print(" a: ");
+        Serial.print(adjustment, 2);
+        Serial.print(" t: ");
+        Serial.print(currentTemp, 2);
+        Serial.print(" s: ");
+        Serial.print(Setpoint, 2);
+        Serial.print(" n: ");
+        Serial.print(Input, 2);
+        Serial.print(" dt: ");
+        Serial.print(pid.GetDeltaTime(), 3);
+        Serial.print(" pt: ");
+        Serial.print(pid.GetProportionalTerm(), 3);
+        Serial.print(" it: ");
+        Serial.print(pid.GetIntegralTerm(), 3);
+        Serial.print(" dt: ");
+        Serial.print(pid.GetDerivativeTerm(), 3);
+        Serial.print(" ft: ");
+        Serial.print(pid.GetFilterTerm(), 2);
+        Serial.print(" o: ");
+        Serial.print(Output, 2);
+        Serial.print(" d: ");
+        Serial.print(dimmer);
+        Serial.println();
+        Serial.flush();
 #endif
+    }
 }
 
 void autoPid()
@@ -1574,31 +1578,31 @@ void autoPid()
         dryer.getData();
 
         Output = tuner.tunePID(dryer.data.ntcTemp, microseconds);
-        dimmer = static_cast<uint16_t>(math::map_to_range(Output, minOutput, maxOutput, HEATER_MAX, HEATER_MIN));
+        updateDimmer();
 
         microseconds = micros();
 
         oled.firstPage();
         do
         {
-            char val[8];
+            char val[12];
             // drawLine(printMenuItem(&menuTxt[DEF_PID_AUTOPID]), 1);
 
-            snprintf(val, sizeof(val), "%03hu/%03hu %1hu", uint8_t(Output > 0.0f), uint8_t(dryer.data.ntcTemp), dryer.data.setTemp);
+            snprintf(val, sizeof(val), "%03hu/%03hu %1hu", uint16_t(dryer.data.ntcTemp), dryer.data.setTemp, uint16_t(Output > 0.0f));
             drawLine(val, 1, false, false);
             snprintf(val, sizeof(val), "%2hu/%2hu", tuner.getCycle(), AUTOPID_ATTEMPT);
             drawLine(val, 1, true, false, 88);
 
             drawLine(printMenuItem(&menuTxt[DEF_PID_KP]), 2, false, false, 0);
-            snprintf(val, sizeof(val), "%6hu", uint8_t(tuner.getKp() * DEF_PID_KP_DIV));
+            snprintf(val, sizeof(val), "%6hu", uint16_t(tuner.getKp() * DEF_PID_KP_DIV));
             drawLine(val, 2, false, false, 80);
 
             drawLine(printMenuItem(&menuTxt[DEF_PID_KI]), 3, false, false, 0);
-            snprintf(val, sizeof(val), "%6hu", uint8_t(tuner.getKi() * DEF_PID_KI_DIV));
+            snprintf(val, sizeof(val), "%6hu", uint16_t(tuner.getKi() * DEF_PID_KI_DIV));
             drawLine(val, 3, false, false, 80);
 
             drawLine(printMenuItem(&menuTxt[DEF_PID_KD]), 4, false, false, 0);
-            snprintf(val, sizeof(val), "%6hu", uint8_t(tuner.getKd() * DEF_PID_KD_DIV));
+            snprintf(val, sizeof(val), "%6hu", uint16_t(tuner.getKd() * DEF_PID_KD_DIV));
             drawLine(val, 4, false, false, 80);
         } while (oled.nextPage());
 
@@ -1649,6 +1653,11 @@ void autoPid()
     subMenuM.position = 0;
     memset(subMenuM.membersID, 0, sizeof(subMenuM.membersID) / sizeof(subMenuM.membersID[0]));
     state = MENU;
+}
+
+void updateDimmer()
+{
+    dimmer = static_cast<uint16_t>(math::map_to_range(Output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MAX, HEATER_MIN));
 }
 
 #if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0

@@ -7,6 +7,11 @@ namespace math::algorithms
   {
   }
 
+  bool PIDController::IsOutputUpdated() const
+  {
+    return _outputUpdated;
+  }
+
   float PIDController::GetDeltaTime() const
   {
     return _deltaTime;
@@ -93,6 +98,8 @@ namespace math::algorithms
 
     if (_deltaTime < _minDeltaTime)
     {
+      _outputUpdated = false;
+
       return;
     }
 
@@ -112,5 +119,6 @@ namespace math::algorithms
     _previousValue = value;
 
     _output = _proportionalTerm + _integralTerm + _derivativeTerm;
+    _outputUpdated = true;
   }
 }
