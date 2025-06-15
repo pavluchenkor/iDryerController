@@ -4,49 +4,57 @@
 
 #include "pidautotuner.h"
 
-PIDAutotuner::PIDAutotuner() {
+PIDAutotuner::PIDAutotuner()
+{
 }
 
 // Set target input for tuning
-void PIDAutotuner::setTargetInputValue(float target) {
+void PIDAutotuner::setTargetInputValue(float target)
+{
   targetInputValue = target;
 }
 
 // Set loop interval
-void PIDAutotuner::setLoopInterval(long interval) {
+void PIDAutotuner::setLoopInterval(long interval)
+{
   loopInterval = interval;
 }
 
 // Set output range
-void PIDAutotuner::setOutputRange(float min, float max) {
+void PIDAutotuner::setOutputRange(float min, float max)
+{
   minOutput = min;
   maxOutput = max;
 }
 
 // Set Ziegler-Nichols tuning mode
-void PIDAutotuner::setZNMode(ZNMode zn) {
+void PIDAutotuner::setZNMode(ZNMode zn)
+{
   znMode = zn;
 }
 
 // Set tuning cycles
-void PIDAutotuner::setTuningCycles(int tuneCycles) {
+void PIDAutotuner::setTuningCycles(int tuneCycles)
+{
   cycles = tuneCycles;
 }
 
 // Initialize all variables before loop
-void PIDAutotuner::startTuningLoop(unsigned long us) {
-  i = 0; // Cycle counter
+void PIDAutotuner::startTuningLoop(unsigned long us)
+{
+  i = 0;         // Cycle counter
   output = true; // Current output state
   outputValue = maxOutput;
-  t1 = t2 = us; // Times used for calculating period
+  t1 = t2 = us;                    // Times used for calculating period
   microseconds = tHigh = tLow = 0; // More time variables
-  max = -1000000000000; // Max input
-  min = 1000000000000; // Min input
+  max = -1000000000000;            // Max input
+  min = 1000000000000;             // Min input
   pAverage = iAverage = dAverage = 0;
 }
 
 // Run one cycle of the loop
-float PIDAutotuner::tunePID(float input, unsigned long us) {
+float PIDAutotuner::tunePID(float input, unsigned long us)
+{
   // Useful information on the algorithm used (Ziegler-Nichols method/Relay method)
   // http://www.processcontrolstuff.net/wp-content/uploads/2015/02/relay_autot-2.pdf
   // https://en.wikipedia.org/wiki/Ziegler%E2%80%93Nichols_method
@@ -65,16 +73,17 @@ float PIDAutotuner::tunePID(float input, unsigned long us) {
   //      Ziegler-Nichols method
 
   // Calculate time delta
-  //long prevMicroseconds = microseconds;
+  auto prevMicroseconds = microseconds;
   microseconds = us;
-  //float deltaT = microseconds - prevMicroseconds;
+  deltaTime = (microseconds - prevMicroseconds) / 1e+6;
 
   // Calculate max and min
   max = (max > input) ? max : input;
   min = (min < input) ? min : input;
 
   // Output is on and input signal has risen to target
-  if (output && input > targetInputValue) {
+  if (output && input > targetInputValue)
+  {
     // Turn output off, record current time as t1, calculate tHigh, and reset maximum
     output = false;
     outputValue = minOutput;
@@ -84,7 +93,8 @@ float PIDAutotuner::tunePID(float input, unsigned long us) {
   }
 
   // Output is off and input signal has dropped to target
-  if (!output && input < targetInputValue) {
+  if (!output && input < targetInputValue)
+  {
     // Turn output on, record current time as t2, calculate tLow
     output = true;
     outputValue = maxOutput;
@@ -118,15 +128,20 @@ float PIDAutotuner::tunePID(float input, unsigned long us) {
     // https://en.wikipedia.org/wiki/Ziegler%E2%80%93Nichols_method
 
     float kpConstant, tiConstant, tdConstant;
-    if (znMode == ZNModeBasicPID) {
+    if (znMode == ZNModeBasicPID)
+    {
       kpConstant = 0.6;
       tiConstant = 0.5;
       tdConstant = 0.125;
-    } else if (znMode == ZNModeLessOvershoot) {
+    }
+    else if (znMode == ZNModeLessOvershoot)
+    {
       kpConstant = 0.33;
       tiConstant = 0.5;
       tdConstant = 0.33;
-    } else { // Default to No Overshoot mode as it is the safest
+    }
+    else
+    { // Default to No Overshoot mode as it is the safest
       kpConstant = 0.2;
       tiConstant = 0.5;
       tdConstant = 0.33;
@@ -138,7 +153,8 @@ float PIDAutotuner::tunePID(float input, unsigned long us) {
     kd = (tdConstant * kp * tu) / loopInterval;
 
     // Average all gains after the first two cycles
-    if (i > 1) {
+    if (i > 1)
+    {
       pAverage += kp;
       iAverage += ki;
       dAverage += kd;
@@ -148,11 +164,12 @@ float PIDAutotuner::tunePID(float input, unsigned long us) {
     min = targetInputValue;
 
     // Increment cycle count
-    i ++;
+    i++;
   }
 
   // If loop is done, disable output and calculate averages
-  if (i >= cycles) {
+  if (i >= cycles)
+  {
     output = false;
     outputValue = minOutput;
     kp = pAverage / (i - 1);
@@ -163,17 +180,24 @@ float PIDAutotuner::tunePID(float input, unsigned long us) {
   return outputValue;
 }
 
+float PIDAutotuner::getDeltaTime()
+{
+  return deltaTime;
+}
+
 // Get PID constants after tuning
 float PIDAutotuner::getKp() { return kp; };
 float PIDAutotuner::getKi() { return ki; };
 float PIDAutotuner::getKd() { return kd; };
 
 // Is the tuning loop finished?
-bool PIDAutotuner::isFinished() {
+bool PIDAutotuner::isFinished()
+{
   return (i >= cycles);
 }
 
 // return number of tuning cycle
-int PIDAutotuner::getCycle() {
+int PIDAutotuner::getCycle()
+{
   return i;
 }

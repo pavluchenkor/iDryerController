@@ -30,7 +30,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-// #define KASYAK_FINDER
+#define KASYAK_FINDER
 #ifdef KASYAK_FINDER
 #define DEBUG_PRINT(x) Serial.println(x)
 #else
@@ -1579,9 +1579,9 @@ void autoPid()
         do
         {
             char val[8];
-            drawLine(printMenuItem(&menuTxt[DEF_PID_AVTOPID]), 1);
+            // drawLine(printMenuItem(&menuTxt[DEF_PID_AVTOPID]), 1);
 
-            snprintf(val, sizeof(val), "%03hu/%03hu/%03hu", uint8_t(Output * 100.0f), uint8_t(dryer.data.ntcTemp), dryer.data.setTemp);
+            snprintf(val, sizeof(val), "%03hu/%03hu %1hu", uint8_t(Output > 0.0f), uint8_t(dryer.data.ntcTemp), dryer.data.setTemp);
             drawLine(val, 1, false, false);
             snprintf(val, sizeof(val), "%2hu/%2hu", tuner.getCycle(), AUTOPID_ATTEMPT);
             drawLine(val, 1, true, false, 88);
@@ -1599,6 +1599,29 @@ void autoPid()
             drawLine(val, 4, false, false, 80);
         } while (oled.nextPage());
 
+#ifdef KASYAK_FINDER
+        Serial.print(" t: ");
+        Serial.print(dryer.data.timestamp);
+        Serial.print(" n: ");
+        Serial.print(dryer.data.ntcTemp, 2);
+        Serial.print(" c: ");
+        Serial.print(tuner.getCycle());
+        Serial.print(" dt: ");
+        Serial.print(tuner.getDeltaTime());
+        Serial.print(" kp: ");
+        Serial.print(tuner.getKp(), 3);
+        Serial.print(" ki: ");
+        Serial.print(tuner.getKi(), 3);
+        Serial.print(" kd: ");
+        Serial.print(tuner.getKd(), 3);
+        Serial.print(" o: ");
+        Serial.print(Output, 2);
+        Serial.print(" d: ");
+        Serial.print(dimmer);
+        Serial.println();
+        Serial.flush();
+#endif
+
         while (micros() - microseconds < minDeltaTimeMicroseconds)
         {
             delayMicroseconds(1);
@@ -1611,7 +1634,7 @@ void autoPid()
     eeprom_update_word(&menuVal[DEF_PID_KP], uint16_t(tuner.getKp() * DEF_PID_KP_DIV));
     eeprom_update_word(&menuVal[DEF_PID_KI], uint16_t(tuner.getKi() * DEF_PID_KI_DIV));
     eeprom_update_word(&menuVal[DEF_PID_KD], uint16_t(tuner.getKd() * DEF_PID_KD_DIV));
-    
+
     delay(5000);
     updateIDryerData();
 

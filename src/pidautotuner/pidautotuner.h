@@ -42,6 +42,7 @@ class PIDAutotuner {
     float tunePID(float input, unsigned long us);
 
     // Get results of most recent tuning
+    float getDeltaTime();
     float getKp();
     float getKi();
     float getKd();
@@ -51,6 +52,7 @@ class PIDAutotuner {
     int getCycle(); // return tuning cycle
 
   private:
+    float deltaTime = 0;
     float targetInputValue = 0;
     float loopInterval = 0;
     float minOutput, maxOutput;
