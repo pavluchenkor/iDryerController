@@ -31,7 +31,7 @@ void plaDryStart();
 void petgDryStart();
 void absDryStart();
 void storageStart();
-void autoPidM();
+void autoPidStart();
 void saveAll();
 void servoTest();
 #if SCALES_MODULE_NUM > 0
@@ -103,36 +103,37 @@ PGM_P const menuTxt[] PROGMEM = {
     i26, // id: 26
     i27, // id: 27
     i28, // id: 28
-    i2,  // id: 29
-    i4,  // id: 30
-    i31, // id: 31
-    i32, // id: 32
-    i33, // id: 33
-    i34, // id: 34
-    i35, // id: 35
-    i36, // id: 36
-    i37, // id: 37
-    i38, // id: 38
+    i29, // id: 29
+    i2,  // id: 30
+    i4,  // id: 31
+    i31, // id: 32
+    i32, // id: 33
+    i33, // id: 34
+    i34, // id: 35
+    i35, // id: 36
+    i36, // id: 37
+    i37, // id: 38
+    i38, // id: 39
 #if SCALES_MODULE_NUM > 0
-    i39, // id: 39
-    i40, // id: 40
-    i41, // id: 41
-    i42, // id: 42
+    i39, // id: 40
+    i40, // id: 41
+    i41, // id: 42
+    i42, // id: 43
 #endif
 #if SCALES_MODULE_NUM > 1
-    i43, // id: 43
-    i41, // id: 44
-    i42, // id: 45
+    i43, // id: 44
+    i41, // id: 45
+    i42, // id: 46
 #endif
 #if SCALES_MODULE_NUM > 2
-    i46, // id: 46
-    i41, // id: 47
-    i42, // id: 48
+    i46, // id: 47
+    i41, // id: 48
+    i42, // id: 49
 #endif
 #if SCALES_MODULE_NUM > 3
-    i49, // id: 49
-    i41, // id: 50
-    i42, // id: 51
+    i49, // id: 50
+    i41, // id: 51
+    i42, // id: 52
 #endif
 };
 
@@ -182,40 +183,41 @@ const menuS menuPGM[] PROGMEM = {
     {26, 23, 0, 65535},  // id: 26
     {27, 23, 0, 65535},  // id: 27
     {28, 23, 50, 1000},  // id: 28
+    {29, 23, 0, 0},      // id: 29
 #if CE == 100
-    {29, 27, 30, 100}, // id: 29
+    {30, 29, 30, 100}, // id: 30
 #elif CE == 110
-    {29, 27, 30, 110}, // id: 29
+    {30, 29, 30, 110}, // id: 30
 #endif
-    {30, 27, 0, 0},    // id: 30
-    {31, 22, 70, 100}, // id: 31
-    {32, 22, 0, 50},   // id: 32
-    {33, 22, 0, 0},    // id: 33
-    {34, 33, 0, 60},   // id: 34
-    {35, 33, 0, 10},   // id: 35
-    {36, 33, 0, 90},   // id: 36
-    {37, 33, 0, 0},    // id: 37
-    {38, 22, 0, 0},    // id: 38
+    {31, 29, 0, 0},    // id: 31
+    {32, 22, 70, 100}, // id: 32
+    {33, 22, 0, 50},   // id: 33
+    {34, 22, 0, 0},    // id: 34
+    {35, 34, 0, 60},   // id: 35
+    {36, 34, 0, 10},   // id: 36
+    {37, 34, 0, 90},   // id: 37
+    {38, 34, 0, 0},    // id: 38
+    {39, 22, 0, 0},    // id: 39
 #if SCALES_MODULE_NUM > 0
-    {39, 0, 0, 0},    // id: 39
-    {40, 39, 0, 0},   // id: 40
-    {41, 40, 0, 500}, // id: 41
-    {42, 40, 0, 0},   // id: 42
+    {40, 0, 0, 0},    // id: 40
+    {41, 40, 0, 0},   // id: 41
+    {42, 41, 0, 500}, // id: 42
+    {43, 41, 0, 0},   // id: 43
 #endif
 #if SCALES_MODULE_NUM > 1
-    {43, 39, 0, 0},   // id: 43
-    {44, 43, 0, 500}, // id: 44
-    {45, 43, 0, 0},   // id: 45
+    {44, 40, 0, 0},   // id: 44
+    {45, 44, 0, 500}, // id: 45
+    {46, 44, 0, 0},   // id: 46
 #endif
 #if SCALES_MODULE_NUM > 2
-    {46, 39, 0, 0},   // id: 46
-    {47, 46, 0, 500}, // id: 47
-    {48, 46, 0, 0},   // id: 48
+    {47, 40, 0, 0},   // id: 47
+    {48, 47, 0, 500}, // id: 48
+    {49, 47, 0, 0},   // id: 49
 #endif
 #if SCALES_MODULE_NUM > 3
-    {49, 39, 0, 0},   // id: 49
-    {50, 49, 0, 500}, // id: 50
-    {51, 49, 0, 0},   // id: 51
+    {50, 40, 0, 0},   // id: 50
+    {51, 50, 0, 500}, // id: 51
+    {52, 50, 0, 0},   // id: 52
 #endif
 };
 
@@ -244,41 +246,42 @@ uint16_t menuVal[] EEMEM = {
     0,                       // id: 21
     0,                       // id: 22
     0,                       // id: 23
-    10,                      // id: 24 Kp div100
-    10,                      // id: 25 Ki div1000
-    200,                     // id: 26 Kd div100
-    50,                      // id: 27 Kf div100
-    5,                       // id: 28 min pid delta time div100
-    65,                      // id: 29
-    0,                       // id: 30
-    100,                     // id: 31 airflow
-    0,                       // id: 32 delta
-    0,                       // id: 33
-    30,                      // id: 34
-    1,                       // id: 35
-    55,                      // id: 36
-    0,                       // id: 37
+    10,                      // id: 24 Kp div100 (DEF_PID_KP_DIV)
+    10,                      // id: 25 Ki div1000 (DEF_PID_KI_DIV)
+    200,                     // id: 26 Kd div100 (DEF_PID_KD_DIV)
+    50,                      // id: 27 Kf div100 (DEF_PID_KF_DIV)
+    5,                       // id: 28 min pid delta time div100 (DEF_MIN_PID_DELTA_TIME_MS_DIV)
+    0,                       // id: 29 autopid
+    65,                      // id: 30 autopid temp
+    0,                       // id: 31 autopid start
+    100,                     // id: 32 airflow
+    0,                       // id: 33 delta
+    0,                       // id: 34
+    30,                      // id: 35
+    1,                       // id: 36
+    55,                      // id: 37
     0,                       // id: 38
+    0,                       // id: 39
 #if SCALES_MODULE_NUM > 0
-    0, // id: 39
     0, // id: 40
     0, // id: 41
     0, // id: 42
+    0, // id: 43
 #endif
 #if SCALES_MODULE_NUM > 1
-    0, // id: 43
     0, // id: 44
     0, // id: 45
+    0, // id: 46
 #endif
 #if SCALES_MODULE_NUM > 2
-    0, // id: 46
     0, // id: 47
     0, // id: 48
+    0, // id: 49
 #endif
 #if SCALES_MODULE_NUM > 3
-    0, // id: 49
     0, // id: 50
     0, // id: 51
+    0, // id: 52
 #endif
 };
 
@@ -315,34 +318,35 @@ const ptrFunc menuFunc[]{
     NULL,          // id: 27
     NULL,          // id: 28
     NULL,          // id: 29
-    &autoPidM,     // id: 30
-    NULL,          // id: 31
+    NULL,          // id: 30
+    &autoPidStart, // id: 31
     NULL,          // id: 32
     NULL,          // id: 33
     NULL,          // id: 34
     NULL,          // id: 35
     NULL,          // id: 36
-    &servoTest,    // id: 37
-    &saveAll,      // id: 38
+    NULL,          // id: 37
+    &servoTest,    // id: 38
+    &saveAll,      // id: 39
 #if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
-    NULL,      // id: 39
     NULL,      // id: 40
     NULL,      // id: 41
-    setSpool1, // id: 42
+    NULL,      // id: 42
+    setSpool1, // id: 43
 #endif
 #if SCALES_MODULE_NUM > 1 && AUTOPID_RUN == 0
-    NULL,       // id: 43
     NULL,       // id: 44
-    &setSpool2, // id: 45
+    NULL,       // id: 45
+    &setSpool2, // id: 46
 #endif
 #if SCALES_MODULE_NUM > 2 && AUTOPID_RUN == 0
-    NULL,       // id: 46
     NULL,       // id: 47
-    &setSpool3, // id: 48
+    NULL,       // id: 48
+    &setSpool3, // id: 49
 #endif
 #if SCALES_MODULE_NUM > 3 && AUTOPID_RUN == 0
-    NULL,       // id: 49
     NULL,       // id: 50
-    &setSpool4, // id: 51
+    NULL,       // id: 51
+    &setSpool4, // id: 52
 #endif
 };

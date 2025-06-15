@@ -301,7 +301,7 @@ void fanON(int percent);
 void async_piii(uint16_t time_ms);
 /* 10 */ void dryStart();
 /* 11 */ void storageStart();
-/* 12 */ void autoPidM();
+/* 12 */ void autoPidStart();
 /* 13 */
 /* 14 */ uint32_t readError();
 /* 15 */ void setError(uint8_t errorCode);
@@ -686,7 +686,7 @@ void setup()
     eeprom_write_dword(&offset_eep[0], 1);
     eeprom_write_dword(&offset_eep[1], 1);
 
-    autoPidM();
+    autoPidStart();
     autoPid();
 
     oled.firstPage();
@@ -704,7 +704,6 @@ void setup()
 
 void loop()
 {
-
     // calibration();
     enc.tick();
     buzzer.update();
@@ -770,11 +769,10 @@ void loop()
         }
         break;
     case OFF:
-
         break;
     case ON:
-
         break;
+
     case MENU:
         WDT(WDTO_8S, 22);
         if (dryer.getData())
@@ -910,7 +908,6 @@ void loop()
 
 #if SCALES_MODULE_NUM == 0
     case AUTOPID:
-        autoPidM();
 #ifndef PWM_TEST
         autoPid();
 #endif
@@ -1140,18 +1137,29 @@ void storageStart()
     WDT_DISABLE();
 }
 
-void autoPidM()
+void autoPidStart()
 {
+    WDT(WDTO_500MS, 12);
+
+    heaterON();
+
+    state = AUTOPID;
+    dryer.data.flag = true;
+    dryer.data.flagTimeCounter = false;
+    dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AVTOPID_TEMPERATURE]);
+    fanON(dryer.data.setFan);
+
+    WDT_DISABLE();
 }
 
 void updateIDryerData()
 {
     WDT(WDTO_250MS, 4);
-    dryer.data.Kp = eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.0f;
-    dryer.data.Ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / 1000.0f;
-    dryer.data.Kd = eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.0f;
-    dryer.data.Kf = eeprom_read_word(&menuVal[DEF_PID_KF]) / 100.0f;
-    dryer.data.minDeltaTime = eeprom_read_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS]) / 100.0f;
+    dryer.data.Kp = eeprom_read_word(&menuVal[DEF_PID_KP]) / DEF_PID_KP_DIV;
+    dryer.data.Ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / DEF_PID_KI_DIV;
+    dryer.data.Kd = eeprom_read_word(&menuVal[DEF_PID_KD]) / DEF_PID_KD_DIV;
+    dryer.data.Kf = eeprom_read_word(&menuVal[DEF_PID_KF]) / DEF_PID_KF_DIV;
+    dryer.data.minDeltaTime = eeprom_read_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS]) / DEF_MIN_PID_DELTA_TIME_MS_DIV;
     dryer.data.deltaT = eeprom_read_word(&menuVal[DEF_SETTINGS_DELTA]);
     dryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
     dryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
@@ -1531,6 +1539,88 @@ void setPoint()
 
 void autoPid()
 {
+    auto minOutput = pid.GetMinOutput();
+    auto maxOutput = pid.GetMaxOutput();
+    auto minDeltaTimeMicroseconds = long(ceil(dryer.data.minDeltaTime * 1e+6));
+
+    auto tuner = PIDAutotuner();
+    tuner.setTargetInputValue(dryer.data.setTemp);
+    tuner.setLoopInterval(minDeltaTimeMicroseconds);
+    tuner.setOutputRange(minOutput, maxOutput);
+    tuner.setTuningCycles(AUTOPID_ATTEMPT);
+    tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
+
+    if (servo.state != CLOSED)
+    {
+        servo.close();
+        delay(3000);
+    }
+
+    WDT_DISABLE();
+    dimmer = HEATER_OFF;
+
+    auto microseconds = micros();
+
+    tuner.startTuningLoop(microseconds);
+
+    while (!tuner.isFinished())
+    {
+        WDT(WDTO_4S, 18);
+
+        dryer.getData();
+
+        Output = tuner.tunePID(dryer.data.ntcTemp, microseconds);
+        dimmer = static_cast<uint16_t>(math::map_to_range(Output, minOutput, maxOutput, HEATER_MAX, HEATER_MIN));
+
+        microseconds = micros();
+
+        oled.clear();
+        oled.firstPage();
+        do
+        {
+            char val[8];
+            drawLine(printMenuItem(&menuTxt[DEF_PID_AVTOPID]), 1);
+
+            snprintf(val, sizeof(val), "%03hu/%03hu/%03hu", uint8_t(Output * 100.0f), uint8_t(dryer.data.ntcTemp), dryer.data.setTemp);
+            drawLine(val, 1, false, false);
+            snprintf(val, sizeof(val), "%2hu/%2hu", tuner.getCycle(), AUTOPID_ATTEMPT);
+            drawLine(val, 1, true, false, 88);
+
+            drawLine(printMenuItem(&menuTxt[DEF_PID_KP]), 2, false, false, 0);
+            snprintf(val, sizeof(val), "%6hu", uint8_t(tuner.getKp() * DEF_PID_KP_DIV));
+            drawLine(val, 2, false, false, 80);
+
+            drawLine(printMenuItem(&menuTxt[DEF_PID_KI]), 3, false, false, 0);
+            snprintf(val, sizeof(val), "%6hu", uint8_t(tuner.getKi() * DEF_PID_KI_DIV));
+            drawLine(val, 3, false, false, 80);
+
+            drawLine(printMenuItem(&menuTxt[DEF_PID_KD]), 4, false, false, 0);
+            snprintf(val, sizeof(val), "%6hu", uint8_t(tuner.getKd() * DEF_PID_KD_DIV));
+            drawLine(val, 4, false, false, 80);
+        } while (oled.nextPage());
+
+        while (micros() - microseconds < minDeltaTimeMicroseconds)
+        {
+            delayMicroseconds(1);
+        }
+    }
+
+    heaterOFF();
+    fanMAX();
+
+    eeprom_update_word(&menuVal[DEF_PID_KP], uint16_t(tuner.getKp() * DEF_PID_KP_DIV));
+    eeprom_update_word(&menuVal[DEF_PID_KI], uint16_t(tuner.getKi() * DEF_PID_KI_DIV));
+    eeprom_update_word(&menuVal[DEF_PID_KD], uint16_t(tuner.getKd() * DEF_PID_KD_DIV));
+    
+    delay(5000);
+    updateIDryerData();
+
+    subMenuM.levelUpdate = DOWN;
+    subMenuM.pointerUpdate = 1;
+    subMenuM.parentID = 0;
+    subMenuM.position = 0;
+    memset(subMenuM.membersID, 0, sizeof(subMenuM.membersID) / sizeof(subMenuM.membersID[0]));
+    state = MENU;
 }
 
 #if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
