@@ -12,7 +12,7 @@ enum stateServo
   OPEN,
 };
 
-class servo
+class Servo
 {
 public:
   uint8_t pin = 0;
@@ -32,7 +32,7 @@ public:
   stateServo prevState = OPEN;
   stateServo state = CLOSED;
 
-  servo(uint8_t _srvPin, uint16_t _closedTime, uint16_t _openTime, uint16_t _angle);
+  Servo(uint8_t _srvPin, uint16_t _closedTime, uint16_t _openTime, uint16_t _angle);
 
   void set(uint16_t _closedTime, uint16_t _openTime, uint16_t _angle);
 
