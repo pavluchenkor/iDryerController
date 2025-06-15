@@ -1408,14 +1408,14 @@ void screenUpdate()
 
         displayPrintMode();
 
-        // if (isScaleShow)
-        // {
-        //     scaleShow();
-        // }
-        // else
-        // {
-        //     displayPrintMode();
-        // }
+        if (isScaleShow)
+        {
+            scaleShow();
+        }
+        else
+        {
+            displayPrintMode();
+        }
     }
 #endif
 }
