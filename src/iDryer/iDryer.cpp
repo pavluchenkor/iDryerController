@@ -54,7 +54,7 @@ bool iDryer::getData()
     data.flagScreenUpdate = false;
   }
 
-  if (uint8_t(ceil(data.airTempCorrected)) >= data.setTemp && !data.flagTimeCounter)
+  if (uint8_t(round(data.airTempCorrected)) >= data.setTemp && !data.flagTimeCounter)
     data.flagTimeCounter = true;
 
   if (data.ntcTemp < TMP_MIN)

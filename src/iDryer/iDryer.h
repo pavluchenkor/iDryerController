@@ -41,7 +41,7 @@ struct Data
   float Ki = 0;
   float Kd = 0;
   float Kf = 0;
-  uint16_t minDeltaTime = 0;
+  float minDeltaTime = 0;
   uint8_t deltaT = 0;
 
   bool operator!=(const Data &other) const;

@@ -30,8 +30,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-// #define KASYAK_FINDER
-#ifdef KASYAK_FINDER
+#if KASYAK_FINDER
 #define DEBUG_PRINT(x) Serial.println(x)
 #else
 #define DEBUG_PRINT(x)
@@ -287,7 +286,6 @@ float Output = 0;
 math::algorithms::PIDController pid;
 
 /* 01 */ void heaterOFF();
-/* 02 */ void heater(uint16_t Output, uint16_t &dimmer);
 /* 03 */ void heaterON();
 void fanMAX();
 void fanOFF();
@@ -301,12 +299,13 @@ void fanON(int percent);
 void async_piii(uint16_t time_ms);
 /* 10 */ void dryStart();
 /* 11 */ void storageStart();
-/* 12 */ void autoPidM();
+/* 12 */ void autoPidStart();
 /* 13 */
 /* 14 */ uint32_t readError();
 /* 15 */ void setError(uint8_t errorCode);
 /* 16 */ void displayPrint(struct subMenu *subMenu);
 /* 17 */ void displayPrintMode();
+void displayPIDTuningScreen(PIDAutotuner &tuner);
 void pwm_test();
 void offset_set_by_num(uint8_t numSensor);
 void zero_set_by_num(uint8_t numSensor);
@@ -333,6 +332,7 @@ void drawLine(const char *text, int lineIndex, bool background = false, bool cen
 /* 30 */ // ADC ERROR
 /* 0 */  // ADC ACCUMULATED ERROR
 /* 31 */ // dryer.getData
+void updateDimmer();
 void WDT(uint16_t time, uint8_t current_function_uuid);
 void WDT_DISABLE();
 void calibration();
@@ -502,26 +502,53 @@ void displayPrintMode()
         drawLine(val, 1, true, false, 104);
 
         drawLine(printMenuItem(&serviceTxt[6]), 2, false, false, 0);
-        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(dryer.data.airTempCorrected), uint8_t(dryer.data.airTemp));
+        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(round(dryer.data.airTempCorrected)), uint8_t(round(dryer.data.airTemp)));
         drawLine(val, 2, false, false, 72);
 
         drawLine(printMenuItem(&serviceTxt[7]), 3, false, false, 0);
-        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(dryer.data.ntcTemp), uint8_t(Setpoint));
+        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(round(dryer.data.ntcTemp)), uint8_t(round(Setpoint)));
         drawLine(val, 3, false, false, 72);
 
         drawLine(printMenuItem(&serviceTxt[8]), 4, false, false, 0);
-        snprintf(val, sizeof(val), "%3hu", uint8_t(dryer.data.airHumidity));
+        snprintf(val, sizeof(val), "%3hu", uint8_t(round(dryer.data.airHumidity)));
         drawLine(val, 4, false, false, 104);
     } while (oled.nextPage());
     dryer.data.flagScreenUpdate = false;
     WDT_DISABLE();
 }
 
+void displayPIDTuningScreen(PIDAutotuner &tuner)
+{
+    oled.firstPage();
+    do
+    {
+        char val[12];
+        // drawLine(printMenuItem(&menuTxt[DEF_PID_AUTOPID]), 1);
+
+        snprintf(val, sizeof(val), "P%1hu %03hu/%03hu", uint8_t(Output > 0.0f), uint8_t(dryer.data.ntcTemp), dryer.data.setTemp);
+        drawLine(val, 1, false, false);
+        snprintf(val, sizeof(val), "%2hu/%2hu", tuner.getCycle(), AUTOPID_ATTEMPT);
+        drawLine(val, 1, true, false, 88);
+
+        drawLine(printMenuItem(&menuTxt[DEF_PID_KP]), 2, false, false, 0);
+        snprintf(val, sizeof(val), "%6hu", uint16_t(tuner.getKp() * DEF_PID_KP_DIV));
+        drawLine(val, 2, false, false, 80);
+
+        drawLine(printMenuItem(&menuTxt[DEF_PID_KI]), 3, false, false, 0);
+        snprintf(val, sizeof(val), "%6hu", uint16_t(tuner.getKi() * DEF_PID_KI_DIV));
+        drawLine(val, 3, false, false, 80);
+
+        drawLine(printMenuItem(&menuTxt[DEF_PID_KD]), 4, false, false, 0);
+        snprintf(val, sizeof(val), "%6hu", uint16_t(tuner.getKd() * DEF_PID_KD_DIV));
+        drawLine(val, 4, false, false, 80);
+    } while (oled.nextPage());
+}
+
 void setup()
 {
     WDT_DISABLE();
 
-#ifdef KASYAK_FINDER
+#if KASYAK_FINDER
     Serial.begin(9600);
 #endif
 
@@ -686,7 +713,7 @@ void setup()
     eeprom_write_dword(&offset_eep[0], 1);
     eeprom_write_dword(&offset_eep[1], 1);
 
-    autoPidM();
+    autoPidStart();
     autoPid();
 
     oled.firstPage();
@@ -704,7 +731,6 @@ void setup()
 
 void loop()
 {
-
     // calibration();
     enc.tick();
     buzzer.update();
@@ -770,11 +796,10 @@ void loop()
         }
         break;
     case OFF:
-
         break;
     case ON:
-
         break;
+
     case MENU:
         WDT(WDTO_8S, 22);
         if (dryer.getData())
@@ -857,7 +882,7 @@ void loop()
         WDT_DISABLE();
 
         break;
-#ifndef KASYAK_FINDER
+#if KASYAK_FINDER == 0
     case STORAGE:
 
         WDT(WDTO_4S, 24);
@@ -910,7 +935,6 @@ void loop()
 
 #if SCALES_MODULE_NUM == 0
     case AUTOPID:
-        autoPidM();
 #ifndef PWM_TEST
         autoPid();
 #endif
@@ -1085,23 +1109,29 @@ void mainDryStart()
 
 void plaDryStart()
 {
+#if KASYAK_FINDER == 0
     dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_PLA_TEMPERATURE]);
     dryer.data.setTime = eeprom_read_word(&menuVal[DEF_PLA_TIME]);
     dryStart();
+#endif
 }
 
 void petgDryStart()
 {
+#if KASYAK_FINDER == 0
     dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_PETG_TEMPERATURE]);
     dryer.data.setTime = eeprom_read_word(&menuVal[DEF_PETG_TIME]);
     dryStart();
+#endif
 }
 
 void absDryStart()
 {
+#if KASYAK_FINDER == 0
     dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_ABS_TEMPERATURE]);
     dryer.data.setTime = eeprom_read_word(&menuVal[DEF_ABS_TIME]);
     dryStart();
+#endif
 }
 
 void dryStart()
@@ -1124,6 +1154,7 @@ void dryStart()
 
 void storageStart()
 {
+#if KASYAK_FINDER == 0
     WDT(WDTO_4S, 11);
     oldTimer = 0;
     scaleTimer = millis();
@@ -1138,20 +1169,34 @@ void storageStart()
     dryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
 
     WDT_DISABLE();
+#endif
 }
 
-void autoPidM()
+void autoPidStart()
 {
+    WDT(WDTO_500MS, 12);
+
+    updateIDryerData();
+
+    heaterON();
+
+    state = AUTOPID;
+    dryer.data.flag = true;
+    dryer.data.flagTimeCounter = false;
+    dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_AUTOPID_TEMPERATURE]);
+    fanON(dryer.data.setFan);
+
+    WDT_DISABLE();
 }
 
 void updateIDryerData()
 {
     WDT(WDTO_250MS, 4);
-    dryer.data.Kp = eeprom_read_word(&menuVal[DEF_PID_KP]) / 100.0f;
-    dryer.data.Ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / 1000.0f;
-    dryer.data.Kd = eeprom_read_word(&menuVal[DEF_PID_KD]) / 100.0f;
-    dryer.data.Kf = eeprom_read_word(&menuVal[DEF_PID_KF]) / 100.0f;
-    dryer.data.minDeltaTime = eeprom_read_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS]) / 100.0f;
+    dryer.data.Kp = eeprom_read_word(&menuVal[DEF_PID_KP]) / DEF_PID_KP_DIV;
+    dryer.data.Ki = eeprom_read_word(&menuVal[DEF_PID_KI]) / DEF_PID_KI_DIV;
+    dryer.data.Kd = eeprom_read_word(&menuVal[DEF_PID_KD]) / DEF_PID_KD_DIV;
+    dryer.data.Kf = eeprom_read_word(&menuVal[DEF_PID_KF]) / DEF_PID_KF_DIV;
+    dryer.data.minDeltaTime = eeprom_read_word(&menuVal[DEF_MIN_PID_DELTA_TIME_MS]) / DEF_MIN_PID_DELTA_TIME_MS_DIV;
     dryer.data.deltaT = eeprom_read_word(&menuVal[DEF_SETTINGS_DELTA]);
     dryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
     dryer.data.setFan = eeprom_read_word(&menuVal[DEF_SETTINGS_BLOWING]);
@@ -1173,12 +1218,14 @@ void saveAll()
     updateIDryerData();
     Timer1.resume();
 
+#if KASYAK_FINDER == 0
     oled.firstPage();
     do
     {
         drawLine(printMenuItem(&serviceTxt[DEF_T_AYRA]), 3);
     } while (oled.nextPage());
     delay(500);
+#endif
     subMenuM.pointerUpdate = 1;
 }
 
@@ -1248,17 +1295,6 @@ void async_piii(uint16_t time_ms)
     }
 
     buzzer.buzz(time_ms);
-}
-
-void heater(uint16_t Output, uint16_t &dimmer)
-{
-    WDT(WDTO_250MS, 2);
-#ifdef v220V
-    dimmer = uint16_t(HEATER_MAX + HEATER_MIN - Output);
-#else
-    analogWrite(DIMMER_PIN, Output);
-#endif
-    WDT_DISABLE();
 }
 
 void heaterON()
@@ -1494,43 +1530,148 @@ void setPoint()
     auto heaterTempError = Setpoint - Input;
     pid.Process(timeInSeconds, heaterTempError);
 
-    Output = pid.GetOutput();
-    dimmer = static_cast<uint16_t>(math::map_to_range(Output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MAX, HEATER_MIN));
+    if (pid.IsOutputUpdated())
+    {
+        Output = pid.GetOutput();
+        updateDimmer();
 
-#ifdef KASYAK_FINDER
-    Serial.print(" t: ");
-    Serial.print(dryer.data.timestamp);
-    Serial.print(" d: ");
-    Serial.print(delta, 2);
-    Serial.print(" a: ");
-    Serial.print(adjustment, 2);
-    Serial.print(" t: ");
-    Serial.print(currentTemp, 2);
-    Serial.print(" s: ");
-    Serial.print(Setpoint, 2);
-    Serial.print(" n: ");
-    Serial.print(Input, 2);
-    Serial.print(" dt: ");
-    Serial.print(pid.GetDeltaTime(), 3);
-    Serial.print(" pt: ");
-    Serial.print(pid.GetProportionalTerm(), 3);
-    Serial.print(" it: ");
-    Serial.print(pid.GetIntegralTerm(), 3);
-    Serial.print(" dt: ");
-    Serial.print(pid.GetDerivativeTerm(), 3);
-    Serial.print(" ft: ");
-    Serial.print(pid.GetFilterTerm(), 2);
-    Serial.print(" o: ");
-    Serial.print(Output, 2);
-    Serial.print(" d: ");
-    Serial.print(dimmer);
-    Serial.println();
-    Serial.flush();
+#if KASYAK_FINDER && DRY_LOGS
+        Serial.print(" t: ");
+        Serial.print(dryer.data.timestamp);
+        Serial.print(" d: ");
+        Serial.print(delta, 2);
+        Serial.print(" a: ");
+        Serial.print(adjustment, 2);
+        Serial.print(" t: ");
+        Serial.print(currentTemp, 2);
+        Serial.print(" s: ");
+        Serial.print(Setpoint, 2);
+        Serial.print(" n: ");
+        Serial.print(Input, 2);
+        Serial.print(" dt: ");
+        Serial.print(pid.GetDeltaTime(), 3);
+        Serial.print(" pt: ");
+        Serial.print(pid.GetProportionalTerm(), 3);
+        Serial.print(" it: ");
+        Serial.print(pid.GetIntegralTerm(), 3);
+        Serial.print(" dt: ");
+        Serial.print(pid.GetDerivativeTerm(), 3);
+        Serial.print(" ft: ");
+        Serial.print(pid.GetFilterTerm(), 2);
+        Serial.print(" o: ");
+        Serial.print(Output, 2);
+        Serial.print(" d: ");
+        Serial.print(dimmer);
+        Serial.println();
+        Serial.flush();
 #endif
+    }
 }
 
 void autoPid()
 {
+    auto minOutput = pid.GetMinOutput();
+    auto maxOutput = pid.GetMaxOutput();
+    auto minDeltaTimeMicroseconds = long(ceil(dryer.data.minDeltaTime * 1e+6));
+
+    auto tuner = PIDAutotuner();
+    tuner.setTargetInputValue(dryer.data.setTemp);
+    tuner.setLoopInterval(minDeltaTimeMicroseconds);
+    tuner.setOutputRange(minOutput, maxOutput);
+    tuner.setTuningCycles(AUTOPID_ATTEMPT);
+    tuner.setZNMode(PIDAutotuner::ZNModeBasicPID);
+
+    if (servo.state != CLOSED)
+    {
+        servo.close();
+        delay(3000);
+    }
+
+    WDT_DISABLE();
+    dimmer = HEATER_OFF;
+
+    auto microseconds = micros();
+    auto currentCycle = tuner.getCycle();
+    auto previousCycle = currentCycle;
+    auto updateScreen = false;
+
+    oled.clear();
+    displayPIDTuningScreen(tuner);
+
+    tuner.startTuningLoop(microseconds);
+
+    while (!tuner.isFinished())
+    {
+        WDT(WDTO_4S, 18);
+
+        microseconds = micros();
+
+        dryer.getData();
+
+        Output = tuner.tunePID(dryer.data.ntcTemp, microseconds);
+        updateDimmer();
+
+        currentCycle = tuner.getCycle();
+        updateScreen = dryer.data.flagScreenUpdate;
+
+        if (currentCycle != previousCycle)
+        {
+            previousCycle = currentCycle;
+            updateScreen = true;
+        }
+
+        if (updateScreen)
+        {
+            displayPIDTuningScreen(tuner);
+        }
+
+#if KASYAK_FINDER && AUTOPID_LOGS
+        Serial.print(" dt: ");
+        Serial.print(tuner.getDeltaTime());
+        Serial.print(" n: ");
+        Serial.print(dryer.data.ntcTemp, 2);
+        Serial.print(" c: ");
+        Serial.print(currentCycle);
+        Serial.print(" kp: ");
+        Serial.print(tuner.getKp(), 3);
+        Serial.print(" ki: ");
+        Serial.print(tuner.getKi(), 4);
+        Serial.print(" kd: ");
+        Serial.print(tuner.getKd(), 3);
+        Serial.print(" o: ");
+        Serial.print(Output, 2);
+        Serial.println();
+        Serial.flush();
+#endif
+
+        while (micros() - microseconds < minDeltaTimeMicroseconds)
+        {
+            delayMicroseconds(1);
+        }
+    }
+
+    heaterOFF();
+    fanMAX();
+
+    eeprom_update_word(&menuVal[DEF_PID_KP], uint16_t(tuner.getKp() * DEF_PID_KP_DIV));
+    eeprom_update_word(&menuVal[DEF_PID_KI], uint16_t(tuner.getKi() * DEF_PID_KI_DIV));
+    eeprom_update_word(&menuVal[DEF_PID_KD], uint16_t(tuner.getKd() * DEF_PID_KD_DIV));
+
+    updateIDryerData();
+
+    delay(SCREEN_UPADATE_TIME);
+
+    subMenuM.levelUpdate = DOWN;
+    subMenuM.pointerUpdate = 1;
+    subMenuM.parentID = 0;
+    subMenuM.position = 0;
+    memset(subMenuM.membersID, 0, sizeof(subMenuM.membersID) / sizeof(subMenuM.membersID[0]));
+    state = MENU;
+}
+
+void updateDimmer()
+{
+    dimmer = static_cast<uint16_t>(math::map_to_range(Output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MAX, HEATER_MIN));
 }
 
 #if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0

@@ -7,6 +7,11 @@ namespace math::algorithms
   {
   }
 
+  bool PIDController::IsOutputUpdated() const
+  {
+    return _outputUpdated;
+  }
+
   float PIDController::GetDeltaTime() const
   {
     return _deltaTime;
@@ -74,6 +79,7 @@ namespace math::algorithms
 
   void PIDController::Process(float time, float value)
   {
+    _outputUpdated = false;
     _deltaTime = time - _previousTime;
 
     if (_deltaTime < 0.0f)
@@ -87,6 +93,7 @@ namespace math::algorithms
       _derivativeTerm = 0.0f;
 
       _output = 0.0f;
+      _outputUpdated = true;
 
       return;
     }
@@ -112,5 +119,6 @@ namespace math::algorithms
     _previousValue = value;
 
     _output = _proportionalTerm + _integralTerm + _derivativeTerm;
+    _outputUpdated = true;
   }
 }
