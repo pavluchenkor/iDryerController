@@ -30,8 +30,10 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-// #define KASYAK_FINDER
-#ifdef KASYAK_FINDER
+#define KASYAK_FINDER 1
+#define DRY_LOGS 0
+#define AUTOPID_LOGS 1
+#if KASYAK_FINDER
 #define DEBUG_PRINT(x) Serial.println(x)
 #else
 #define DEBUG_PRINT(x)
@@ -527,7 +529,7 @@ void displayPIDTuningScreen(PIDAutotuner &tuner)
         char val[12];
         // drawLine(printMenuItem(&menuTxt[DEF_PID_AUTOPID]), 1);
 
-        snprintf(val, sizeof(val), "%03hu/%03hu P%1hu", uint16_t(dryer.data.ntcTemp), dryer.data.setTemp, uint16_t(Output > 0.0f));
+        snprintf(val, sizeof(val), "P%1hu %03hu/%03hu", uint16_t(Output > 0.0f), uint16_t(dryer.data.ntcTemp), dryer.data.setTemp);
         drawLine(val, 1, false, false);
         snprintf(val, sizeof(val), "%2hu/%2hu", tuner.getCycle(), AUTOPID_ATTEMPT);
         drawLine(val, 1, true, false, 88);
@@ -550,7 +552,7 @@ void setup()
 {
     WDT_DISABLE();
 
-#ifdef KASYAK_FINDER
+#if KASYAK_FINDER
     Serial.begin(9600);
 #endif
 
@@ -884,7 +886,7 @@ void loop()
         WDT_DISABLE();
 
         break;
-#ifndef KASYAK_FINDER
+#if KASYAK_FINDER == 0
     case STORAGE:
 
         WDT(WDTO_4S, 24);
@@ -1538,7 +1540,7 @@ void setPoint()
         Output = pid.GetOutput();
         updateDimmer();
 
-#ifdef KASYAK_FINDER
+#if KASYAK_FINDER && DRY_LOGS
         Serial.print(" t: ");
         Serial.print(dryer.data.timestamp);
         Serial.print(" d: ");
@@ -1628,11 +1630,7 @@ void autoPid()
             displayPIDTuningScreen(tuner);
         }
 
-#ifdef KASYAK_FINDER
-        Serial.print(" t: ");
-        Serial.print(dryer.data.timestamp);
-        Serial.print(" edt: ");
-        Serial.print(dryer.data.minDeltaTime);
+#if KASYAK_FINDER && AUTOPID_LOGS
         Serial.print(" dt: ");
         Serial.print(tuner.getDeltaTime());
         Serial.print(" n: ");
@@ -1642,13 +1640,11 @@ void autoPid()
         Serial.print(" kp: ");
         Serial.print(tuner.getKp(), 3);
         Serial.print(" ki: ");
-        Serial.print(tuner.getKi(), 3);
+        Serial.print(tuner.getKi(), 4);
         Serial.print(" kd: ");
         Serial.print(tuner.getKd(), 3);
         Serial.print(" o: ");
         Serial.print(Output, 2);
-        Serial.print(" d: ");
-        Serial.print(dimmer);
         Serial.println();
         Serial.flush();
 #endif

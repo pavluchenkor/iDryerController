@@ -48,7 +48,7 @@
 #define DEF_PID_KP 24
 #define DEF_PID_KP_DIV 100.0f
 #define DEF_PID_KI 25
-#define DEF_PID_KI_DIV 1000.0f
+#define DEF_PID_KI_DIV 10000.0f
 #define DEF_PID_KD 26
 #define DEF_PID_KD_DIV 100.0f
 #define DEF_PID_KF 27
