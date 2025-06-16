@@ -30,7 +30,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#define KASYAK_FINDER
+// #define KASYAK_FINDER
 #ifdef KASYAK_FINDER
 #define DEBUG_PRINT(x) Serial.println(x)
 #else
@@ -307,6 +307,7 @@ void async_piii(uint16_t time_ms);
 /* 15 */ void setError(uint8_t errorCode);
 /* 16 */ void displayPrint(struct subMenu *subMenu);
 /* 17 */ void displayPrintMode();
+void displayPIDTuningScreen(PIDAutotuner &tuner);
 void pwm_test();
 void offset_set_by_num(uint8_t numSensor);
 void zero_set_by_num(uint8_t numSensor);
@@ -516,6 +517,33 @@ void displayPrintMode()
     } while (oled.nextPage());
     dryer.data.flagScreenUpdate = false;
     WDT_DISABLE();
+}
+
+void displayPIDTuningScreen(PIDAutotuner &tuner)
+{
+    oled.firstPage();
+    do
+    {
+        char val[12];
+        // drawLine(printMenuItem(&menuTxt[DEF_PID_AUTOPID]), 1);
+
+        snprintf(val, sizeof(val), "%03hu/%03hu P%1hu", uint16_t(dryer.data.ntcTemp), dryer.data.setTemp, uint16_t(Output > 0.0f));
+        drawLine(val, 1, false, false);
+        snprintf(val, sizeof(val), "%2hu/%2hu", tuner.getCycle(), AUTOPID_ATTEMPT);
+        drawLine(val, 1, true, false, 88);
+
+        drawLine(printMenuItem(&menuTxt[DEF_PID_KP]), 2, false, false, 0);
+        snprintf(val, sizeof(val), "%6hu", uint16_t(tuner.getKp() * DEF_PID_KP_DIV));
+        drawLine(val, 2, false, false, 80);
+
+        drawLine(printMenuItem(&menuTxt[DEF_PID_KI]), 3, false, false, 0);
+        snprintf(val, sizeof(val), "%6hu", uint16_t(tuner.getKi() * DEF_PID_KI_DIV));
+        drawLine(val, 3, false, false, 80);
+
+        drawLine(printMenuItem(&menuTxt[DEF_PID_KD]), 4, false, false, 0);
+        snprintf(val, sizeof(val), "%6hu", uint16_t(tuner.getKd() * DEF_PID_KD_DIV));
+        drawLine(val, 4, false, false, 80);
+    } while (oled.nextPage());
 }
 
 void setup()
@@ -1566,45 +1594,39 @@ void autoPid()
     dimmer = HEATER_OFF;
 
     auto microseconds = micros();
-
-    tuner.startTuningLoop(microseconds);
+    auto currentCycle = tuner.getCycle();
+    auto previousCycle = currentCycle;
+    auto updateScreen = false;
 
     oled.clear();
+    displayPIDTuningScreen(tuner);
+
+    tuner.startTuningLoop(microseconds);
 
     while (!tuner.isFinished())
     {
         WDT(WDTO_4S, 18);
+
+        microseconds = micros();
 
         dryer.getData();
 
         Output = tuner.tunePID(dryer.data.ntcTemp, microseconds);
         updateDimmer();
 
-        microseconds = micros();
+        currentCycle = tuner.getCycle();
+        updateScreen = dryer.data.flagScreenUpdate;
 
-        oled.firstPage();
-        do
+        if (currentCycle != previousCycle)
         {
-            char val[12];
-            // drawLine(printMenuItem(&menuTxt[DEF_PID_AUTOPID]), 1);
+            previousCycle = currentCycle;
+            updateScreen = true;
+        }
 
-            snprintf(val, sizeof(val), "%03hu/%03hu %1hu", uint16_t(dryer.data.ntcTemp), dryer.data.setTemp, uint16_t(Output > 0.0f));
-            drawLine(val, 1, false, false);
-            snprintf(val, sizeof(val), "%2hu/%2hu", tuner.getCycle(), AUTOPID_ATTEMPT);
-            drawLine(val, 1, true, false, 88);
-
-            drawLine(printMenuItem(&menuTxt[DEF_PID_KP]), 2, false, false, 0);
-            snprintf(val, sizeof(val), "%6hu", uint16_t(tuner.getKp() * DEF_PID_KP_DIV));
-            drawLine(val, 2, false, false, 80);
-
-            drawLine(printMenuItem(&menuTxt[DEF_PID_KI]), 3, false, false, 0);
-            snprintf(val, sizeof(val), "%6hu", uint16_t(tuner.getKi() * DEF_PID_KI_DIV));
-            drawLine(val, 3, false, false, 80);
-
-            drawLine(printMenuItem(&menuTxt[DEF_PID_KD]), 4, false, false, 0);
-            snprintf(val, sizeof(val), "%6hu", uint16_t(tuner.getKd() * DEF_PID_KD_DIV));
-            drawLine(val, 4, false, false, 80);
-        } while (oled.nextPage());
+        if (updateScreen)
+        {
+            displayPIDTuningScreen(tuner);
+        }
 
 #ifdef KASYAK_FINDER
         Serial.print(" t: ");
@@ -1616,7 +1638,7 @@ void autoPid()
         Serial.print(" n: ");
         Serial.print(dryer.data.ntcTemp, 2);
         Serial.print(" c: ");
-        Serial.print(tuner.getCycle());
+        Serial.print(currentCycle);
         Serial.print(" kp: ");
         Serial.print(tuner.getKp(), 3);
         Serial.print(" ki: ");
@@ -1644,8 +1666,9 @@ void autoPid()
     eeprom_update_word(&menuVal[DEF_PID_KI], uint16_t(tuner.getKi() * DEF_PID_KI_DIV));
     eeprom_update_word(&menuVal[DEF_PID_KD], uint16_t(tuner.getKd() * DEF_PID_KD_DIV));
 
-    delay(5000);
     updateIDryerData();
+
+    delay(SCREEN_UPADATE_TIME);
 
     subMenuM.levelUpdate = DOWN;
     subMenuM.pointerUpdate = 1;
