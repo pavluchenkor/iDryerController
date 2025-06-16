@@ -31,8 +31,8 @@
 #include <avr/interrupt.h>
 
 #define KASYAK_FINDER 1
-#define DRY_LOGS 0
-#define AUTOPID_LOGS 1
+#define DRY_LOGS 1
+#define AUTOPID_LOGS 0
 #if KASYAK_FINDER
 #define DEBUG_PRINT(x) Serial.println(x)
 #else
@@ -506,15 +506,15 @@ void displayPrintMode()
         drawLine(val, 1, true, false, 104);
 
         drawLine(printMenuItem(&serviceTxt[6]), 2, false, false, 0);
-        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(dryer.data.airTempCorrected), uint8_t(dryer.data.airTemp));
+        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(round(dryer.data.airTempCorrected)), uint8_t(round(dryer.data.airTemp)));
         drawLine(val, 2, false, false, 72);
 
         drawLine(printMenuItem(&serviceTxt[7]), 3, false, false, 0);
-        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(dryer.data.ntcTemp), uint8_t(Setpoint));
+        snprintf(val, sizeof(val), "%3hu/%03hu", uint8_t(round(dryer.data.ntcTemp)), uint8_t(round(Setpoint)));
         drawLine(val, 3, false, false, 72);
 
         drawLine(printMenuItem(&serviceTxt[8]), 4, false, false, 0);
-        snprintf(val, sizeof(val), "%3hu", uint8_t(dryer.data.airHumidity));
+        snprintf(val, sizeof(val), "%3hu", uint8_t(round(dryer.data.airHumidity)));
         drawLine(val, 4, false, false, 104);
     } while (oled.nextPage());
     dryer.data.flagScreenUpdate = false;
@@ -529,7 +529,7 @@ void displayPIDTuningScreen(PIDAutotuner &tuner)
         char val[12];
         // drawLine(printMenuItem(&menuTxt[DEF_PID_AUTOPID]), 1);
 
-        snprintf(val, sizeof(val), "P%1hu %03hu/%03hu", uint16_t(Output > 0.0f), uint16_t(dryer.data.ntcTemp), dryer.data.setTemp);
+        snprintf(val, sizeof(val), "P%1hu %03hu/%03hu", uint8_t(round(Output > 0.0f)), uint8_t(round(dryer.data.ntcTemp)), dryer.data.setTemp);
         drawLine(val, 1, false, false);
         snprintf(val, sizeof(val), "%2hu/%2hu", tuner.getCycle(), AUTOPID_ATTEMPT);
         drawLine(val, 1, true, false, 88);
