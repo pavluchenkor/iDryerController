@@ -30,9 +30,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#define KASYAK_FINDER 1
-#define DRY_LOGS 1
-#define AUTOPID_LOGS 0
 #if KASYAK_FINDER
 #define DEBUG_PRINT(x) Serial.println(x)
 #else
@@ -289,7 +286,6 @@ float Output = 0;
 math::algorithms::PIDController pid;
 
 /* 01 */ void heaterOFF();
-/* 02 */ void heater(uint16_t Output, uint16_t &dimmer);
 /* 03 */ void heaterON();
 void fanMAX();
 void fanOFF();
@@ -1113,23 +1109,29 @@ void mainDryStart()
 
 void plaDryStart()
 {
+#if KASYAK_FINDER == 0
     dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_PLA_TEMPERATURE]);
     dryer.data.setTime = eeprom_read_word(&menuVal[DEF_PLA_TIME]);
     dryStart();
+#endif
 }
 
 void petgDryStart()
 {
+#if KASYAK_FINDER == 0
     dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_PETG_TEMPERATURE]);
     dryer.data.setTime = eeprom_read_word(&menuVal[DEF_PETG_TIME]);
     dryStart();
+#endif
 }
 
 void absDryStart()
 {
+#if KASYAK_FINDER == 0
     dryer.data.setTemp = eeprom_read_word(&menuVal[DEF_ABS_TEMPERATURE]);
     dryer.data.setTime = eeprom_read_word(&menuVal[DEF_ABS_TIME]);
     dryStart();
+#endif
 }
 
 void dryStart()
@@ -1152,6 +1154,7 @@ void dryStart()
 
 void storageStart()
 {
+#if KASYAK_FINDER == 0
     WDT(WDTO_4S, 11);
     oldTimer = 0;
     scaleTimer = millis();
@@ -1166,6 +1169,7 @@ void storageStart()
     dryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
 
     WDT_DISABLE();
+#endif
 }
 
 void autoPidStart()
@@ -1214,12 +1218,14 @@ void saveAll()
     updateIDryerData();
     Timer1.resume();
 
+#if KASYAK_FINDER == 0
     oled.firstPage();
     do
     {
         drawLine(printMenuItem(&serviceTxt[DEF_T_AYRA]), 3);
     } while (oled.nextPage());
     delay(500);
+#endif
     subMenuM.pointerUpdate = 1;
 }
 
@@ -1289,17 +1295,6 @@ void async_piii(uint16_t time_ms)
     }
 
     buzzer.buzz(time_ms);
-}
-
-void heater(uint16_t Output, uint16_t &dimmer)
-{
-    WDT(WDTO_250MS, 2);
-#ifdef v220V
-    dimmer = uint16_t(HEATER_MAX + HEATER_MIN - Output);
-#else
-    analogWrite(DIMMER_PIN, Output);
-#endif
-    WDT_DISABLE();
 }
 
 void heaterON()

@@ -249,8 +249,8 @@ uint16_t menuVal[] EEMEM = {
     10,                      // id: 24 Kp div100 (DEF_PID_KP_DIV)
     10,                      // id: 25 Ki div10000 (DEF_PID_KI_DIV)
     200,                     // id: 26 Kd div100 (DEF_PID_KD_DIV)
-    150,                     // id: 27 Kf div1000 (DEF_PID_KF_DIV)
-    150,                     // id: 28 min pid delta time div1000 (DEF_MIN_PID_DELTA_TIME_MS_DIV)
+    333,                     // id: 27 Kf div1000 (DEF_PID_KF_DIV)
+    333,                     // id: 28 min pid delta time div1000 (DEF_MIN_PID_DELTA_TIME_MS_DIV)
     0,                       // id: 29 autopid
     65,                      // id: 30 autopid temp
     0,                       // id: 31 autopid start

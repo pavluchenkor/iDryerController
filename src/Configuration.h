@@ -297,4 +297,8 @@ language, will not be displayed
 #define SENSOR_SHT31
 #endif
 
+#define KASYAK_FINDER 1
+#define DRY_LOGS 1
+#define AUTOPID_LOGS 0
+
 #endif
