@@ -79,6 +79,7 @@ namespace math::algorithms
 
   void PIDController::Process(float time, float value)
   {
+    _outputUpdated = false;
     _deltaTime = time - _previousTime;
 
     if (_deltaTime < 0.0f)
@@ -92,14 +93,13 @@ namespace math::algorithms
       _derivativeTerm = 0.0f;
 
       _output = 0.0f;
+      _outputUpdated = true;
 
       return;
     }
 
     if (_deltaTime < _minDeltaTime)
     {
-      _outputUpdated = false;
-
       return;
     }
 
