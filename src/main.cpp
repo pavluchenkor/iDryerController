@@ -525,7 +525,7 @@ void displayPIDTuningScreen(PIDAutotuner &tuner)
         char val[12];
         // drawLine(printMenuItem(&menuTxt[DEF_PID_AUTOPID]), 1);
 
-        snprintf(val, sizeof(val), "P%1hu %03hu/%03hu", uint8_t(round(Output > 0.0f)), uint8_t(round(dryer.data.ntcTemp)), dryer.data.setTemp);
+        snprintf(val, sizeof(val), "P%1hu %03hu/%03hu", uint8_t(Output > 0.0f), uint8_t(dryer.data.ntcTemp), dryer.data.setTemp);
         drawLine(val, 1, false, false);
         snprintf(val, sizeof(val), "%2hu/%2hu", tuner.getCycle(), AUTOPID_ATTEMPT);
         drawLine(val, 1, true, false, 88);
