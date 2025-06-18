@@ -280,6 +280,8 @@ filamentExpense filamentExpenseFlag[SCALES_MODULE_NUM] = {UPDATE_DATA};
 
 #endif
 
+constexpr auto ntcUpdateInterval = (uint32_t)(0.002f * math::usCountInSec);
+
 float Setpoint = 0;
 float Input = 0;
 float Output = 0;
@@ -881,11 +883,10 @@ void loop()
         servo.check();
         // DEBUG_PRINT(7);
         WDT_DISABLE();
-
         break;
+
 #if KASYAK_FINDER == 0
     case STORAGE:
-
         WDT(WDTO_4S, 24);
         getData();
         setPoint();
@@ -934,11 +935,9 @@ void loop()
         break;
 #endif
 
-#if SCALES_MODULE_NUM == 0
     case AUTOPID:
-#ifndef PWM_TEST
+#if SCALES_MODULE_NUM == 0
         autoPid();
-#endif
 #endif
         break;
 
@@ -1527,7 +1526,7 @@ void setPoint()
 
     Input = dryer.data.ntcTemp;
 
-    auto timeInSeconds = dryer.data.timestamp / math::msCountInSec;
+    auto timeInSeconds = dryer.data.timestamp / float(math::msCountInSec);
     auto heaterTempError = Setpoint - Input;
     pid.Process(timeInSeconds, heaterTempError);
 
@@ -1573,7 +1572,7 @@ void autoPid()
 {
     auto minOutput = pid.GetMinOutput();
     auto maxOutput = pid.GetMaxOutput();
-    auto minDeltaTimeMicroseconds = long(dryer.data.minDeltaTime * 1e+6);
+    auto minDeltaTimeMicroseconds = uint32_t(dryer.data.minDeltaTime * math::usCountInSec);
 
     auto tuner = PIDAutotuner();
     tuner.setTargetInputValue(dryer.data.setTemp);
@@ -1597,8 +1596,7 @@ void autoPid()
 
     auto currentMicroseconds = micros();
     auto previousMicroseconds = currentMicroseconds;
-    auto currentCycle = tuner.getCycle();
-    auto previousCycle = currentCycle;
+    auto elapsedMicroseconds = currentMicroseconds - previousMicroseconds;
     auto updateScreen = false;
 
     tuner.startTuningLoop(currentMicroseconds);
@@ -1607,34 +1605,29 @@ void autoPid()
     {
         WDT(WDTO_4S, 18);
 
-        while (currentMicroseconds - previousMicroseconds < minDeltaTimeMicroseconds)
+        updateScreen = true;
+
+        do
         {
             currentMicroseconds = micros();
+            elapsedMicroseconds = currentMicroseconds - previousMicroseconds;
 
-            if (currentMicroseconds % 2000 == 0) // update data each 2ms
+            if (elapsedMicroseconds % ntcUpdateInterval == 0) // update data each 2ms
             {
                 getData();
+
+                if (updateScreen) // update screen once
+                {
+                    updateScreen = false;
+                    displayPIDTuningScreen(tuner);
+                }
             }
-        }
+        } while (elapsedMicroseconds < minDeltaTimeMicroseconds); // wait until next tuning interval
 
         previousMicroseconds = currentMicroseconds;
 
         Output = tuner.tunePID(dryer.data.ntcTemp, currentMicroseconds);
         updateDimmer();
-
-        currentCycle = tuner.getCycle();
-        updateScreen = dryer.data.flagScreenUpdate;
-
-        if (currentCycle != previousCycle)
-        {
-            previousCycle = currentCycle;
-            updateScreen = true;
-        }
-
-        if (updateScreen)
-        {
-            displayPIDTuningScreen(tuner);
-        }
 
 #if KASYAK_FINDER && AUTOPID_LOGS
         Serial.print(" dt: ");
@@ -1642,7 +1635,7 @@ void autoPid()
         Serial.print(" n: ");
         Serial.print(dryer.data.ntcTemp, 2);
         Serial.print(" c: ");
-        Serial.print(currentCycle);
+        Serial.print(tuner.getCycle());
         Serial.print(" kp: ");
         Serial.print(tuner.getKp(), 3);
         Serial.print(" ki: ");
