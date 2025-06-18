@@ -280,10 +280,12 @@ filamentExpense filamentExpenseFlag[SCALES_MODULE_NUM] = {UPDATE_DATA};
 
 #endif
 
+using math::algorithms::PIDController;
+
 float Setpoint = 0;
 float Input = 0;
 float Output = 0;
-math::algorithms::PIDController pid;
+PIDController pid;
 
 /* 01 */ void heaterOFF();
 /* 03 */ void heaterON();
@@ -321,10 +323,11 @@ void getData();
 void setPoint();
 void screenUpdate();
 void drawLine(const char *text, int lineIndex, bool background = false, bool center = true, int x = 0, int backgroundX = 0);
-/* 22 */ // CASE MENU
-/* 23 */ // CASE DRY
-/* 24 */ // CASE STORAGE
-/* 25 */ void autoPid();
+void ntcErrorFlow();
+/* 22 */ void menuFlow();
+/* 23 */ void dryFlow();
+/* 24 */ void storageFlow();
+/* 25 */ void autoPidFlow();
 /* 26 */ // NTC MIN
 /* 27 */ // NTC MAX
 /* 28 */ // BME MIN
@@ -715,7 +718,7 @@ void setup()
     eeprom_write_dword(&offset_eep[1], 1);
 
     autoPidStart();
-    autoPid();
+    autoPidFlow();
 
     oled.firstPage();
     do
@@ -747,7 +750,6 @@ void loop()
     }
 
 #if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
-
     hx711Multi.readMassMulti();
     filamentCheck(sensorNum, hx711Multi.getMassMulti(sensorNum), state, prevSpoolMass);
     sensorNum++;
@@ -769,178 +771,36 @@ void loop()
             subMenuM.pointerPos = 0;
             subMenuM.pointerUpdate = 1;
             while (digitalRead(encBut))
-                ;
+            {
+            }
         }
     }
 
     switch (state)
     {
     case NTC_ERROR:
-
-        fanMAX();
-        heaterOFF();
-
-        oled.clear();
-        oled.firstPage();
-        do
-        {
-            drawLine(printMenuItem(&serviceTxt[DEF_T_ERROR]), 2, true);
-            drawLine(printMenuItem(&serviceTxt[DEF_T_CHECK]), 2, true);
-            drawLine(printMenuItem(&serviceTxt[DEF_T_THERMISTOR]), 2, true);
-            drawLine(printMenuItem(&serviceTxt[DEF_T_OVERLOAD]), 2, true);
-        } while (oled.nextPage());
-
-        while (digitalRead(encBut))
-        {
-            async_piii(500);
-            delay(500);
-        }
-        break;
-    case OFF:
-        break;
-    case ON:
+        ntcErrorFlow();
         break;
 
     case MENU:
-        WDT(WDTO_8S, 22);
-        if (dryer.getData())
-        {
-            if (dryer.data.ntcTemp > 45)
-                fanMAX();
-            else if (dryer.data.ntcTemp < 40)
-                fanOFF();
-        }
-
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
-        if (hx711Multi.tare[hx711Multi.sensorNum] != (uint8_t)eeprom_read_word(&menuVal[DEF_COIL_1_TARA + (hx711Multi.sensorNum * 3)]))
-        {
-            hx711Multi.tare[hx711Multi.sensorNum] = (uint8_t)eeprom_read_word(&menuVal[DEF_COIL_1_TARA + (hx711Multi.sensorNum * 3)]);
-        }
-#endif
-
-        controlsHandler(menuPGM, menuVal, menuFunc, &subMenuM);
-
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
-
-        if (millis() - scaleTimer > MENU_SCALE_SWITCH_TIME && subMenuM.parentID == 0)
-        {
-            scaleShow();
-        }
-        else
-        {
-#endif
-            if (subMenuM.levelUpdate)
-            {
-                submenuHandler(menuPGM, menuSize, &subMenuM);
-                screen(&subMenuM);
-                displayPrint(&subMenuM);
-            }
-
-            if (subMenuM.pointerUpdate || dryer.data.flagScreenUpdate) // TODO: проверить
-            {
-                screen(&subMenuM);
-                displayPrint(&subMenuM);
-            }
-
-#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
-        }
-#endif
-        WDT_DISABLE();
+        menuFlow();
         break;
 
     case DRY:
-        WDT(WDTO_1S, 23);
-        getData();
-        setPoint();
-        screenUpdate();
-        fanON(dryer.data.setFan);
-
-        if (Setpoint == 0)
-        {
-            dimmer = HEATER_OFF;
-        }
-
-        if (dryer.data.timestamp - oldTimer >= 60000 && dryer.data.flagTimeCounter)
-        {
-            // DEBUG_PRINT(4);
-            oldTimer = dryer.data.timestamp;
-            dryer.data.setTime--;
-        }
-
-        if (dryer.data.setTime == 0)
-        {
-            async_piii(1000);
-            // DEBUG_PRINT(5);
-            subMenuM.parentID = 5; // ID пункта хранение
-            heaterOFF();
-            WDT_DISABLE();
-            storageStart();
-            // DEBUG_PRINT(6);
-        }
-
-        servo.check();
-        // DEBUG_PRINT(7);
-        WDT_DISABLE();
-
+        dryFlow();
         break;
+
 #if KASYAK_FINDER == 0
     case STORAGE:
-
-        WDT(WDTO_4S, 24);
-        getData();
-        setPoint();
-        screenUpdate();
-
-        if (dryer.data.flag)
-        {
-            dryer.data.flagTimeCounter ? fanON(dryer.data.setFan) : fanMAX();
-            setPoint();
-            servo.check();
-
-            if (dryer.data.setTemp <= dryer.data.airTempCorrected && dryer.data.airHumidity <= dryer.data.setHumidity)
-            {
-                if (servo.state == OPEN)
-                    servo.toggle();
-
-                dryer.data.optimalConditionsReachedFlag = true;
-                dryer.data.flag = false;
-            }
-        }
-        else
-        {
-            if (servo.state == CLOSED && dryer.data.optimalConditionsReachedFlag == true)
-            {
-                dryer.data.optimalConditionsReachedFlag = false;
-                heaterOFF();
-            }
-
-            if (dryer.data.ntcTemp <= dryer.data.airTempCorrected + TEMP_HYSTERESIS)
-            {
-                fanOFF();
-            }
-#if ACTIVATION_HYSTERESIS_MODE == 1
-            if ((dryer.data.airHumidity >= dryer.data.setHumidity + HUMIDITY_HYSTERESIS && !dryer.data.flag) || (dryer.data.airTemp <= dryer.data.setTemp - TEMP_HYSTERESIS && !dryer.data.flag))
-#else
-            if (dryer.data.airHumidity >= dryer.data.setHumidity + HUMIDITY_HYSTERESIS && !dryer.data.flag)
-#endif
-            {
-                dryer.data.flag = true;
-                fanON(dryer.data.setFan);
-                heaterON();
-            }
-        }
-
-        WDT_DISABLE();
+        storageFlow();
         break;
 #endif
 
 #if SCALES_MODULE_NUM == 0
     case AUTOPID:
-#ifndef PWM_TEST
-        autoPid();
-#endif
-#endif
+        autoPidFlow();
         break;
+#endif
 
     default:
         break;
@@ -1527,7 +1387,7 @@ void setPoint()
 
     Input = dryer.data.ntcTemp;
 
-    auto timeInSeconds = dryer.data.timestamp / math::msCountInSec;
+    auto timeInSeconds = dryer.data.timestamp / float(math::msCountInSec);
     auto heaterTempError = Setpoint - Input;
     pid.Process(timeInSeconds, heaterTempError);
 
@@ -1535,6 +1395,11 @@ void setPoint()
     {
         Output = pid.GetOutput();
         updateDimmer();
+
+        if (Setpoint == 0)
+        {
+            dimmer = HEATER_OFF;
+        }
 
 #if KASYAK_FINDER && DRY_LOGS
         Serial.print(" t: ");
@@ -1569,13 +1434,170 @@ void setPoint()
     }
 }
 
-void autoPid()
+void ntcErrorFlow()
 {
+    fanMAX();
+    heaterOFF();
+
+    oled.clear();
+    oled.firstPage();
+    do
+    {
+        drawLine(printMenuItem(&serviceTxt[DEF_T_ERROR]), 2, true);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_CHECK]), 2, true);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_THERMISTOR]), 2, true);
+        drawLine(printMenuItem(&serviceTxt[DEF_T_OVERLOAD]), 2, true);
+    } while (oled.nextPage());
+
+    while (digitalRead(encBut))
+    {
+        async_piii(500);
+        delay(500);
+    }
+}
+
+void menuFlow()
+{
+    WDT(WDTO_8S, 22);
+    getData();
+
+    if (dryer.data.ntcTemp > 45)
+    {
+        fanMAX();
+    }
+    else if (dryer.data.ntcTemp < 40)
+    {
+        fanOFF();
+    }
+
+#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
+    if (hx711Multi.tare[hx711Multi.sensorNum] != (uint8_t)eeprom_read_word(&menuVal[DEF_COIL_1_TARA + (hx711Multi.sensorNum * 3)]))
+    {
+        hx711Multi.tare[hx711Multi.sensorNum] = (uint8_t)eeprom_read_word(&menuVal[DEF_COIL_1_TARA + (hx711Multi.sensorNum * 3)]);
+    }
+#endif
+
+    controlsHandler(menuPGM, menuVal, menuFunc, &subMenuM);
+
+#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
+
+    if (millis() - scaleTimer > MENU_SCALE_SWITCH_TIME && subMenuM.parentID == 0)
+    {
+        scaleShow();
+    }
+    else
+    {
+#endif
+        if (subMenuM.levelUpdate)
+        {
+            submenuHandler(menuPGM, menuSize, &subMenuM);
+            screen(&subMenuM);
+            displayPrint(&subMenuM);
+        }
+
+        if (subMenuM.pointerUpdate || dryer.data.flagScreenUpdate) // TODO: проверить
+        {
+            screen(&subMenuM);
+            displayPrint(&subMenuM);
+        }
+
+#if SCALES_MODULE_NUM != 0 && AUTOPID_RUN == 0
+    }
+#endif
+    WDT_DISABLE();
+}
+
+void dryFlow()
+{
+    WDT(WDTO_1S, 23);
+    getData();
+    setPoint();
+    screenUpdate();
+    fanON(dryer.data.setFan);
+
+    if (dryer.data.timestamp - oldTimer >= 60000 && dryer.data.flagTimeCounter)
+    {
+        // DEBUG_PRINT(4);
+        oldTimer = dryer.data.timestamp;
+        dryer.data.setTime--;
+    }
+
+    if (dryer.data.setTime == 0)
+    {
+        async_piii(1000);
+        // DEBUG_PRINT(5);
+        subMenuM.parentID = 5; // ID пункта хранение
+        heaterOFF();
+        WDT_DISABLE();
+        storageStart();
+        // DEBUG_PRINT(6);
+    }
+
+    servo.check();
+    // DEBUG_PRINT(7);
+    WDT_DISABLE();
+}
+
+void storageFlow()
+{
+    WDT(WDTO_4S, 24);
+    getData();
+    setPoint();
+    screenUpdate();
+
+    if (dryer.data.flag)
+    {
+        dryer.data.flagTimeCounter ? fanON(dryer.data.setFan) : fanMAX();
+        setPoint();
+        servo.check();
+
+        if (dryer.data.setTemp <= dryer.data.airTempCorrected && dryer.data.airHumidity <= dryer.data.setHumidity)
+        {
+            if (servo.state == OPEN)
+            {
+                servo.toggle();
+            }
+
+            dryer.data.optimalConditionsReachedFlag = true;
+            dryer.data.flag = false;
+        }
+    }
+    else
+    {
+        if (servo.state == CLOSED && dryer.data.optimalConditionsReachedFlag == true)
+        {
+            dryer.data.optimalConditionsReachedFlag = false;
+            heaterOFF();
+        }
+
+        if (dryer.data.ntcTemp <= dryer.data.airTempCorrected + TEMP_HYSTERESIS)
+        {
+            fanOFF();
+        }
+#if ACTIVATION_HYSTERESIS_MODE == 1
+        if ((dryer.data.airHumidity >= dryer.data.setHumidity + HUMIDITY_HYSTERESIS && !dryer.data.flag) || (dryer.data.airTemp <= dryer.data.setTemp - TEMP_HYSTERESIS && !dryer.data.flag))
+#else
+        if (dryer.data.airHumidity >= dryer.data.setHumidity + HUMIDITY_HYSTERESIS && !dryer.data.flag)
+#endif
+        {
+            dryer.data.flag = true;
+            fanON(dryer.data.setFan);
+            heaterON();
+        }
+    }
+
+    WDT_DISABLE();
+}
+
+void autoPidFlow()
+{
+    constexpr auto ntcUpdateInterval = (uint32_t)(0.005f * math::usCountInSec);
+
     auto minOutput = pid.GetMinOutput();
     auto maxOutput = pid.GetMaxOutput();
-    auto minDeltaTimeMicroseconds = long(dryer.data.minDeltaTime * 1e+6);
+    auto minDeltaTimeMicroseconds = uint32_t(dryer.data.minDeltaTime * math::usCountInSec);
 
-    auto tuner = PIDAutotuner();
+    PIDAutotuner tuner;
     tuner.setTargetInputValue(dryer.data.setTemp);
     tuner.setLoopInterval(minDeltaTimeMicroseconds);
     tuner.setOutputRange(minOutput, maxOutput);
@@ -1597,44 +1619,38 @@ void autoPid()
 
     auto currentMicroseconds = micros();
     auto previousMicroseconds = currentMicroseconds;
-    auto currentCycle = tuner.getCycle();
-    auto previousCycle = currentCycle;
+    auto elapsedMicroseconds = currentMicroseconds - previousMicroseconds;
     auto updateScreen = false;
 
     tuner.startTuningLoop(currentMicroseconds);
 
     while (!tuner.isFinished())
     {
-        WDT(WDTO_4S, 18);
+        WDT(WDTO_4S, 25);
 
-        while (currentMicroseconds - previousMicroseconds < minDeltaTimeMicroseconds)
+        updateScreen = true;
+
+        do
         {
             currentMicroseconds = micros();
+            elapsedMicroseconds = currentMicroseconds - previousMicroseconds;
 
-            if (currentMicroseconds % 2000 == 0) // update data each 2ms
+            if (elapsedMicroseconds % ntcUpdateInterval == 0 && (elapsedMicroseconds + ntcUpdateInterval < minDeltaTimeMicroseconds)) // update data each 2ms during tuning interval
             {
                 getData();
+
+                if (updateScreen) // update screen once during tuning interval
+                {
+                    updateScreen = false;
+                    displayPIDTuningScreen(tuner);
+                }
             }
-        }
+        } while (elapsedMicroseconds < minDeltaTimeMicroseconds); // wait until next tuning interval
 
         previousMicroseconds = currentMicroseconds;
 
         Output = tuner.tunePID(dryer.data.ntcTemp, currentMicroseconds);
         updateDimmer();
-
-        currentCycle = tuner.getCycle();
-        updateScreen = dryer.data.flagScreenUpdate;
-
-        if (currentCycle != previousCycle)
-        {
-            previousCycle = currentCycle;
-            updateScreen = true;
-        }
-
-        if (updateScreen)
-        {
-            displayPIDTuningScreen(tuner);
-        }
 
 #if KASYAK_FINDER && AUTOPID_LOGS
         Serial.print(" dt: ");
@@ -1642,7 +1658,7 @@ void autoPid()
         Serial.print(" n: ");
         Serial.print(dryer.data.ntcTemp, 2);
         Serial.print(" c: ");
-        Serial.print(currentCycle);
+        Serial.print(tuner.getCycle());
         Serial.print(" kp: ");
         Serial.print(tuner.getKp(), 3);
         Serial.print(" ki: ");

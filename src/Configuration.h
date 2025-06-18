@@ -26,10 +26,10 @@
 18 // PID TUNING;
 20 void scaleShow();
 21
-22 // CASE MENU
-23 // CASE DRY
-24 // CASE STORAGE
-25 void autoPid();
+22 void menuFlow();
+23 void dryFlow();
+24 void storageFlow();
+25 void autoPidFlow();
 26 // NTC MIN
 27 // NTC MAX
 28 // BME MIN
