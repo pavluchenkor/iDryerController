@@ -1456,6 +1456,7 @@ void ntcErrorFlow()
 void menuFlow()
 {
     WDT(WDTO_8S, 22);
+    getData();
 
     if (dryer.data.ntcTemp > 45)
     {
@@ -1555,8 +1556,10 @@ void storageFlow()
         if (dryer.data.setTemp <= dryer.data.airTempCorrected && dryer.data.airHumidity <= dryer.data.setHumidity)
         {
             if (servo.state == OPEN)
+            {
                 servo.toggle();
-
+            }
+            
             dryer.data.optimalConditionsReachedFlag = true;
             dryer.data.flag = false;
         }
