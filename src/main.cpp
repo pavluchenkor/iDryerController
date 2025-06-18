@@ -282,8 +282,6 @@ filamentExpense filamentExpenseFlag[SCALES_MODULE_NUM] = {UPDATE_DATA};
 
 using math::algorithms::PIDController;
 
-constexpr auto ntcUpdateInterval = (uint32_t)(0.002f * math::usCountInSec);
-
 float Setpoint = 0;
 float Input = 0;
 float Output = 0;
@@ -1398,6 +1396,11 @@ void setPoint()
         Output = pid.GetOutput();
         updateDimmer();
 
+        if (Setpoint == 0)
+        {
+            dimmer = HEATER_OFF;
+        }
+
 #if KASYAK_FINDER && DRY_LOGS
         Serial.print(" t: ");
         Serial.print(dryer.data.timestamp);
@@ -1512,11 +1515,6 @@ void dryFlow()
     screenUpdate();
     fanON(dryer.data.setFan);
 
-    if (Setpoint == 0)
-    {
-        dimmer = HEATER_OFF;
-    }
-
     if (dryer.data.timestamp - oldTimer >= 60000 && dryer.data.flagTimeCounter)
     {
         // DEBUG_PRINT(4);
@@ -1559,7 +1557,7 @@ void storageFlow()
             {
                 servo.toggle();
             }
-            
+
             dryer.data.optimalConditionsReachedFlag = true;
             dryer.data.flag = false;
         }
@@ -1593,6 +1591,8 @@ void storageFlow()
 
 void autoPidFlow()
 {
+    constexpr auto ntcUpdateInterval = (uint32_t)(0.005f * math::usCountInSec);
+
     auto minOutput = pid.GetMinOutput();
     auto maxOutput = pid.GetMaxOutput();
     auto minDeltaTimeMicroseconds = uint32_t(dryer.data.minDeltaTime * math::usCountInSec);
@@ -1635,11 +1635,11 @@ void autoPidFlow()
             currentMicroseconds = micros();
             elapsedMicroseconds = currentMicroseconds - previousMicroseconds;
 
-            if (elapsedMicroseconds % ntcUpdateInterval == 0) // update data each 2ms
+            if (elapsedMicroseconds % ntcUpdateInterval == 0 && (elapsedMicroseconds + ntcUpdateInterval < minDeltaTimeMicroseconds)) // update data each 2ms during tuning interval
             {
                 getData();
 
-                if (updateScreen) // update screen once
+                if (updateScreen) // update screen once during tuning interval
                 {
                     updateScreen = false;
                     displayPIDTuningScreen(tuner);
