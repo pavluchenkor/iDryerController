@@ -5,6 +5,8 @@
 namespace math
 {
   constexpr auto msCountInSec = 1000.0f;
+  
+  float map_to_range_with_clamp(float value, float inputLowerBound, float inputUpperBound, float outputLowerBound, float outputUpperBound);
 
   float map_to_range(float value, float inputLowerBound, float inputUpperBound, float outputLowerBound, float outputUpperBound);
 

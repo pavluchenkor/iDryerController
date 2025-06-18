@@ -299,6 +299,6 @@ language, will not be displayed
 
 #define KASYAK_FINDER 0
 #define DRY_LOGS 1
-#define AUTOPID_LOGS 0
+#define AUTOPID_LOGS 1
 
 #endif
