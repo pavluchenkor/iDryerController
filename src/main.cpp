@@ -1510,7 +1510,7 @@ void setPoint()
     float deltaT = dryer.data.deltaT;               // Дополнительный коэффициент для агрессивного нагрева
 
     auto delta = desiredTemp - currentTemp;
-    auto adjustment = math::map_to_range(delta, HEATER_AIR_DELTA, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);
+    auto adjustment = math::map_to_range_with_clamp(delta, HEATER_AIR_DELTA, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);
 
     Setpoint = desiredTemp + adjustment;
 
@@ -1573,7 +1573,7 @@ void autoPid()
 {
     auto minOutput = pid.GetMinOutput();
     auto maxOutput = pid.GetMaxOutput();
-    auto minDeltaTimeMicroseconds = long(ceil(dryer.data.minDeltaTime * 1e+6));
+    auto minDeltaTimeMicroseconds = long(dryer.data.minDeltaTime * 1e+6);
 
     auto tuner = PIDAutotuner();
     tuner.setTargetInputValue(dryer.data.setTemp);
@@ -1591,25 +1591,35 @@ void autoPid()
     WDT_DISABLE();
     dimmer = HEATER_OFF;
 
-    auto microseconds = micros();
+    oled.clear();
+    getData();
+    displayPIDTuningScreen(tuner);
+
+    auto currentMicroseconds = micros();
+    auto previousMicroseconds = currentMicroseconds;
     auto currentCycle = tuner.getCycle();
     auto previousCycle = currentCycle;
     auto updateScreen = false;
 
-    oled.clear();
-    displayPIDTuningScreen(tuner);
-
-    tuner.startTuningLoop(microseconds);
+    tuner.startTuningLoop(currentMicroseconds);
 
     while (!tuner.isFinished())
     {
         WDT(WDTO_4S, 18);
 
-        microseconds = micros();
+        while (currentMicroseconds - previousMicroseconds < minDeltaTimeMicroseconds)
+        {
+            currentMicroseconds = micros();
 
-        dryer.getData();
+            if (currentMicroseconds % 2000 == 0) // update data each 2ms
+            {
+                getData();
+            }
+        }
 
-        Output = tuner.tunePID(dryer.data.ntcTemp, microseconds);
+        previousMicroseconds = currentMicroseconds;
+
+        Output = tuner.tunePID(dryer.data.ntcTemp, currentMicroseconds);
         updateDimmer();
 
         currentCycle = tuner.getCycle();
@@ -1644,11 +1654,6 @@ void autoPid()
         Serial.println();
         Serial.flush();
 #endif
-
-        while (micros() - microseconds < minDeltaTimeMicroseconds)
-        {
-            delayMicroseconds(1);
-        }
     }
 
     heaterOFF();
@@ -1672,7 +1677,7 @@ void autoPid()
 
 void updateDimmer()
 {
-    dimmer = static_cast<uint16_t>(math::map_to_range(Output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MAX, HEATER_MIN));
+    dimmer = static_cast<uint16_t>(math::map_to_range_with_clamp(Output, pid.GetMinOutput(), pid.GetMaxOutput(), HEATER_MAX, HEATER_MIN));
 }
 
 float optional_round(float value)

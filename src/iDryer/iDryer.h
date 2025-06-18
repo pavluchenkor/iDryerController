@@ -29,7 +29,6 @@ struct Data
   float airHumidity = 0;
   bool optimalConditionsReachedFlag = false;
   unsigned long startTime = 0;
-  unsigned long errorTime28 = 0;
   uint8_t setTemp = 0;
   uint8_t setHumidity = 0;
   uint16_t setTime = 0;
@@ -43,16 +42,13 @@ struct Data
   float Kf = 0;
   float minDeltaTime = 0;
   uint8_t deltaT = 0;
-
-  bool operator!=(const Data &other) const;
 };
 
 class iDryer
 {
 public:
   Data data;
-  Data oldData;
-  unsigned long screenTime = 0;
+  unsigned long lastScreenUpdateTimestamp = 0;
   thermistor &ntc;
 
 #ifdef SENSOR_BME280
