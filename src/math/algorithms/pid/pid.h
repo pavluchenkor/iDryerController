@@ -12,7 +12,7 @@ namespace math::algorithms
     float _integralGain = 0;
     float _derivativeGain = 0;
     float _filterGain = 0;
-    float _minOutput = 0;
+    float _minOutput = -1;
     float _maxOutput = 1;
 
     // state

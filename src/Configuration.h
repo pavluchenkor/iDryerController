@@ -109,6 +109,13 @@ temperature  sensor choice
  ***************************/
 #define SENSOR_TYPE 1
 
+/***************************
+Пороговые значения для температурных фаз
+ ***************************/
+#define HEATING_THRESHOLD 10.0f // Порог для агрессивного нагрева (°C)
+#define HEATER_AIR_DELTA 0.0f   // Компенсация теплопотерь (°C)
+#define CRITICAL_OVERHEAT 5.0f  // Критическая температура (°C)
+
 #define TMP_MIN 1
 #define TMP_MAX 130
 #define TMP_SAFETY_THRESHOLD 10
@@ -161,10 +168,10 @@ Manual PID setup
 if OVERWRITE_PID - 0, pid, after burning, will be default
  **********************/
 #define OVERWRITE_PID 0
-#define K_PROPRTIONAL 20  //
-#define K_INTEGRAL 1      //
-#define K_DERIVATIVE 40   //
-#define K_FILTER 40       //
+#define K_PROPRTIONAL 20     //
+#define K_INTEGRAL 1         //
+#define K_DERIVATIVE 40      //
+#define K_FILTER 40          //
 #define K_MIN_DELTA_TIME 300 //
 /*********************
 Pid type

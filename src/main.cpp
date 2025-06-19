@@ -36,11 +36,6 @@
 #define DEBUG_PRINT(x)
 #endif
 
-// Пороговые значения для температурных фаз
-#define HEATING_THRESHOLD 10.0f // Порог для агрессивного нагрева (°C)
-#define HEATER_AIR_DELTA 0.0f   // Компенсация теплопотерь (°C)
-#define CRITICAL_OVERHEAT 5.0f  // Критическая температура (°C)
-
 // #define DEBUG
 #ifdef DEBUG
 uint8_t testPWM = 0;
@@ -1365,12 +1360,12 @@ void getData()
 
 void setPoint()
 {
-    auto currentTemp = dryer.data.airTempCorrected; // Текущая температура
-    float desiredTemp = dryer.data.setTemp;         // Заданная температура
-    float deltaT = dryer.data.deltaT;               // Дополнительный коэффициент для агрессивного нагрева
+    auto currentTemp = dryer.data.airTempCorrected;            // Текущая температура
+    float desiredTemp = dryer.data.setTemp + HEATER_AIR_DELTA; // Заданная температура
+    float deltaT = dryer.data.deltaT;                          // Дополнительный коэффициент для агрессивного нагрева
 
     auto delta = desiredTemp - currentTemp;
-    auto adjustment = math::map_to_range_with_clamp(delta, HEATER_AIR_DELTA, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);
+    auto adjustment = math::map_to_range_with_clamp(delta, 0.0f, HEATING_THRESHOLD, 0.0f, deltaT);
 
     Setpoint = desiredTemp + adjustment;
 
