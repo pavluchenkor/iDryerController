@@ -131,10 +131,10 @@ temperature  sensor choice
 #define CE 110 //*
 
 // Калибровка показаний BME280 | Linear Temperature Calibration for BME280
-#define MIN_CALIB_TEMP 90       // Температура воздуха в комнате по показниям BME280 | Air temperature in room by BME280 measurements
-#define MAX_CALIB_TEMP CE       // Температура воздуха в камере предельная по показниям BME280 (!! Не трогать) | Air MAX temperature in chamber by BME280 measurements (!! DO NOT TOUCH)
-#define REAL_CALIB_TEMP_MIN 90  // Температура воздуха в комнате по показаниям термопары | Air temperature in room by thermocouple measurements
-#define REAL_CALIB_TEMP_MAX 110 // Температура воздуха в камере по показниям термопары при достижении заданной температуры по показаниям BME280 | Air temperature in chamber by thermocouple measurements at BME280 setpoint temperature reached
+#define MIN_CALIB_TEMP 60                                               // Температура воздуха в комнате по показниям BME280 | Air temperature in room by BME280 measurements
+#define MAX_CALIB_TEMP CE                                               // Температура воздуха в камере предельная по показниям BME280 (!! Не трогать) | Air MAX temperature in chamber by BME280 measurements (!! DO NOT TOUCH)
+#define REAL_CALIB_TEMP_MIN 60                                          // Температура воздуха в комнате по показаниям термопары | Air temperature in room by thermocouple measurements
+#define REAL_CALIB_TEMP_MAX CE + (REAL_CALIB_TEMP_MIN - MIN_CALIB_TEMP) // Температура воздуха в камере по показниям термопары при достижении заданной температуры по показаниям BME280 | Air temperature in chamber by thermocouple measurements at BME280 setpoint temperature reached
 
 // Polynomial Temperature Calibration for BME280
 // #define COEFF_A 0.0
