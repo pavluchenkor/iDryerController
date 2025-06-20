@@ -992,6 +992,8 @@ void dryStart()
     WDT(WDTO_4S, 10);
     oldTimer = 0;
     scaleTimer = millis();
+
+    updateIDryerData();
     heaterON();
 
     state = DRY;
@@ -1011,6 +1013,8 @@ void storageStart()
     WDT(WDTO_4S, 11);
     oldTimer = 0;
     scaleTimer = millis();
+
+    updateIDryerData();
     heaterON();
 
     state = STORAGE;
@@ -1032,7 +1036,6 @@ void autoPidStart()
     WDT(WDTO_500MS, 12);
 
     updateIDryerData();
-
     heaterON();
 
     state = AUTOPID;
@@ -1067,24 +1070,6 @@ void updateIDryerData()
     WDT_DISABLE();
 }
 
-void saveAll()
-{
-    Timer1.pause();
-    updateIDryerData();
-    Timer1.resume();
-
-#if KASYAK_FINDER == 0
-    oled.firstPage();
-    do
-    {
-        drawLine(printMenuItem(&serviceTxt[DEF_T_AYRA]), 3);
-    } while (oled.nextPage());
-    delay(500);
-#endif
-    subMenuM.pointerUpdate = 1;
-}
-
-// WDTO_15MS
 // WDTO_8S
 void WDT(uint16_t time, uint8_t current_function_uuid)
 {
@@ -1144,11 +1129,6 @@ void piii(uint16_t time_ms)
 
 void async_piii(uint16_t time_ms)
 {
-    if (state == AUTOPID)
-    {
-        return;
-    }
-
     buzzer.buzz(time_ms);
 }
 
@@ -1640,13 +1620,18 @@ void autoPidFlow()
     {
         WDT(WDTO_4S, 25);
 
-        if (enc.hold())
+        enc.tick();
+        buzzer.update();
+
+        if (enc.hold()) // check user exit
         {
             menuStart();
 
             while (digitalRead(encBut))
             {
             }
+
+            return;
         }
 
         updateScreen = true;
