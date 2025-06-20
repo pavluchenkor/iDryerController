@@ -294,6 +294,7 @@ void fanON(int percent);
 /* 08 */ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu);
 /* 09 */ void piii(uint16_t time_ms);
 void async_piii(uint16_t time_ms);
+void menuStart();
 /* 10 */ void dryStart();
 /* 11 */ void storageStart();
 /* 12 */ void autoPidStart();
@@ -753,24 +754,6 @@ void loop()
         sensorNum = 0;
 #endif
 
-    if (enc.hold())
-    {
-        if (state == DRY || state == STORAGE)
-        {
-            WDT_DISABLE();
-            state = MENU;
-            heaterOFF();
-            async_piii(500);
-            subMenuM.levelUpdate = UP;
-            subMenuM.parentID = 0;
-            subMenuM.pointerPos = 0;
-            subMenuM.pointerUpdate = 1;
-            while (digitalRead(encBut))
-            {
-            }
-        }
-    }
-
     switch (state)
     {
     case NTC_ERROR:
@@ -990,6 +973,20 @@ void absDryStart()
 #endif
 }
 
+void menuStart()
+{
+    WDT_DISABLE();
+    heaterOFF();
+    async_piii(500);
+
+    state = MENU;
+
+    subMenuM.levelUpdate = UP;
+    subMenuM.parentID = 0;
+    subMenuM.pointerPos = 0;
+    subMenuM.pointerUpdate = 1;
+}
+
 void dryStart()
 {
     WDT(WDTO_4S, 10);
@@ -1025,6 +1022,8 @@ void storageStart()
     dryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
 
     WDT_DISABLE();
+#else
+    menuStart();
 #endif
 }
 
@@ -1510,6 +1509,15 @@ void dryFlow()
     screenUpdate();
     fanON(dryer.data.setFan);
 
+    if (enc.hold())
+    {
+        menuStart();
+
+        while (digitalRead(encBut))
+        {
+        }
+    }
+
     if (dryer.data.timestamp - oldTimer >= 60000 && dryer.data.flagTimeCounter)
     {
         // DEBUG_PRINT(4);
@@ -1539,6 +1547,15 @@ void storageFlow()
     getData();
     setPoint();
     screenUpdate();
+
+    if (enc.hold())
+    {
+        menuStart();
+
+        while (digitalRead(encBut))
+        {
+        }
+    }
 
     if (dryer.data.flag)
     {
@@ -1622,6 +1639,15 @@ void autoPidFlow()
     while (!tuner.isFinished())
     {
         WDT(WDTO_4S, 25);
+
+        if (enc.hold())
+        {
+            menuStart();
+
+            while (digitalRead(encBut))
+            {
+            }
+        }
 
         updateScreen = true;
 
