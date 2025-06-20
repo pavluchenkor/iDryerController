@@ -32,7 +32,6 @@ void petgDryStart();
 void absDryStart();
 void storageStart();
 void autoPidStart();
-void saveAll();
 void servoTest();
 #if SCALES_MODULE_NUM > 0
 void setSpool1();
@@ -113,7 +112,7 @@ PGM_P const menuTxt[] PROGMEM = {
     i35, // id: 36
     i36, // id: 37
     i37, // id: 38
-    i38, // id: 39
+    // i38, // id: 39
 #if SCALES_MODULE_NUM > 0
     i39, // id: 40
     i40, // id: 41
@@ -197,7 +196,7 @@ const menuS menuPGM[] PROGMEM = {
     {36, 34, 0, 10},   // id: 36
     {37, 34, 0, 90},   // id: 37
     {38, 34, 0, 0},    // id: 38
-    {39, 22, 0, 0},    // id: 39
+    // {39, 22, 0, 0},    // id: 39
 #if SCALES_MODULE_NUM > 0
     {40, 0, 0, 0},    // id: 40
     {41, 40, 0, 0},   // id: 41
@@ -261,7 +260,7 @@ uint16_t menuVal[] EEMEM = {
     1,                       // id: 36
     55,                      // id: 37
     0,                       // id: 38
-    0,                       // id: 39
+    // 0,                       // id: 39
 #if SCALES_MODULE_NUM > 0
     0, // id: 40
     0, // id: 41
@@ -327,7 +326,7 @@ const ptrFunc menuFunc[]{
     NULL,          // id: 36
     NULL,          // id: 37
     &servoTest,    // id: 38
-    &saveAll,      // id: 39
+    // &saveAll,      // id: 39
 #if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
     NULL,      // id: 40
     NULL,      // id: 41

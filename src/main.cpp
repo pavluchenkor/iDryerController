@@ -107,7 +107,7 @@ uint32_t ERROR_CODE EEMEM = 0x0;
  * меняй это на свой страх и риск
  ********************/
 #define HEATER_MIN 500
-#define HEATER_MAX 2000
+#define HEATER_MAX 9499
 #define HEATER_OFF 9500
 #endif
 
@@ -294,6 +294,7 @@ void fanON(int percent);
 /* 08 */ void submenuHandler(const menuS constMenu[], uint8_t menuSize, struct subMenu *subMenu);
 /* 09 */ void piii(uint16_t time_ms);
 void async_piii(uint16_t time_ms);
+void menuStart();
 /* 10 */ void dryStart();
 /* 11 */ void storageStart();
 /* 12 */ void autoPidStart();
@@ -753,24 +754,6 @@ void loop()
         sensorNum = 0;
 #endif
 
-    if (enc.hold())
-    {
-        if (state == DRY || state == STORAGE)
-        {
-            WDT_DISABLE();
-            state = MENU;
-            heaterOFF();
-            async_piii(500);
-            subMenuM.levelUpdate = UP;
-            subMenuM.parentID = 0;
-            subMenuM.pointerPos = 0;
-            subMenuM.pointerUpdate = 1;
-            while (digitalRead(encBut))
-            {
-            }
-        }
-    }
-
     switch (state)
     {
     case NTC_ERROR:
@@ -990,11 +973,27 @@ void absDryStart()
 #endif
 }
 
+void menuStart()
+{
+    WDT_DISABLE();
+    heaterOFF();
+    async_piii(500);
+
+    state = MENU;
+
+    subMenuM.levelUpdate = UP;
+    subMenuM.parentID = 0;
+    subMenuM.pointerPos = 0;
+    subMenuM.pointerUpdate = 1;
+}
+
 void dryStart()
 {
     WDT(WDTO_4S, 10);
     oldTimer = 0;
     scaleTimer = millis();
+
+    updateIDryerData();
     heaterON();
 
     state = DRY;
@@ -1014,6 +1013,8 @@ void storageStart()
     WDT(WDTO_4S, 11);
     oldTimer = 0;
     scaleTimer = millis();
+
+    updateIDryerData();
     heaterON();
 
     state = STORAGE;
@@ -1025,6 +1026,8 @@ void storageStart()
     dryer.data.setHumidity = eeprom_read_word(&menuVal[DEF_STORAGE_HUMIDITY]);
 
     WDT_DISABLE();
+#else
+    menuStart();
 #endif
 }
 
@@ -1033,7 +1036,6 @@ void autoPidStart()
     WDT(WDTO_500MS, 12);
 
     updateIDryerData();
-
     heaterON();
 
     state = AUTOPID;
@@ -1068,24 +1070,6 @@ void updateIDryerData()
     WDT_DISABLE();
 }
 
-void saveAll()
-{
-    Timer1.pause();
-    updateIDryerData();
-    Timer1.resume();
-
-#if KASYAK_FINDER == 0
-    oled.firstPage();
-    do
-    {
-        drawLine(printMenuItem(&serviceTxt[DEF_T_AYRA]), 3);
-    } while (oled.nextPage());
-    delay(500);
-#endif
-    subMenuM.pointerUpdate = 1;
-}
-
-// WDTO_15MS
 // WDTO_8S
 void WDT(uint16_t time, uint8_t current_function_uuid)
 {
@@ -1145,11 +1129,6 @@ void piii(uint16_t time_ms)
 
 void async_piii(uint16_t time_ms)
 {
-    if (state == AUTOPID)
-    {
-        return;
-    }
-
     buzzer.buzz(time_ms);
 }
 
@@ -1369,6 +1348,11 @@ void setPoint()
 
     Setpoint = desiredTemp + adjustment;
 
+    if (delta < 0.0f)
+    {
+        Setpoint -= delta;
+    }
+
     if (Setpoint > TMP_MAX)
     {
         Setpoint = TMP_MAX;
@@ -1510,6 +1494,15 @@ void dryFlow()
     screenUpdate();
     fanON(dryer.data.setFan);
 
+    if (enc.hold())
+    {
+        menuStart();
+
+        while (digitalRead(encBut))
+        {
+        }
+    }
+
     if (dryer.data.timestamp - oldTimer >= 60000 && dryer.data.flagTimeCounter)
     {
         // DEBUG_PRINT(4);
@@ -1539,6 +1532,15 @@ void storageFlow()
     getData();
     setPoint();
     screenUpdate();
+
+    if (enc.hold())
+    {
+        menuStart();
+
+        while (digitalRead(encBut))
+        {
+        }
+    }
 
     if (dryer.data.flag)
     {
@@ -1622,6 +1624,20 @@ void autoPidFlow()
     while (!tuner.isFinished())
     {
         WDT(WDTO_4S, 25);
+
+        enc.tick();
+        buzzer.update();
+
+        if (enc.hold()) // check user exit
+        {
+            menuStart();
+
+            while (digitalRead(encBut))
+            {
+            }
+
+            return;
+        }
 
         updateScreen = true;
 
