@@ -38,7 +38,7 @@ bool iDryer::getData()
     data.flagScreenUpdate = true;
   }
 
-  if (!data.flagTimeCounter && uint8_t(round(data.airTempCorrected)) >= data.setTemp)
+  if (!data.flagTimeCounter && (uint8_t(round(data.airTempCorrected)) >= data.setTemp - DRY_START_THRESHOLD))
   {
     data.flagTimeCounter = true;
   }
@@ -47,14 +47,17 @@ bool iDryer::getData()
   {
     return false;
   }
+
   if (data.ntcTemp > TMP_MAX + TMP_SAFETY_THRESHOLD)
   {
     return false;
   }
+
   if (data.airTempCorrected < TMP_MIN)
   {
     return false;
   }
+
   if (data.airTempCorrected > TMP_MAX + TMP_SAFETY_THRESHOLD)
   {
     return false;

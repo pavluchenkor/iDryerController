@@ -100,7 +100,7 @@ buzzer beeps every time the heater comes on
   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
  */
 
-#define TEMP_SENSOR_0 5
+#define TEMP_SENSOR_0 11
 
 /***************************
 temperature  sensor choice
@@ -112,9 +112,10 @@ temperature  sensor choice
 /***************************
 Пороговые значения для температурных фаз
  ***************************/
-#define HEATING_THRESHOLD 10.0f // Порог для агрессивного нагрева (°C)
-#define HEATER_AIR_DELTA 0.0f   // Компенсация теплопотерь (°C)
-#define CRITICAL_OVERHEAT 5.0f  // Критическая температура (°C)
+#define DRY_START_THRESHOLD 1.0f // Порог для начала отсчета времени сушки (°C)
+#define HEATING_THRESHOLD 10.0f  // Порог для агрессивного нагрева (°C)
+#define HEATER_AIR_DELTA 0.0f    // Компенсация теплопотерь (°C)
+#define CRITICAL_OVERHEAT 5.0f   // Критическая температура (°C)
 
 #define TMP_MIN 1
 #define TMP_MAX 130

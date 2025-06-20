@@ -107,7 +107,7 @@ uint32_t ERROR_CODE EEMEM = 0x0;
  * меняй это на свой страх и риск
  ********************/
 #define HEATER_MIN 500
-#define HEATER_MAX 2000
+#define HEATER_MAX 9499
 #define HEATER_OFF 9500
 #endif
 
