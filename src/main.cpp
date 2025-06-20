@@ -1348,6 +1348,11 @@ void setPoint()
 
     Setpoint = desiredTemp + adjustment;
 
+    if (delta < 0.0f)
+    {
+        Setpoint -= delta;
+    }
+
     if (Setpoint > TMP_MAX)
     {
         Setpoint = TMP_MAX;
