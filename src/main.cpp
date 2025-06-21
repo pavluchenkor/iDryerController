@@ -1346,12 +1346,12 @@ void setPoint()
     auto delta = desiredTemp - currentTemp;
     auto adjustment = math::map_to_range_with_clamp(delta, 0.0f, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);
 
-    Setpoint = desiredTemp + adjustment;
-
     if (delta < 0.0f)
     {
-        Setpoint -= math::map_to_range_with_clamp(abs(delta), 0.0f, 1.0f, 0.0f, HEATING_THRESHOLD);
+        adjustment -= math::map_to_range_with_clamp(abs(delta), 0.0f, 1.0f, 0.0f, HEATING_THRESHOLD);
     }
+
+    Setpoint = desiredTemp + adjustment;
 
     if (Setpoint > TMP_MAX)
     {
