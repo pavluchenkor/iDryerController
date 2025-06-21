@@ -5,4 +5,5 @@ test/
 read_hex.py
 .DS_Store
 logs
+*.code-workspace
 ~*

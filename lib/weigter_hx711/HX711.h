@@ -12,6 +12,7 @@
 
 extern uint32_t zero_weight_eep[] EEMEM;
 extern uint32_t offset_eep[] EEMEM;
+extern uint32_t scale_temp_offset_table_eep[4][6]  EEMEM;
 
 class HX711
 {
@@ -63,6 +64,7 @@ public:
   bool multiplexerPinSet(uint8_t sensorNum);
   int16_t getMassMulti(uint8_t sensorNum);
   void offsetFirstSetMulti(uint8_t avg_size, uint8_t sensorNum);
+  void tempOffsetSetMulti(uint8_t sensorNum, uint8_t temp, uint8_t avg_size);
   void zeroSetMulti(uint8_t avg_size, uint8_t sensorNum);
   uint16_t tare[MAX_SENSORS];
   uint8_t sensorNum;
