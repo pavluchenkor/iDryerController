@@ -1339,18 +1339,18 @@ void getData()
 
 void setPoint()
 {
-    auto currentTemp = dryer.data.airTempCorrected;            // Текущая температура
-    float desiredTemp = dryer.data.setTemp + HEATER_AIR_DELTA; // Заданная температура
-    float deltaT = dryer.data.deltaT;                          // Дополнительный коэффициент для агрессивного нагрева
+    auto currentTemp = dryer.data.airTempCorrected; // Текущая температура
+    float desiredTemp = dryer.data.setTemp;         // Заданная температура
+    float deltaT = dryer.data.deltaT;               // Дополнительный коэффициент для агрессивного нагрева
 
     auto delta = desiredTemp - currentTemp;
-    auto adjustment = math::map_to_range_with_clamp(delta, 0.0f, HEATING_THRESHOLD, 0.0f, deltaT);
+    auto adjustment = math::map_to_range_with_clamp(delta, 0.0f, HEATING_THRESHOLD, HEATER_AIR_DELTA, deltaT);
 
     Setpoint = desiredTemp + adjustment;
 
     if (delta < 0.0f)
     {
-        Setpoint -= delta;
+        Setpoint -= math::map_to_range_with_clamp(abs(delta), 0.0f, 1.0f, 0.0f, HEATING_THRESHOLD);
     }
 
     if (Setpoint > TMP_MAX)
