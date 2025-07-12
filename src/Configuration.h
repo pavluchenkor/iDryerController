@@ -107,7 +107,7 @@ temperature  sensor choice
 1 BME280
 2 SHT31
  ***************************/
-#define SENSOR_TYPE 1
+#define SENSOR_TYPE 2
 
 /***************************
 Пороговые значения для температурных фаз

@@ -339,7 +339,7 @@ float optional_round(float value);
 
 #ifdef SENSOR_BME280
 iDryer dryer(ntc, bme);
-#elif SENSOR_SHT31
+#else
 iDryer dryer(ntc, sht);
 #endif
 
