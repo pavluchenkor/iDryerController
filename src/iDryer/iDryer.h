@@ -53,13 +53,13 @@ public:
 
 #ifdef SENSOR_BME280
   GyverBME280 &bme;
-#elif SENSOR_SHT31
+#else
   SHT31 &sht;
 #endif
 
 #ifdef SENSOR_BME280
   iDryer(thermistor &ntc, GyverBME280 &bme);
-#elif SENSOR_SHT31
+#else
   iDryer(thermistor &ntc, SHT31 &sht);
 #endif
 

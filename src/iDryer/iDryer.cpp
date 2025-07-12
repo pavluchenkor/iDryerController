@@ -4,7 +4,7 @@
 iDryer::iDryer(thermistor &ntc, GyverBME280 &bme) : ntc(ntc), bme(bme)
 {
 }
-#elif SENSOR_SHT31
+#else
 iDryer::iDryer(thermistor &ntc, SHT31 &sht) : ntc(ntc), sht(sht)
 {
 }
