@@ -253,10 +253,10 @@ static const uint8_t u8x8_d_ssd1607_to_display_seq[] = {
   /* bit 5/4: 1 - 0 transition */
   /* bit 3/2: 0 - 1 transition */
   /* bit 1/0: 0 - 0 transition */
-  /* 	00 – VSS */
-  /* 	01 – VSH */
-  /* 	10 – VSL */
-  /* 	11 – NA */
+  /* 	00 - VSS */
+  /* 	01 - VSH */
+  /* 	10 - VSL */
+  /* 	11 - NA */
   
   /* original values */
   /*

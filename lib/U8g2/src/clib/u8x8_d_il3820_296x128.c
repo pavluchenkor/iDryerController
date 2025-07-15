@@ -94,10 +94,10 @@
 /* bit 5/4: 1 - 0 transition */
 /* bit 3/2: 0 - 1 transition */
 /* bit 1/0: 0 - 0 transition */
-/* 	00 – VSS */
-/* 	01 – VSH */
-/* 	10 – VSL */
-/* 	11 – NA */
+/* 	00 - VSS */
+/* 	01 - VSH */
+/* 	10 - VSL */
+/* 	11 - NA */
   
 
 #include "u8x8.h"
