@@ -583,7 +583,7 @@ static const uint8_t u8x8_d_ssd1322_128x64_init_seq[] = {
 	A[2]=0b, Disable Nibble Re-map [reset]
 	A[2]=1b, Enable Nibble Re-map			***
 	
-	A[4]=0b, Scan from COM0 to COM[N –1] [reset]	
+	A[4]=0b, Scan from COM0 to COM[N -1] [reset]	
 	A[4]=1b, Scan from COM[N-1] to COM0, where N is the	***
 	
 	Multiplex ratio
