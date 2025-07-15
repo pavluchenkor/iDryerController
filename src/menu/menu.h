@@ -112,27 +112,26 @@ PGM_P const menuTxt[] PROGMEM = {
     i35, // id: 36
     i36, // id: 37
     i37, // id: 38
-    // i38, // id: 39
 #if SCALES_MODULE_NUM > 0
-    i39, // id: 40
-    i40, // id: 41
-    i41, // id: 42
-    i42, // id: 43
+    i39, // id: 39
+    i40, // id: 40
+    i41, // id: 41
+    i42, // id: 42
 #endif
 #if SCALES_MODULE_NUM > 1
-    i43, // id: 44
-    i41, // id: 45
-    i42, // id: 46
+    i43, // id: 43
+    i41, // id: 44
+    i42, // id: 45
 #endif
 #if SCALES_MODULE_NUM > 2
-    i46, // id: 47
-    i41, // id: 48
-    i42, // id: 49
+    i46, // id: 46
+    i41, // id: 47
+    i42, // id: 48
 #endif
 #if SCALES_MODULE_NUM > 3
-    i49, // id: 50
-    i41, // id: 51
-    i42, // id: 52
+    i49, // id: 49
+    i41, // id: 50
+    i42, // id: 51
 #endif
 };
 
@@ -196,27 +195,26 @@ const menuS menuPGM[] PROGMEM = {
     {36, 34, 0, 10},   // id: 36
     {37, 34, 0, 90},   // id: 37
     {38, 34, 0, 0},    // id: 38
-    // {39, 22, 0, 0},    // id: 39
 #if SCALES_MODULE_NUM > 0
-    {40, 0, 0, 0},    // id: 40
-    {41, 40, 0, 0},   // id: 41
-    {42, 41, 0, 500}, // id: 42
-    {43, 41, 0, 0},   // id: 43
+    {39, 0, 0, 0},    // id: 39
+    {40, 39, 0, 0},   // id: 40
+    {41, 40, 0, 500}, // id: 41
+    {42, 40, 0, 0},   // id: 42
 #endif
 #if SCALES_MODULE_NUM > 1
-    {44, 40, 0, 0},   // id: 44
-    {45, 44, 0, 500}, // id: 45
-    {46, 44, 0, 0},   // id: 46
+    {43, 39, 0, 0},   // id: 43
+    {44, 43, 0, 500}, // id: 44
+    {45, 43, 0, 0},   // id: 45
 #endif
 #if SCALES_MODULE_NUM > 2
-    {47, 40, 0, 0},   // id: 47
-    {48, 47, 0, 500}, // id: 48
-    {49, 47, 0, 0},   // id: 49
+    {46, 39, 0, 0},   // id: 46
+    {47, 46, 0, 500}, // id: 47
+    {48, 46, 0, 0},   // id: 48
 #endif
 #if SCALES_MODULE_NUM > 3
-    {50, 40, 0, 0},   // id: 50
-    {51, 50, 0, 500}, // id: 51
-    {52, 50, 0, 0},   // id: 52
+    {49, 39, 0, 0},   // id: 49
+    {50, 49, 0, 500}, // id: 50
+    {51, 50, 0, 0},   // id: 51
 #endif
 };
 
@@ -260,27 +258,26 @@ uint16_t menuVal[] EEMEM = {
     1,                       // id: 36
     55,                      // id: 37
     0,                       // id: 38
-    // 0,                       // id: 39
 #if SCALES_MODULE_NUM > 0
+    0, // id: 39
     0, // id: 40
     0, // id: 41
     0, // id: 42
-    0, // id: 43
 #endif
 #if SCALES_MODULE_NUM > 1
+    0, // id: 43
     0, // id: 44
     0, // id: 45
-    0, // id: 46
 #endif
 #if SCALES_MODULE_NUM > 2
+    0, // id: 46
     0, // id: 47
     0, // id: 48
-    0, // id: 49
 #endif
 #if SCALES_MODULE_NUM > 3
+    0, // id: 49
     0, // id: 50
     0, // id: 51
-    0, // id: 52
 #endif
 };
 
@@ -326,26 +323,25 @@ const ptrFunc menuFunc[]{
     NULL,          // id: 36
     NULL,          // id: 37
     &servoTest,    // id: 38
-    // &saveAll,      // id: 39
 #if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
+    NULL,      // id: 39
     NULL,      // id: 40
     NULL,      // id: 41
-    NULL,      // id: 42
-    setSpool1, // id: 43
+    setSpool1, // id: 42
 #endif
 #if SCALES_MODULE_NUM > 1 && AUTOPID_RUN == 0
+    NULL,       // id: 43
     NULL,       // id: 44
-    NULL,       // id: 45
-    &setSpool2, // id: 46
+    &setSpool2, // id: 45
 #endif
 #if SCALES_MODULE_NUM > 2 && AUTOPID_RUN == 0
+    NULL,       // id: 46
     NULL,       // id: 47
-    NULL,       // id: 48
-    &setSpool3, // id: 49
+    &setSpool3, // id: 48
 #endif
 #if SCALES_MODULE_NUM > 3 && AUTOPID_RUN == 0
+    NULL,       // id: 49
     NULL,       // id: 50
-    NULL,       // id: 51
-    &setSpool4, // id: 52
+    &setSpool4, // id: 51
 #endif
 };
