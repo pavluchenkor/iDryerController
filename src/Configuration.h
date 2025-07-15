@@ -107,14 +107,14 @@ temperature  sensor choice
 1 BME280
 2 SHT31
  ***************************/
-#define SENSOR_TYPE 2
+#define SENSOR_TYPE 1
 
 /***************************
 Пороговые значения для температурных фаз
  ***************************/
 #define DRY_START_THRESHOLD 1.0f // Порог для начала отсчета времени сушки (°C)
-#define HEATING_THRESHOLD 10.0f  // Порог для агрессивного нагрева (°C)
-#define HEATER_AIR_DELTA 0.0f    // Компенсация теплопотерь (°C)
+#define HEATING_THRESHOLD 5.0f   // Порог для агрессивного нагрева (°C)
+#define HEATER_AIR_DELTA 10.0f   // Компенсация теплопотерь (°C)
 #define CRITICAL_OVERHEAT 5.0f   // Критическая температура (°C)
 
 #define TMP_MIN 1
