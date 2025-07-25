@@ -29,8 +29,13 @@ bool iDryer::getData()
   data.airHumidity = (bme.readHumidity() + data.airHumidity) / 2.0f;
 #endif
 
-  data.airTempCorrected = math::map_to_range_with_clamp(data.airTemp, MIN_CALIB_TEMP, MAX_CALIB_TEMP, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX);
+  data.airTempCorrected = data.airTemp;
   data.flagScreenUpdate = false;
+
+  if (data.airTemp > MIN_CALIB_TEMP)
+  {
+    data.airTempCorrected = math::map_to_range_with_clamp(data.airTemp, MIN_CALIB_TEMP, MAX_CALIB_TEMP, REAL_CALIB_TEMP_MIN, REAL_CALIB_TEMP_MAX);
+  }
 
   if (data.timestamp - lastScreenUpdateTimestamp > SCREEN_UPADATE_TIME)
   {
