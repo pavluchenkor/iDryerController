@@ -9,7 +9,7 @@
 01 void heaterOFF();
 02 void heater(uint16_t Output, uint16_t &dimmer);
 03 void heaterON();
-04 void updateIDyerData();
+04 void updateIDryerData();
 05
 06 void screen(struct subMenu *subMenu);
 07 void controlsHandler(const menuS constMenu[], uint16_t editableMenu[], const ptrFunc functionMenu[], struct subMenu *subMenu);
@@ -26,16 +26,16 @@
 18 // PID TUNING;
 20 void scaleShow();
 21
-22 // CASE MENU
-23 // CASE DRY
-24 // CASE STORAGE
-25 void autoPid();
+22 void menuFlow();
+23 void dryFlow();
+24 void storageFlow();
+25 void autoPidFlow();
 26 // NTC MIN
 27 // NTC MAX
 28 // BME MIN
 29 // BME MAX
 30 // ADC ERROR
-31 // iDryer.getData
+31 // dryer.getData
 
 !!!!!!!!!!!!!!!!!!!!!!!ERROR CODE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 
@@ -100,7 +100,22 @@ buzzer beeps every time the heater comes on
   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
  */
 
-#define TEMP_SENSOR_0 5
+#define TEMP_SENSOR_0 11
+
+/***************************
+temperature  sensor choice
+1 BME280
+2 SHT31
+ ***************************/
+#define SENSOR_TYPE 1
+
+/***************************
+Пороговые значения для температурных фаз
+ ***************************/
+#define DRY_START_THRESHOLD 1.0f // Порог для начала отсчета времени сушки (°C)
+#define HEATING_THRESHOLD 5.0f   // Порог для агрессивного нагрева (°C)
+#define HEATER_AIR_DELTA 10.0f   // Компенсация теплопотерь (°C)
+#define CRITICAL_OVERHEAT 5.0f   // Критическая температура (°C)
 
 #define TMP_MIN 1
 #define TMP_MAX 130
@@ -112,15 +127,14 @@ buzzer beeps every time the heater comes on
 110 Celsius enabler
 100 or 110
  ********************/
- 
+
 #define CE 110 //*
 
-
 // Калибровка показаний BME280 | Linear Temperature Calibration for BME280
-#define MIN_CALIB_TEMP 70         // Температура воздуха в комнате по показниям BME280 | Air temperature in room by BME280 measurements
-#define MAX_CALIB_TEMP CE         // Температура воздуха в камере предельная по показниям BME280 (!! Не трогать) | Air MAX temperature in chamber by BME280 measurements (!! DO NOT TOUCH)
-#define REAL_CALIB_TEMP_MIN 70    // Температура воздуха в комнате по показаниям термопары | Air temperature in room by thermocouple measurements
-#define REAL_CALIB_TEMP_MAX 110   // Температура воздуха в камере по показниям термопары при достижении заданной температуры по показаниям BME280 | Air temperature in chamber by thermocouple measurements at BME280 setpoint temperature reached
+#define MIN_CALIB_TEMP 60                                               // Температура воздуха в комнате по показниям BME280 | Air temperature in room by BME280 measurements
+#define MAX_CALIB_TEMP CE                                               // Температура воздуха в камере предельная по показниям BME280 (!! Не трогать) | Air MAX temperature in chamber by BME280 measurements (!! DO NOT TOUCH)
+#define REAL_CALIB_TEMP_MIN 60                                          // Температура воздуха в комнате по показаниям термопары | Air temperature in room by thermocouple measurements
+#define REAL_CALIB_TEMP_MAX CE + (REAL_CALIB_TEMP_MIN - MIN_CALIB_TEMP) // Температура воздуха в камере по показниям термопары при достижении заданной температуры по показаниям BME280 | Air temperature in chamber by thermocouple measurements at BME280 setpoint temperature reached
 
 // Polynomial Temperature Calibration for BME280
 // #define COEFF_A 0.0
@@ -132,7 +146,6 @@ buzzer beeps every time the heater comes on
 // #define COEFF_B -0.010865
 // #define COEFF_C 0.484942
 // #define COEFF_D -3.841228
-
 
 /**********************
 Select the power-on algorithm.
@@ -156,10 +169,11 @@ Manual PID setup
 if OVERWRITE_PID - 0, pid, after burning, will be default
  **********************/
 #define OVERWRITE_PID 0
-#define K_PROPRTIONAL 20  //
-#define K_INTEGRAL 1      //
-#define K_DERIVATIVE 40   //
-#define K_SAMPLE_TIME 300 //
+#define K_PROPRTIONAL 20     //
+#define K_INTEGRAL 1         //
+#define K_DERIVATIVE 40      //
+#define K_FILTER 40          //
+#define K_MIN_DELTA_TIME 300 //
 /*********************
 Pid type
 P_ON_M specifies that Proportional on Measurement be used
@@ -282,5 +296,17 @@ language, will not be displayed
 #define PRESET_NAME_2 "PETG"
 #define PRESET_NAME_3 "PA6"
 #endif
+
+#if SENSOR_TYPE == 0
+#define ERROR
+#elif SENSOR_TYPE == 1
+#define SENSOR_BME280
+#elif SENSOR_TYPE == 2
+#define SENSOR_SHT31
+#endif
+
+#define KASYAK_FINDER 0
+#define DRY_LOGS 1
+#define AUTOPID_LOGS 1
 
 #endif

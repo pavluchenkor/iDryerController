@@ -31,8 +31,7 @@ void plaDryStart();
 void petgDryStart();
 void absDryStart();
 void storageStart();
-void autoPidM();
-void saveAll();
+void autoPidStart();
 void servoTest();
 #if SCALES_MODULE_NUM > 0
 void setSpool1();
@@ -74,193 +73,191 @@ PGM_P const serviceTxt[] PROGMEM = {
 };
 
 PGM_P const menuTxt[] PROGMEM = {
-    i0,
-    i1,
-    i2,
-    i3,
-    i4,
-    i5,
-    i2,
-    i7,
-    i4,
-    i9,
-    i10,
-    i2,
-    i3,
-    i4,
-    i14,
-    i2,
-    i3,
-    i4,
-    i18,
-    i2,
-    i3,
-    i4,
-    i22,
-    i23,
-    i24,
-    i25,
-    i26,
-    i27,
-    i28,
-    i2,
-    i4,
-    i31,
-    i32,
-    i33,
-    i34,
-    i35,
-    i36,
-    i37,
-    i38,
+    i0,  // id: 0
+    i1,  // id: 1
+    i2,  // id: 2
+    i3,  // id: 3
+    i4,  // id: 4
+    i5,  // id: 5
+    i2,  // id: 6
+    i7,  // id: 7
+    i4,  // id: 8
+    i9,  // id: 9
+    i10, // id: 10
+    i2,  // id: 11
+    i3,  // id: 12
+    i4,  // id: 13
+    i14, // id: 14
+    i2,  // id: 15
+    i3,  // id: 16
+    i4,  // id: 17
+    i18, // id: 18
+    i2,  // id: 19
+    i3,  // id: 20
+    i4,  // id: 21
+    i22, // id: 22
+    i23, // id: 23
+    i24, // id: 24
+    i25, // id: 25
+    i26, // id: 26
+    i27, // id: 27
+    i28, // id: 28
+    i29, // id: 29
+    i2,  // id: 30
+    i4,  // id: 31
+    i31, // id: 32
+    i32, // id: 33
+    i33, // id: 34
+    i34, // id: 35
+    i35, // id: 36
+    i36, // id: 37
+    i37, // id: 38
 #if SCALES_MODULE_NUM > 0
-    i39,
-    i40,
-    i41,
-    i42,
+    i39, // id: 39
+    i40, // id: 40
+    i41, // id: 41
+    i42, // id: 42
 #endif
 #if SCALES_MODULE_NUM > 1
-    i43,
-    i41,
-    i42,
+    i43, // id: 43
+    i41, // id: 44
+    i42, // id: 45
 #endif
 #if SCALES_MODULE_NUM > 2
-    i46,
-    i41,
-    i42,
+    i46, // id: 46
+    i41, // id: 47
+    i42, // id: 48
 #endif
 #if SCALES_MODULE_NUM > 3
-    i49,
-    i41,
-    i42,
+    i49, // id: 49
+    i41, // id: 50
+    i42, // id: 51
 #endif
 };
 
-
-
 const menuS menuPGM[] PROGMEM = {
-    {0, NULL, 0, 0},
-    {1, 0, 0, 0},
-# if CE == 100
-    {2, 1, 0, 100},
-#elif CE == 110
-    {2, 1, 0, 110},
-#endif
-    {3, 1, 0, 1140},
-    {4, 1, 0, 0},
-    {5, 0, 0, 0},
-# if CE == 100
-    {6, 5, 0, 100},
-#elif CE == 110
-    {6, 5, 0, 110},
-#endif
-    {7, 5, 5, 40},
-    {8, 5, 0, 0},
-    {9, 0, 0, 0},
-    {10, 9, 0, 0},
+    {0, NULL, 0, 0}, // id: 0
+    {1, 0, 0, 0},    // id: 1
 #if CE == 100
-    {11, 10, 45, 100},
+    {2, 1, 0, 100}, // id: 2
 #elif CE == 110
-    {11, 10, 45, 110},
+    {2, 1, 0, 110}, // id: 2
 #endif
-    {12, 10, 120, 1140},
-    {13, 10, 0, 0},
-    {14, 9, 0, 0},
-    {15, 14, 45, 100},
-    {16, 14, 120, 1140},
-    {17, 14, 0, 0},
-    {18, 9, 0, 0},
+    {3, 1, 0, 1140}, // id: 3
+    {4, 1, 0, 0},    // id: 4
+    {5, 0, 0, 0},    // id: 5
 #if CE == 100
-    {19, 18, 45, 100},
+    {6, 5, 0, 100}, // id: 6
 #elif CE == 110
-    {19, 18, 45, 110},
+    {6, 5, 0, 110}, // id: 6
 #endif
-    {20, 18, 120, 1140},
-    {21, 18, 0, 0},
-    {22, 0, 0, 0},
-    {23, 22, 0, 0},
-    {24, 23, 0, 65535},
-    {25, 23, 0, 65535},
-    {26, 23, 0, 65535},
-    {27, 23, 0, 0},
-    {28, 27, 50, 1000},
-# if CE == 100
-    {29, 27, 30, 100},
+    {7, 5, 5, 40}, // id: 7
+    {8, 5, 0, 0},  // id: 8
+    {9, 0, 0, 0},  // id: 9
+    {10, 9, 0, 0}, // id: 10
+#if CE == 100
+    {11, 10, 45, 100}, // id: 11
 #elif CE == 110
-    {29, 27, 30, 110},
+    {11, 10, 45, 110}, // id: 11
 #endif
-    {30, 27, 0, 0},
-    {31, 22, 70, 100},
-    {32, 22, 0, 50},
-    {33, 22, 0, 0},
-    {34, 33, 0, 60},
-    {35, 33, 0, 10},
-    {36, 33, 0, 90},
-    {37, 33, 0, 0},
-    {38, 22, 0, 0},
+    {12, 10, 120, 1140}, // id: 12
+    {13, 10, 0, 0},      // id: 13
+    {14, 9, 0, 0},       // id: 14
+    {15, 14, 45, 100},   // id: 15
+    {16, 14, 120, 1140}, // id: 16
+    {17, 14, 0, 0},      // id: 17
+    {18, 9, 0, 0},       // id: 18
+#if CE == 100
+    {19, 18, 45, 100}, // id: 19
+#elif CE == 110
+    {19, 18, 45, 110}, // id: 19
+#endif
+    {20, 18, 120, 1140}, // id: 20
+    {21, 18, 0, 0},      // id: 21
+    {22, 0, 0, 0},       // id: 22
+    {23, 22, 0, 0},      // id: 23
+    {24, 23, 0, 65535},  // id: 24
+    {25, 23, 0, 65535},  // id: 25
+    {26, 23, 0, 65535},  // id: 26
+    {27, 23, 1, 65535},  // id: 27
+    {28, 23, 1, 65535},  // id: 28
+    {29, 23, 0, 0},      // id: 29
+#if CE == 100
+    {30, 29, 30, 100}, // id: 30
+#elif CE == 110
+    {30, 29, 30, 110}, // id: 30
+#endif
+    {31, 29, 0, 0},    // id: 31
+    {32, 22, 70, 100}, // id: 32
+    {33, 22, 0, 50},   // id: 33
+    {34, 22, 0, 0},    // id: 34
+    {35, 34, 0, 60},   // id: 35
+    {36, 34, 0, 10},   // id: 36
+    {37, 34, 0, 90},   // id: 37
+    {38, 34, 0, 0},    // id: 38
 #if SCALES_MODULE_NUM > 0
-    {39, 0, 0, 0},
-    {40, 39, 0, 0},
-    {41, 40, 0, 500},
-    {42, 40, 0, 0},
+    {39, 0, 0, 0},    // id: 39
+    {40, 39, 0, 0},   // id: 40
+    {41, 40, 0, 500}, // id: 41
+    {42, 40, 0, 0},   // id: 42
 #endif
 #if SCALES_MODULE_NUM > 1
-    {43, 39, 0, 0},
-    {44, 43, 0, 500},
-    {45, 43, 0, 0},
+    {43, 39, 0, 0},   // id: 43
+    {44, 43, 0, 500}, // id: 44
+    {45, 43, 0, 0},   // id: 45
 #endif
 #if SCALES_MODULE_NUM > 2
-    {46, 39, 0, 0},
-    {47, 46, 0, 500},
-    {48, 46, 0, 0},
+    {46, 39, 0, 0},   // id: 46
+    {47, 46, 0, 500}, // id: 47
+    {48, 46, 0, 0},   // id: 48
 #endif
 #if SCALES_MODULE_NUM > 3
-    {49, 39, 0, 0},
-    {50, 49, 0, 500},
-    {51, 49, 0, 0},
+    {49, 39, 0, 0},   // id: 49
+    {50, 49, 0, 500}, // id: 50
+    {51, 50, 0, 0},   // id: 51
 #endif
 };
 
 uint16_t menuVal[] EEMEM = {
-    EEPROM_VALIDATION_VALUE,    // id: 0
-    0,                          // id: 1
-    60,                         // id: 2
-    240,                        // id: 3
-    0,                          // id: 4
-    0,                          // id: 5
-    35,                         // id: 6
-    15,                         // id: 7
-    0,                          // id: 8
-    0,                          // id: 9
-    0,                          // id: 10
-    55,                         // id: 11
-    180,                        // id: 12
-    0,                          // id: 13
-    0,                          // id: 14
-    65,                         // id: 15
-    240,                        // id: 16
-    0,                          // id: 17
-    0,                          // id: 18
-    90,                         // id: 19
-    240,                        // id: 20
-    0,                          // id: 21
-    0,                          // id: 22
-    0,                          // id: 23
-    3800,                       // id: 24 Kp 500
-    200,                        // id: 25 Ki 1
-    17650,                      // id: 26 Kd 200
-    0,                          // id: 27
-    333,                        // id: 28 autopid sample time
-    65,                         // id: 29
-    0,                          // id: 30
-    100,                        // id: 31 airflow
-    10,                         // id: 32 delta
-    0,                          // id: 33
-    30,                         // id: 34
-    1,                          // id: 35
-    55,                         // id: 36
-    0,                          // id: 37
-    0,                          // id: 38
+    EEPROM_VALIDATION_VALUE, // id: 0
+    0,                       // id: 1
+    60,                      // id: 2
+    240,                     // id: 3
+    0,                       // id: 4
+    0,                       // id: 5
+    35,                      // id: 6
+    15,                      // id: 7
+    0,                       // id: 8
+    0,                       // id: 9
+    0,                       // id: 10
+    55,                      // id: 11
+    180,                     // id: 12
+    0,                       // id: 13
+    0,                       // id: 14
+    65,                      // id: 15
+    240,                     // id: 16
+    0,                       // id: 17
+    0,                       // id: 18
+    90,                      // id: 19
+    240,                     // id: 20
+    0,                       // id: 21
+    0,                       // id: 22
+    0,                       // id: 23
+    10,                      // id: 24 Kp div100 (DEF_PID_KP_DIV)
+    20,                      // id: 25 Ki div10000 (DEF_PID_KI_DIV)
+    200,                     // id: 26 Kd div100 (DEF_PID_KD_DIV)
+    333,                     // id: 27 Kf div1000 (DEF_PID_KF_DIV)
+    333,                     // id: 28 min pid delta time div1000 (DEF_MIN_PID_DELTA_TIME_MS_DIV)
+    0,                       // id: 29 autopid
+    65,                      // id: 30 autopid temp
+    0,                       // id: 31 autopid start
+    100,                     // id: 32 airflow
+    0,                       // id: 33 delta
+    0,                       // id: 34
+    30,                      // id: 35
+    1,                       // id: 36
+    55,                      // id: 37
+    0,                       // id: 38
 #if SCALES_MODULE_NUM > 0
     0, // id: 39
     0, // id: 40
@@ -286,66 +283,65 @@ uint16_t menuVal[] EEMEM = {
 
 typedef void (*ptrFunc)();
 
-const ptrFunc menuFunc[]
-{
-    NULL,
-        NULL,
-        NULL,
-        NULL,
-        &mainDryStart,
-        NULL,
-        NULL,
-        NULL,
-        &storageStart,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        &plaDryStart,
-        NULL,
-        NULL,
-        NULL,
-        &petgDryStart,
-        NULL,
-        NULL,
-        NULL,
-        &absDryStart,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        &autoPidM,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        &servoTest,
-        &saveAll,
+const ptrFunc menuFunc[]{
+    NULL,          // id: 0
+    NULL,          // id: 1
+    NULL,          // id: 2
+    NULL,          // id: 3
+    &mainDryStart, // id: 4
+    NULL,          // id: 5
+    NULL,          // id: 6
+    NULL,          // id: 7
+    &storageStart, // id: 8
+    NULL,          // id: 9
+    NULL,          // id: 10
+    NULL,          // id: 11
+    NULL,          // id: 12
+    &plaDryStart,  // id: 13
+    NULL,          // id: 14
+    NULL,          // id: 15
+    NULL,          // id: 16
+    &petgDryStart, // id: 17
+    NULL,          // id: 18
+    NULL,          // id: 19
+    NULL,          // id: 20
+    &absDryStart,  // id: 21
+    NULL,          // id: 22
+    NULL,          // id: 23
+    NULL,          // id: 24
+    NULL,          // id: 25
+    NULL,          // id: 26
+    NULL,          // id: 27
+    NULL,          // id: 28
+    NULL,          // id: 29
+    NULL,          // id: 30
+    &autoPidStart, // id: 31
+    NULL,          // id: 32
+    NULL,          // id: 33
+    NULL,          // id: 34
+    NULL,          // id: 35
+    NULL,          // id: 36
+    NULL,          // id: 37
+    &servoTest,    // id: 38
 #if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
-        NULL,
-        NULL,
-        NULL,
-        setSpool1,
+    NULL,      // id: 39
+    NULL,      // id: 40
+    NULL,      // id: 41
+    setSpool1, // id: 42
 #endif
 #if SCALES_MODULE_NUM > 1 && AUTOPID_RUN == 0
-        NULL,
-        NULL,
-        &setSpool2,
+    NULL,       // id: 43
+    NULL,       // id: 44
+    &setSpool2, // id: 45
 #endif
 #if SCALES_MODULE_NUM > 2 && AUTOPID_RUN == 0
-        NULL,
-        NULL,
-        &setSpool3,
+    NULL,       // id: 46
+    NULL,       // id: 47
+    &setSpool3, // id: 48
 #endif
 #if SCALES_MODULE_NUM > 3 && AUTOPID_RUN == 0
-        NULL,
-        NULL,
-        &setSpool4,
+    NULL,       // id: 49
+    NULL,       // id: 50
+    &setSpool4, // id: 51
 #endif
 };
