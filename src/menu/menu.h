@@ -214,7 +214,7 @@ const menuS menuPGM[] PROGMEM = {
 #if SCALES_MODULE_NUM > 3
     {49, 39, 0, 0},   // id: 49
     {50, 49, 0, 500}, // id: 50
-    {51, 50, 0, 0},   // id: 51
+    {51, 49, 0, 0},   // id: 51
 #endif
 };
 
