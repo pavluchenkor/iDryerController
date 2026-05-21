@@ -243,20 +243,20 @@ uint16_t menuVal[] EEMEM = {
     0,                       // id: 21
     0,                       // id: 22
     0,                       // id: 23
-    10,                      // id: 24 Kp div100 (DEF_PID_KP_DIV)
-    20,                      // id: 25 Ki div10000 (DEF_PID_KI_DIV)
-    200,                     // id: 26 Kd div100 (DEF_PID_KD_DIV)
+    3,                       // id: 24 Kp div100 (DEF_PID_KP_DIV)
+    8,                       // id: 25 Ki div10000 (DEF_PID_KI_DIV)
+    25,                      // id: 26 Kd div100 (DEF_PID_KD_DIV)
     333,                     // id: 27 Kf div1000 (DEF_PID_KF_DIV)
     333,                     // id: 28 min pid delta time div1000 (DEF_MIN_PID_DELTA_TIME_MS_DIV)
     0,                       // id: 29 autopid
     65,                      // id: 30 autopid temp
     0,                       // id: 31 autopid start
     100,                     // id: 32 airflow
-    0,                       // id: 33 delta
+    20,                      // id: 33 delta
     0,                       // id: 34
-    30,                      // id: 35
-    1,                       // id: 36
-    55,                      // id: 37
+    10,                      // id: 35 servo close duration
+    1,                       // id: 36 servo open duration
+    55,                      // id: 37 servo open angle
     0,                       // id: 38
 #if SCALES_MODULE_NUM > 0
     0, // id: 39
@@ -323,23 +323,23 @@ const ptrFunc menuFunc[]{
     NULL,          // id: 36
     NULL,          // id: 37
     &servoTest,    // id: 38
-#if SCALES_MODULE_NUM > 0 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 0
     NULL,      // id: 39
     NULL,      // id: 40
     NULL,      // id: 41
     setSpool1, // id: 42
 #endif
-#if SCALES_MODULE_NUM > 1 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 1
     NULL,       // id: 43
     NULL,       // id: 44
     &setSpool2, // id: 45
 #endif
-#if SCALES_MODULE_NUM > 2 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 2
     NULL,       // id: 46
     NULL,       // id: 47
     &setSpool3, // id: 48
 #endif
-#if SCALES_MODULE_NUM > 3 && AUTOPID_RUN == 0
+#if SCALES_MODULE_NUM > 3
     NULL,       // id: 49
     NULL,       // id: 50
     &setSpool4, // id: 51

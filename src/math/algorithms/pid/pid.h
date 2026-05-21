@@ -1,5 +1,7 @@
 #ifndef PID_H
 #define PID_H
+#include "Configuration.h"
+#include "math/math_extensions.h"
 
 namespace math::algorithms
 {
@@ -7,18 +9,22 @@ namespace math::algorithms
   {
   private:
     // settings
+    const float _minOutput = 0;
+    const float _maxOutput = 1;
     float _minDeltaTime = 0;
     float _proportionalGain = 0;
     float _integralGain = 0;
     float _derivativeGain = 0;
     float _filterGain = 0;
-    float _minOutput = 0;
-    float _maxOutput = 1;
 
     // state
     bool _outputUpdated = false;
+#if KASYAK_FINDER
+    float _time = 0;
+    float _input = 0;
+#endif
     float _previousTime = 0;
-    float _previousValue = 0;
+    float _previousInput = 0;
 
     // calculations
     float _deltaTime = 0;
@@ -34,11 +40,17 @@ namespace math::algorithms
     // getters
     bool IsOutputUpdated() const;
     float GetDeltaTime() const;
+    float GetMinDeltaTime() const;
     float GetProportionalTerm() const;
     float GetIntegralTerm() const;
     float GetDerivativeTerm() const;
     float GetFilterTerm() const;
+#if KASYAK_FINDER
+    float GetTime() const;
+    float GetInput() const;
+#endif
     float GetOutput() const;
+    float GetMappedOutput(float lowerBound, float upperBound) const;
     float GetMinOutput() const;
     float GetMaxOutput() const;
 
@@ -51,6 +63,8 @@ namespace math::algorithms
 
     // calculations
     void Process(float time, float value);
+
+    void Reset();
   };
 }
 

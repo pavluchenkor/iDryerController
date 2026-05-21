@@ -113,9 +113,10 @@ temperature  sensor choice
 Пороговые значения для температурных фаз
  ***************************/
 #define DRY_START_THRESHOLD 1.0f // Порог для начала отсчета времени сушки (°C)
-#define HEATING_THRESHOLD 5.0f   // Порог для агрессивного нагрева (°C)
-#define HEATER_AIR_DELTA 10.0f   // Компенсация теплопотерь (°C)
 #define CRITICAL_OVERHEAT 5.0f   // Критическая температура (°C)
+#define AIR_PID_KP 1.0f          // Пропорциональная составляющая PID по воздуху
+#define AIR_PID_KI 0.01f         // Интегральная составляющая PID по воздуху
+#define AIR_PID_KD 0.0f          // Дифференциальная составляющая PID по воздуху
 
 #define TMP_MIN 1
 #define TMP_MAX 130
@@ -164,16 +165,6 @@ aprox 1min per attempt
  ********************/
 #define AUTOPID_ATTEMPT 10
 
-/**********************
-Manual PID setup
-if OVERWRITE_PID - 0, pid, after burning, will be default
- **********************/
-#define OVERWRITE_PID 0
-#define K_PROPRTIONAL 20     //
-#define K_INTEGRAL 1         //
-#define K_DERIVATIVE 40      //
-#define K_FILTER 40          //
-#define K_MIN_DELTA_TIME 300 //
 /*********************
 Pid type
 P_ON_M specifies that Proportional on Measurement be used
@@ -248,24 +239,24 @@ the minimum and maximum pulse widths that will suit most servos (in us)
 https://en.wikipedia.org/wiki/Servo_control
 SERVO_CUCKOO - Servo sound notification time 0 - off, 50-100 - normal
  ********************/
-#define SERVO_MIN_PULSE 300
+#define SERVO_MIN_PULSE 1000
 #define SERVO_MAX_PULSE 2000
 #define SERVO_PERIOD_MS 20
 #define SERVO_CUCKOO 50 // 0
 
+/*********************
+ * НЕ ВЛЕЗАЙ! УЕБЬЕТ!
+ * меняй это на свой страх и риск
+ ********************/
+#define HEATER_IMPULSE_DURATION_US 100 // Длительность импульса для управления нагревателем (в микросекундах)
+#define HEATER_IMPULSE_OFFSET_US 500   // Смещение для включения нагревателя относительно нулевого импульса (в микросекундах)
+
 /**********************
 if you change here, do an upload isp and upload eep anyway
-if your SCALES_MODULE_NUM not 0 do this:
-   1 pio run -e EEP -t fullclean -t uploadeep
-   2 set #define AUTOPID_RUN 1
-   2.1 CTRL + S
-   3 pio run -e EEP -t fullclean -t upload
-   4 wait for autopid to finish setting up
-   5 set #define AUTOPID_RUN 0
-   5.1 CTRL + S
-   6 pio run -e EEP -t fullclean -t upload
- ********************/
-#define AUTOPID_RUN 0
+
+pio run -e EEP -t fullclean -t uploadeep -t upload
+
+********************/
 #define SCALES_MODULE_NUM 0
 
 #define FILAMENT_SENSOR_ON                   //
@@ -306,7 +297,9 @@ language, will not be displayed
 #endif
 
 #define KASYAK_FINDER 0
-#define DRY_LOGS 1
-#define AUTOPID_LOGS 1
+#define DRY_AIR_LOGS 1
+#define DRY_HEATER_LOGS 0
+#define SERVO_LOGS 0
+#define AUTOPID_LOGS 0
 
 #endif

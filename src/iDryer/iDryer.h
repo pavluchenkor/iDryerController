@@ -5,9 +5,18 @@
 #include <GyverTimers.h>
 #include "Configuration.h"
 #include "math/math_extensions.h"
+#include "math/algorithms/pid/pid.h"
 #include "thermistor/thermistor.h"
 #include "GyverBME280.h"
 #include "SHT31.h"
+
+using math::algorithms::PIDController;
+
+#ifdef SENSOR_BME280
+#define AirTempSensor GyverBME280
+#else
+#define AirTempSensor SHT31
+#endif
 
 enum State
 {
@@ -36,34 +45,44 @@ struct Data
   bool flagScreenUpdate = false;
   bool flagTimeCounter = false;
   uint8_t setFan = 0;
-  float Kp = 0;
-  float Ki = 0;
-  float Kd = 0;
-  float Kf = 0;
-  float minDeltaTime = 0;
   uint8_t deltaT = 0;
 };
 
 class iDryer
 {
+  // TODO: Prefer getters and setters for data members instead of direct access
 public:
+  State state = OFF;
   Data data;
-  unsigned long lastScreenUpdateTimestamp = 0;
-  thermistor &ntc;
+  PIDController airPid;
+  PIDController heaterPid;
 
-#ifdef SENSOR_BME280
-  GyverBME280 &bme;
-#else
-  SHT31 &sht;
-#endif
+private:
+  unsigned long _lastScreenUpdateTimestamp = 0;
 
-#ifdef SENSOR_BME280
-  iDryer(thermistor &ntc, GyverBME280 &bme);
-#else
-  iDryer(thermistor &ntc, SHT31 &sht);
-#endif
+  float _targetHeaterTemp = 0;
+  float _output = 0;
 
-  bool getData();
+  bool _overrideOutput = false;
+
+  thermistor &_heaterTempSensor;
+  AirTempSensor &_airTempSensor;
+
+public:
+  iDryer(thermistor &heaterTempSensor, AirTempSensor &airTempSensor);
+
+  float GetSetpoint() const;
+
+  float GetOutput() const;
+  void SetOutput(float output);
+
+  bool IsHeatingAllowed() const;
+
+  void Reset();
+
+  bool UpdateData();
+
+  void Setpoint();
 };
 
 #endif // IDRYER_H

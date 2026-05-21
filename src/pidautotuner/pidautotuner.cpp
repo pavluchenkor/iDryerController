@@ -3,6 +3,7 @@
 // This code is distrubuted under the MIT License, see LICENSE for details
 
 #include "pidautotuner.h"
+#include "math/math_extensions.h"
 
 PIDAutotuner::PIDAutotuner()
 {
@@ -18,6 +19,11 @@ void PIDAutotuner::setTargetInputValue(float target)
 void PIDAutotuner::setLoopInterval(long interval)
 {
   loopInterval = interval;
+}
+
+void PIDAutotuner::setSafeInterval(long interval)
+{
+  safeInterval = interval;
 }
 
 // Set output range
@@ -93,7 +99,7 @@ float PIDAutotuner::tunePID(float input, unsigned long us)
   }
 
   // Output is off and input signal has dropped to target
-  if (!output && input < targetInputValue)
+  if (!output && input < targetInputValue && (us - t1) > safeInterval)
   {
     // Turn output on, record current time as t2, calculate tLow
     output = true;
