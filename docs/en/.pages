@@ -1,0 +1,6 @@
+title: iDryerController
+nav:
+  - About: README.md
+  - Firmware: firmware.md
+  - Sensor calibtaration: sensor.md
+  - Manual: user-manual.md
