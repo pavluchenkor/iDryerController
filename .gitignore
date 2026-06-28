@@ -7,3 +7,4 @@ read_hex.py
 logs
 *.code-workspace
 ~*
+___*
