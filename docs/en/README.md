@@ -1,4 +1,6 @@
-# Firmware
+# About the Project
+
+![PCB](../img/IMG_3080.png)
 
 A universal solution for filament drying. Can be built from inexpensive and readily available components, such as an old heater block heater, an unused fan, and a heat sink. A box from a hardware store and any insulation material can serve as the enclosure. The list of components is limited only by imagination.
 

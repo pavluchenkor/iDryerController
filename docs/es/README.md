@@ -1,4 +1,6 @@
-# Firmware
+# Acerca del Proyecto
+
+![PCB](../img/IMG_3080.png)
 
 Solución universal para el secado de filamento. Se puede construir con materiales disponibles y económicos, por ejemplo un viejo calentador de un bloque de calor, un ventilador innecesario y un disipador de calor, y usar una caja de una tienda de electrónica y cualquier aislante como carcasa. La lista de piezas utilizadas está limitada solo por la imaginación.
 

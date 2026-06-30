@@ -1,4 +1,6 @@
-# Firmware
+# Sobre o Projeto
+
+![PCB](../img/IMG_3080.png)
 
 Solução universal para secagem de filamento. Pode ser construída com componentes acessíveis e baratos, como um antigo aquecedor de bloco de calor, um ventilador desnecessário e um dissipador de calor. A carcaça pode ser uma caixa de ferragens e qualquer isolante térmico. A lista de componentes utilizados é limitada apenas pela imaginação.
 

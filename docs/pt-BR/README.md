@@ -1,4 +1,6 @@
-# Firmware
+# Sobre o Projeto
+
+![PCB](../img/IMG_3080.png)
 
 Solução universal para secagem de filamento. Pode ser construída a partir de componentes acessíveis e baratos, como um antigo aquecedor de bloco, um ventilador desnecessário e um dissipador, e usar uma caixa de material de construção como gabinete e qualquer isolante. A lista de peças usadas é limitada apenas pela imaginação.
 

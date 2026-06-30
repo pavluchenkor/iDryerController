@@ -1,4 +1,6 @@
-# Firmware
+# À propos du projet
+
+![PCB](../img/IMG_3080.png)
 
 Solution universelle pour sécher le filament. Il est possible de l'assembler à partir de composants disponibles et peu coûteux, par exemple un ancien radiateur de bloc d'impression, un ventilateur inutilisé et un dissipateur thermique, et d'utiliser une boîte d'un magasin de bricolage et un isolant quelconque comme boîtier. La liste des pièces utilisées n'est limitée que par l'imagination.
 

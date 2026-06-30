@@ -1,4 +1,6 @@
-# Firmware
+# Über das Projekt
+
+![PCB](../img/IMG_3080.png)
 
 Eine universelle Lösung zum Trocknen von Filamenten. Sie können es aus kostengünstigen und verfügbaren Komponenten zusammenbauen – beispielsweise aus einem alten Heizblockheizer, einem unnötigen Lüfter und einem Kühlkörper. Als Gehäuse können Sie eine einfache Kiste und eine beliebige Isolierung verwenden. Die Liste der verwendeten Komponenten ist nur durch Ihre Fantasie begrenzt.
 

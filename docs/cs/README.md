@@ -1,4 +1,6 @@
-# Firmware
+# O projektu
+
+![PCB](../img/IMG_3080.png)
 
 Univerzální řešení pro sušení filamentu. Lze postavit z dostupného a levného zařízení, například starého topného prvku z heat-blocku, nepotřebného ventilátoru a chladiče, a jako skříň použít krabici z obchodu a libovolný izolační materiál. Seznam používaných součástek je omezen pouze fantazií.
 
